@@ -44,6 +44,55 @@ test('GET /api/lessons/current returns the restored bookmark', async (context) =
   });
 });
 
+test('GET /api/lessons/history lists locked lessons without moving the bookmark', async (context) => {
+  const currentLessonService = {
+    async getHistoryForUser() {
+      return [
+        {
+          id: 'lesson-1',
+          title: 'My Job',
+          sequenceNumber: 1,
+          cycleNumber: 1,
+        },
+      ];
+    },
+  };
+  const database = { query: async () => ({ rows: [] }) };
+  const app = createApp({ database, currentLessonService });
+  const server = await listen(app);
+  context.after(() => server.close());
+
+  const address = server.address();
+  const response = await fetch(
+    `http://127.0.0.1:${address.port}/api/lessons/history`,
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).data[0].id, 'lesson-1');
+});
+
+test('GET /api/lessons/:id returns an owned historical lesson', async (context) => {
+  const currentLessonService = {
+    async getByIdForUser({ lessonId }) {
+      return { id: lessonId, status: 'completed', isLocked: true };
+    },
+  };
+  const database = { query: async () => ({ rows: [] }) };
+  const app = createApp({ database, currentLessonService });
+  const server = await listen(app);
+  context.after(() => server.close());
+
+  const address = server.address();
+  const response = await fetch(
+    `http://127.0.0.1:${address.port}/api/lessons/lesson-1`,
+  );
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), {
+    data: { id: 'lesson-1', status: 'completed', isLocked: true },
+  });
+});
+
 test('POST /api/lessons/:id/complete advances the lesson', async (context) => {
   const completeLessonService = {
     async completeForUser({ lessonId }) {

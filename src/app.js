@@ -66,6 +66,29 @@ export function createApp({
     }
   });
 
+  app.get('/api/lessons/history', async (_request, response, next) => {
+    try {
+      const lessons = await currentLessonService.getHistoryForUser(
+        config.demoUserId,
+      );
+      response.json({ data: lessons });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get('/api/lessons/:lessonId', async (request, response, next) => {
+    try {
+      const lesson = await currentLessonService.getByIdForUser({
+        userId: config.demoUserId,
+        lessonId: request.params.lessonId,
+      });
+      response.json({ data: lesson });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   app.post('/api/lessons/:lessonId/complete', async (request, response, next) => {
     try {
       const result = await resolvedCompleteLessonService.completeForUser({

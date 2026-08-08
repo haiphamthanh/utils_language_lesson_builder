@@ -25,6 +25,20 @@
       <section id="error" class="notice notice-error" hidden></section>
 
       <article id="lesson" class="lesson" hidden>
+        <nav class="lesson-navigation" aria-label="Điều hướng lịch sử bài học">
+          <button id="previous-lesson-button" class="icon-button" type="button" aria-label="Xem bài đã hoàn thành trước đó" disabled>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+          </button>
+          <span id="viewing-status" class="viewing-status">Bài hiện tại</span>
+          <button id="next-lesson-button" class="icon-button" type="button" aria-label="Xem bài tiếp theo" disabled>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m9 18 6-6-6-6" />
+            </svg>
+          </button>
+        </nav>
+
         <div class="lesson-meta">
           <div>
             <p id="journey-title" class="eyebrow"></p>

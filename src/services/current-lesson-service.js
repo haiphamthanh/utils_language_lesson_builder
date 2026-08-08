@@ -16,8 +16,44 @@ export class CurrentLessonService {
       );
     }
 
+    return this.#toView(lesson, true);
+  }
+
+  async getByIdForUser({ userId, lessonId }) {
+    const lesson = await this.lessonRepository.findViewableById({
+      userId,
+      lessonId,
+    });
+
+    if (!lesson) {
+      throw new AppError(
+        404,
+        'LESSON_NOT_FOUND',
+        'The lesson was not found or is not available to this learner.',
+      );
+    }
+
+    return this.#toView(lesson, lesson.is_current);
+  }
+
+  async getHistoryForUser(userId) {
+    const lessons = await this.lessonRepository.findCompletedHistoryByUserId(
+      userId,
+    );
+
+    return lessons.map((lesson) => ({
+      id: lesson.id,
+      title: lesson.title,
+      sequenceNumber: lesson.sequence_number,
+      cycleNumber: lesson.cycle_number,
+      completedAt: lesson.completed_at,
+    }));
+  }
+
+  #toView(lesson, isCurrent) {
     return {
       id: lesson.id,
+      isCurrent,
       status: lesson.status,
       isLocked: lesson.is_locked,
       completedAt: lesson.completed_at,

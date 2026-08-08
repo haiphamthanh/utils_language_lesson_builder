@@ -26,6 +26,7 @@ Hệ thống không có editor, submission hay chấm bài. `Done` là tín hi�
 6. Vòng ôn tạo một lesson progress mới nhưng tham chiếu version đã khóa ở vòng 1.
 7. Thống kê chỉ tính lesson đã Done. Mở web hoặc regenerate không tạo ngày học.
 8. “Từ đã gặp” là thống kê tiếp xúc, không được gọi là “từ đã thuộc”.
+9. Đọc bài lịch sử là read-only: không đổi `user_journey_progress`, không tăng thống kê và không hiện action mutate.
 
 ## Ranh giới module
 

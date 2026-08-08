@@ -57,6 +57,7 @@ npm run db:seed
 6. **Tạo bài khác** tạo version mới nhưng giữ lịch sử; bài đã Done hoặc đang ôn bị backend từ chối regenerate.
 7. Thanh tiến độ đếm bài đã khóa, ngày học, streak và từ/cụm từ đã tiếp xúc; chỉ Done mới làm thay đổi số liệu.
 8. Mỗi từ vựng, cụm từ và cấu trúc có đúng 5 câu ví dụ trong target language.
+9. Hai nút mũi tên cho phép đi qua các bài đã khóa rồi quay về bài hiện tại; thao tác xem không thay đổi bookmark hoặc thống kê.
 
 ## Ranh giới MVP hiện tại
 
