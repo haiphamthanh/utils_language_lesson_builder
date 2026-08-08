@@ -2,6 +2,7 @@ const elements = {
   loading: document.querySelector('#loading'),
   error: document.querySelector('#error'),
   mastheadEyebrow: document.querySelector('#masthead-eyebrow'),
+  themeToggle: document.querySelector('#theme-toggle'),
   lesson: document.querySelector('#lesson'),
   journeyTitle: document.querySelector('#journey-title'),
   lessonTitle: document.querySelector('#lesson-title'),
@@ -40,10 +41,62 @@ const elements = {
   highlightViewComment: document.querySelector('#highlight-view-comment'),
   highlightEditButton: document.querySelector('#highlight-edit-button'),
   highlightDeleteButton: document.querySelector('#highlight-delete-button'),
+  library: document.querySelector('#library'),
+  librarySearchInput: document.querySelector('#library-search-input'),
+  libraryLanguageFilter: document.querySelector('#library-language-filter'),
+  libraryNewJourneyButton: document.querySelector('#library-new-journey-button'),
+  libraryShelf: document.querySelector('#library-shelf'),
+  libraryEmptyMessage: document.querySelector('#library-empty-message'),
+  librarySelect: document.querySelector('#library-select'),
+  librarySelectCreateButton: document.querySelector('#library-select-create-button'),
 };
 
 const LANGUAGES = ['English', 'Japanese'];
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
+const THEME_STORAGE_KEY = 'writing-journey:theme';
+
+function getStoredTheme() {
+  try {
+    const value = localStorage.getItem(THEME_STORAGE_KEY);
+    return ['auto', 'light', 'dark'].includes(value) ? value : 'auto';
+  } catch {
+    return 'auto';
+  }
+}
+
+function getResolvedTheme() {
+  const theme = getStoredTheme();
+  if (theme === 'light' || theme === 'dark') return theme;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches
+    ? 'dark'
+    : 'light';
+}
+
+function applyTheme() {
+  document.body.dataset.theme = getResolvedTheme();
+}
+
+function cycleTheme() {
+  const current = getStoredTheme();
+  const next =
+    current === 'auto' ? 'light' : current === 'light' ? 'dark' : 'auto';
+  try {
+    localStorage.setItem(THEME_STORAGE_KEY, next);
+  } catch {
+    // The theme still applies for this session when storage is unavailable.
+  }
+  applyTheme();
+}
+
+elements.themeToggle.addEventListener('click', () => {
+  cycleTheme();
+});
+
+window
+  .matchMedia('(prefers-color-scheme: dark)')
+  .addEventListener('change', applyTheme);
+
+applyTheme();
 
 let currentLesson = null;
 let bookmarkedLesson = null;
@@ -58,6 +111,10 @@ let lessonHighlights = [];
 let pendingHighlight = null;
 let editingHighlightId = null;
 let popoverActiveHighlight = null;
+let journeys = [];
+let libraryQuery = '';
+let libraryLanguageFilter = 'ALL';
+let activeJourneyId = null;
 
 function reviewGroups(review) {
   return [
@@ -445,7 +502,9 @@ function getSelectionAnchorRect(range) {
     (rect) => rect.width || rect.height,
   );
   if (rects.length) return rects[rects.length - 1];
-  return range.getBoundingClientRect();
+  const bounding = range.getBoundingClientRect();
+  if (bounding.width || bounding.height) return bounding;
+  return undefined;
 }
 
 function maybeShowHighlightPopover() {
@@ -461,6 +520,7 @@ function maybeShowHighlightPopover() {
   }
 
   const range = selection.getRangeAt(0);
+  const anchorRect = getSelectionAnchorRect(range);
   const startParagraph = getClosestParagraph(range.startContainer);
   const endParagraph = getClosestParagraph(range.endContainer);
   if (
@@ -508,7 +568,7 @@ function maybeShowHighlightPopover() {
   };
   editingHighlightId = null;
   renderLessonContent(currentLesson.content);
-  showHighlightCreateView(pendingHighlight, getSelectionAnchorRect(range));
+  showHighlightCreateView(pendingHighlight, anchorRect);
 }
 
 function openHighlightPopover(highlightId, anchorElement) {
@@ -586,6 +646,8 @@ function showLesson(lesson) {
   editingHighlightId = null;
   popoverActiveHighlight = null;
   elements.highlightPopover.hidden = true;
+  activeJourneyId = lesson.journey?.id ?? null;
+  markActiveJourney();
   elements.mastheadEyebrow.textContent = 'Bài học hôm nay';
   elements.journeyTitle.textContent = `${lesson.journey.title} · ${lesson.journey.level}`;
   elements.lessonTitle.textContent = lesson.title;
@@ -598,6 +660,7 @@ function showLesson(lesson) {
   elements.error.hidden = true;
   elements.journeySetup.hidden = true;
   elements.completion.hidden = true;
+  elements.librarySelect.hidden = true;
   elements.lesson.hidden = false;
 
   elements.completeButton.hidden =
@@ -617,25 +680,31 @@ function showLesson(lesson) {
 function showJourneyCompleted(journey) {
   currentLesson = null;
   bookmarkedLesson = null;
+  activeJourneyId = journey?.id ?? null;
   hideHighlightPopover();
+  markActiveJourney();
   elements.mastheadEyebrow.textContent = 'Hành trình hoàn thành';
   elements.completionJourneyTitle.textContent = journey?.title ?? '';
   elements.loading.hidden = true;
   elements.error.hidden = true;
   elements.lesson.hidden = true;
   elements.journeySetup.hidden = true;
+  elements.librarySelect.hidden = true;
   elements.completion.hidden = false;
 }
 
 function showJourneySetup() {
   currentLesson = null;
   bookmarkedLesson = null;
+  activeJourneyId = null;
   hideHighlightPopover();
+  markActiveJourney();
   elements.mastheadEyebrow.textContent = 'Hành trình mới';
   elements.loading.hidden = true;
   elements.error.hidden = true;
   elements.lesson.hidden = true;
   elements.completion.hidden = true;
+  elements.librarySelect.hidden = true;
   elements.journeySetup.hidden = false;
   renderSetup();
 }
@@ -647,6 +716,204 @@ async function loadTopics() {
   return payload.data;
 }
 
+/* ---------- Journey library (bookshelf) ---------- */
+
+const JOURNEY_STATUS_LABELS = {
+  active: 'Đang học',
+  reviewing: 'Đang ôn',
+  completed: 'Đã hoàn thành',
+  paused: 'Tạm dừng',
+};
+
+async function loadLibrary() {
+  try {
+    const response = await fetch('/api/journeys');
+    const payload = await response.json();
+    if (!response.ok) return;
+    journeys = payload.data ?? [];
+  } catch {
+    // The shelf stays usable even when the library cannot load.
+  }
+  renderLibrary();
+}
+
+function renderLibraryLanguageFilter() {
+  const container = elements.libraryLanguageFilter;
+  container.replaceChildren();
+
+  const languages = [
+    'ALL',
+    ...new Set(journeys.map((journey) => journey.language).filter(Boolean)),
+  ];
+
+  for (const language of languages) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'library-filter-chip';
+    button.dataset.value = language;
+    button.textContent = language === 'ALL' ? 'Tất cả' : language;
+    button.setAttribute('role', 'radio');
+    button.setAttribute('aria-checked', 'false');
+    button.addEventListener('click', () => {
+      libraryLanguageFilter = language;
+      markSelected(container, '.library-filter-chip', language);
+      renderLibraryShelf();
+    });
+    container.append(button);
+  }
+
+  markSelected(container, '.library-filter-chip', libraryLanguageFilter);
+}
+
+function getFilteredJourneys() {
+  const query = libraryQuery.trim().toLowerCase();
+  return journeys.filter((journey) => {
+    const matchesQuery =
+      !query || journey.title.toLowerCase().includes(query);
+    const matchesLanguage =
+      libraryLanguageFilter === 'ALL' ||
+      journey.language === libraryLanguageFilter;
+    return matchesQuery && matchesLanguage;
+  });
+}
+
+function buildBookCard(journey) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'book';
+  button.dataset.journeyId = journey.id;
+  button.dataset.language = journey.language ?? '';
+  if (journey.id === activeJourneyId) button.classList.add('is-open');
+  button.setAttribute(
+    'aria-label',
+    `Mở hành trình ${journey.title} (${journey.language} · ${journey.level})`,
+  );
+
+  const spine = document.createElement('span');
+  spine.className = 'book-spine';
+  spine.setAttribute('aria-hidden', 'true');
+
+  const body = document.createElement('span');
+  body.className = 'book-body';
+
+  const title = document.createElement('strong');
+  title.className = 'book-title';
+  title.textContent = journey.title;
+
+  const meta = document.createElement('span');
+  meta.className = 'book-meta';
+  meta.textContent = `${journey.language} · ${journey.level}`;
+
+  const status = document.createElement('span');
+  status.className = `book-status book-status-${journey.status}`;
+  status.textContent = JOURNEY_STATUS_LABELS[journey.status] ?? journey.status;
+
+  const progress = document.createElement('span');
+  progress.className = 'book-progress';
+  const progressFill = document.createElement('span');
+  progressFill.className = 'book-progress-fill';
+  const percent =
+    journey.totalLessons > 0
+      ? Math.min(
+          100,
+          Math.round((journey.completedLessons / journey.totalLessons) * 100),
+        )
+      : 0;
+  progressFill.style.width = `${percent}%`;
+  progress.append(progressFill);
+
+  const position = document.createElement('span');
+  position.className = 'book-position';
+  const current = journey.currentLesson;
+  position.textContent = current
+    ? `Bài ${current.sequenceNumber}/${journey.plannedLessonCount} · Vòng ${current.cycleNumber}`
+    : `${journey.completedLessons}/${journey.totalLessons} bài`;
+
+  body.append(title, meta, status, progress, position);
+  button.append(spine, body);
+  button.addEventListener('click', () => openJourney(journey.id));
+  return button;
+}
+
+function renderLibraryShelf() {
+  const filtered = getFilteredJourneys();
+  const shelf = elements.libraryShelf;
+  shelf.replaceChildren();
+
+  for (const journey of filtered) {
+    shelf.append(buildBookCard(journey));
+  }
+
+  elements.libraryEmptyMessage.hidden = filtered.length > 0;
+  elements.libraryEmptyMessage.textContent =
+    journeys.length === 0
+      ? 'Chưa có hành trình nào. Hãy bắt đầu một hành trình mới.'
+      : 'Không có hành trình nào khớp với bộ lọc.';
+}
+
+function renderLibrary() {
+  renderLibraryLanguageFilter();
+  renderLibraryShelf();
+}
+
+function markActiveJourney() {
+  elements.libraryShelf.querySelectorAll('.book').forEach((book) => {
+    book.classList.toggle(
+      'is-open',
+      book.dataset.journeyId === activeJourneyId,
+    );
+  });
+}
+
+function showLibrarySelect() {
+  currentLesson = null;
+  bookmarkedLesson = null;
+  activeJourneyId = null;
+  hideHighlightPopover();
+  markActiveJourney();
+  elements.mastheadEyebrow.textContent = 'Kệ sách hành trình';
+  elements.loading.hidden = true;
+  elements.error.hidden = true;
+  elements.lesson.hidden = true;
+  elements.journeySetup.hidden = true;
+  elements.completion.hidden = true;
+  elements.librarySelect.hidden = false;
+}
+
+function showLibrarySelectOrSetup() {
+  if (journeys.length === 0) showJourneySetup();
+  else showLibrarySelect();
+}
+
+async function openJourney(journeyId) {
+  hideHighlightPopover();
+  elements.error.hidden = true;
+
+  try {
+    const response = await fetch(`/api/journeys/${journeyId}/open`, {
+      method: 'POST',
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.message ?? 'Không thể mở hành trình.');
+
+    activeJourneyId = journeyId;
+
+    if (payload.data.journeyCompleted) {
+      showJourneyCompleted(payload.data.journey);
+      await loadHistory(null);
+    } else {
+      bookmarkedLesson = payload.data.lesson;
+      showLesson(payload.data.lesson);
+      await loadHistory(payload.data.lesson);
+    }
+    await loadLibrary();
+    loadStats();
+  } catch (error) {
+    elements.error.textContent = error.message;
+    elements.error.hidden = false;
+  }
+}
+
 function markSelected(container, selector, value) {
   container.querySelectorAll(selector).forEach((button) => {
     const selected = button.dataset.value === value;
@@ -655,13 +922,37 @@ function markSelected(container, selector, value) {
   });
 }
 
+function getAvailableTopics() {
+  return topics.filter(
+    (topic) =>
+      !topic.language_scope || topic.language_scope === selectedLanguage,
+  );
+}
+
 function renderTopicList() {
   elements.topicList.replaceChildren();
-  for (const topic of topics) {
+  const available = getAvailableTopics();
+
+  if (available.length === 0) {
+    selectedTopicId = null;
+    const empty = document.createElement('p');
+    empty.className = 'review-empty';
+    empty.textContent = 'Chưa có chủ đề phù hợp với ngôn ngữ này.';
+    elements.topicList.append(empty);
+    updateCreateJourneyButton();
+    return;
+  }
+
+  if (!available.some((topic) => topic.id === selectedTopicId)) {
+    selectedTopicId = available[0].id;
+  }
+
+  for (const topic of available) {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'topic-option';
     button.dataset.topicId = topic.id;
+    button.classList.toggle('is-selected', topic.id === selectedTopicId);
     button.setAttribute('role', 'radio');
     button.setAttribute('aria-checked', topic.id === selectedTopicId ? 'true' : 'false');
 
@@ -679,6 +970,8 @@ function renderTopicList() {
     button.addEventListener('click', () => selectTopic(topic.id));
     elements.topicList.append(button);
   }
+
+  updateCreateJourneyButton();
 }
 
 function renderChoiceList(container, values, key) {
@@ -712,6 +1005,7 @@ function selectTopic(id) {
 function selectLanguage(value) {
   selectedLanguage = value;
   markSelected(elements.languageList, '.choice-option', value);
+  renderTopicList();
   updateCreateJourneyButton();
 }
 
@@ -740,11 +1034,9 @@ async function renderSetup() {
     }
   }
 
-  renderTopicList();
   renderChoiceList(elements.languageList, LANGUAGES, 'language');
   renderChoiceList(elements.levelList, LEVELS, 'level');
 
-  selectTopic(topics[0]?.id ?? null);
   selectLanguage(LANGUAGES[0]);
   selectLevel(LEVELS[0]);
 }
@@ -755,7 +1047,7 @@ async function loadCurrentLesson() {
     const payload = await response.json();
 
     if (response.status === 404) {
-      showJourneySetup();
+      showLibrarySelectOrSetup();
       return null;
     }
     if (!response.ok) throw new Error(payload.message ?? 'Không thể tải bài học.');
@@ -773,7 +1065,11 @@ async function loadCurrentLesson() {
 
 async function loadHistory(activeLesson = bookmarkedLesson) {
   try {
-    const response = await fetch('/api/lessons/history');
+    const journeyId = currentLesson?.journey?.id;
+    const url = journeyId
+      ? `/api/lessons/history?journeyId=${encodeURIComponent(journeyId)}`
+      : '/api/lessons/history';
+    const response = await fetch(url);
     const payload = await response.json();
     if (!response.ok) return;
 
@@ -846,11 +1142,25 @@ async function loadStats() {
 
 async function initialize() {
   loadStats();
+  await loadLibrary();
   const lesson = await loadCurrentLesson();
   if (lesson) await loadHistory(lesson);
 }
 
 initialize();
+
+elements.librarySearchInput.addEventListener('input', (event) => {
+  libraryQuery = event.target.value;
+  renderLibraryShelf();
+});
+
+elements.libraryNewJourneyButton.addEventListener('click', () => {
+  showJourneySetup();
+});
+
+elements.librarySelectCreateButton.addEventListener('click', () => {
+  showJourneySetup();
+});
 
 elements.previousLessonButton.addEventListener('click', () => {
   openTimelineLesson(-1);
@@ -887,6 +1197,7 @@ elements.createJourneyButton.addEventListener('click', async () => {
     elements.journeySetup.hidden = true;
     showLesson(payload.data);
     await loadHistory(payload.data);
+    await loadLibrary();
     loadStats();
   } catch (error) {
     elements.setupStatus.textContent = error.message;
@@ -912,6 +1223,7 @@ elements.completeButton.addEventListener('click', async () => {
     if (payload.data.journeyCompleted) {
       showJourneyCompleted(completedJourney);
       await loadHistory(null);
+      await loadLibrary();
       loadStats();
       return;
     }
@@ -922,6 +1234,7 @@ elements.completeButton.addEventListener('click', async () => {
       ? 'Bài này đã được ghi nhận trước đó.'
       : 'Đã khóa bài trước. Đây là bài tiếp theo.';
     await loadHistory(payload.data.nextLesson);
+    await loadLibrary();
     loadStats();
   } catch (error) {
     elements.lessonStatus.textContent = error.message;

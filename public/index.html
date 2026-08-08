@@ -14,7 +14,57 @@
           <a class="brand" href="/">Writing Journey</a>
           <p id="masthead-eyebrow" class="eyebrow">Bài học hôm nay</p>
         </div>
+        <button
+          id="theme-toggle"
+          class="theme-toggle"
+          type="button"
+          aria-label="Chuyển giao diện sáng/tối"
+          title="Chuyển giao diện sáng/tối"
+        >
+          <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="5" />
+            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+          </svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
+        </button>
       </header>
+
+      <section id="library" class="library" aria-label="Kệ sách hành trình">
+        <div class="library-toolbar">
+          <label class="library-search" for="library-search-input">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+            <input
+              id="library-search-input"
+              type="search"
+              placeholder="Tìm hành trình…"
+              autocomplete="off"
+            />
+          </label>
+          <div
+            id="library-language-filter"
+            class="library-language-filter"
+            role="radiogroup"
+            aria-label="Lọc theo ngôn ngữ"
+          ></div>
+          <button
+            id="library-new-journey-button"
+            class="primary-button library-new-button"
+            type="button"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Hành trình mới
+          </button>
+        </div>
+        <div id="library-shelf" class="library-shelf"></div>
+        <p id="library-empty-message" class="library-empty" hidden></p>
+      </section>
 
       <section class="stats" aria-label="Tiến độ học">
         <div><strong id="completed-count">—</strong><span>Bài hoàn thành</span></div>
@@ -31,18 +81,18 @@
           <p class="eyebrow">Hành trình mới</p>
           <h1>Bạn muốn luyện viết gì hôm nay?</h1>
           <p class="panel-intro">
-            Chọn một chủ đề, ngôn ngữ và trình độ. Hệ thống sẽ vẽ lộ trình và
+            Chọn ngôn ngữ, chủ đề và trình độ. Hệ thống sẽ vẽ lộ trình và
             sinh bài đầu tiên để bạn chép tay.
           </p>
 
           <div class="setup-field">
-            <h2><span class="setup-number">1</span> Chủ đề</h2>
-            <div id="topic-list" class="topic-list" role="radiogroup" aria-label="Chọn chủ đề"></div>
+            <h2><span class="setup-number">1</span> Ngôn ngữ</h2>
+            <div id="language-list" class="choice-list" role="radiogroup" aria-label="Chọn ngôn ngữ"></div>
           </div>
 
           <div class="setup-field">
-            <h2><span class="setup-number">2</span> Ngôn ngữ</h2>
-            <div id="language-list" class="choice-list" role="radiogroup" aria-label="Chọn ngôn ngữ"></div>
+            <h2><span class="setup-number">2</span> Chủ đề</h2>
+            <div id="topic-list" class="topic-list" role="radiogroup" aria-label="Chọn chủ đề"></div>
           </div>
 
           <div class="setup-field">
@@ -75,6 +125,24 @@
           </p>
           <button id="new-journey-button" class="primary-button completion-action" type="button">
             Tạo bài mới
+          </button>
+        </div>
+      </section>
+
+      <section id="library-select" class="panel" hidden>
+        <div class="panel-inner library-select-inner">
+          <p class="eyebrow">Chọn hành trình</p>
+          <h1>Mở một hành trình để tiếp tục.</h1>
+          <p class="panel-intro">
+            Bấm vào một quyển sách trên kệ để quay lại hành trình của bạn, hoặc
+            bắt đầu một hành trình mới.
+          </p>
+          <button
+            id="library-select-create-button"
+            class="primary-button"
+            type="button"
+          >
+            Tạo hành trình mới
           </button>
         </div>
       </section>

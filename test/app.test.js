@@ -225,8 +225,60 @@ test('POST /api/journeys creates a journey and returns the first lesson', async 
   assert.equal((await response.json()).data.title, 'Introducing Travel');
 });
 
-test('GET /api/lessons/:id/highlights lists the lesson highlights', async (context) => {
-  const highlightService = {
+test('GET /api/journeys lists the learner journeys', async (context) => {
+  const journeyService = {
+    async listForUser() {
+      return [
+        {
+          id: 'journey-1',
+          title: 'Software Engineering English',
+          language: 'English',
+          level: 'Beginner',
+          status: 'active',
+          completedLessons: 1,
+          totalLessons: 6,
+        },
+      ];
+    },
+  };
+  const database = { query: async () => ({ rows: [] }) };
+  const app = createApp({ database, journeyService });
+  const server = await listen(app);
+  context.after(() => server.close());
+
+  const address = server.address();
+  const response = await fetch(`http://127.0.0.1:${address.port}/api/journeys`);
+
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).data[0].language, 'English');
+});
+
+test('POST /api/journeys/:id/open resumes a paused journey', async (context) => {
+  const journeyService = {
+    async openForUser({ journeyId }) {
+      return {
+        journeyCompleted: false,
+        journey: { id: journeyId, title: 'Travel English' },
+        lesson: { id: 'lesson-9', title: 'Packing', isCurrent: true },
+      };
+    },
+  };
+  const database = { query: async () => ({ rows: [] }) };
+  const app = createApp({ database, journeyService });
+  const server = await listen(app);
+  context.after(() => server.close());
+
+  const address = server.address();
+  const response = await fetch(
+    `http://127.0.0.1:${address.port}/api/journeys/journey-1/open`,
+    { method: 'POST' },
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).data.lesson.id, 'lesson-9');
+});
+
+test('GET /api/lessons/:id/highlights lists the lesson highlights', async (context) => {  const highlightService = {
     async listForLesson({ lessonId }) {
       return [{ id: 'h1', lessonId, text: 'developer' }];
     },

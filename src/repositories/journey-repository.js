@@ -66,4 +66,86 @@ export class JourneyRepository {
       return { journeyId, lessonId };
     });
   }
+
+  async listForUser(userId) {
+    const result = await this.database.query(
+      `SELECT
+         j.id,
+         j.language,
+         j.level,
+         j.title,
+         j.status,
+         j.max_cycles,
+         j.planned_lesson_count,
+         j.started_at,
+         j.completed_at,
+         j.updated_at,
+         p.current_lesson_id,
+         p.last_opened_at,
+         lv.title AS current_lesson_title,
+         l.status AS current_lesson_status,
+         l.sequence_number AS current_lesson_sequence,
+         l.cycle_number AS current_lesson_cycle,
+         (SELECT COUNT(*)::integer
+          FROM lessons cl
+          WHERE cl.journey_id = j.id AND cl.status = 'completed') AS completed_lessons
+       FROM journeys j
+       JOIN user_journey_progress p
+         ON p.journey_id = j.id AND p.user_id = j.user_id
+       LEFT JOIN lessons l ON l.id = p.current_lesson_id
+       LEFT JOIN lesson_versions lv ON lv.id = l.active_version_id
+       WHERE j.user_id = $1
+       ORDER BY j.updated_at DESC`,
+      [userId],
+    );
+
+    return result.rows;
+  }
+
+  async findByIdForUser({ userId, journeyId }) {
+    const result = await this.database.query(
+      `SELECT id, title, language, level, status, max_cycles, planned_lesson_count
+       FROM journeys
+       WHERE id = $1 AND user_id = $2`,
+      [journeyId, userId],
+    );
+
+    return result.rows[0] ?? null;
+  }
+
+  async reactivate({ userId, journeyId, openedAt = new Date() }) {
+    return inTransaction(this.database, async (client) => {
+      await client.query(
+        `UPDATE journeys
+         SET status = 'paused', updated_at = now()
+         WHERE user_id = $1 AND status IN ('active', 'reviewing') AND id <> $2`,
+        [userId, journeyId],
+      );
+
+      await client.query(
+        `UPDATE journeys
+         SET status = 'active', updated_at = now()
+         WHERE id = $1 AND user_id = $2 AND status = 'paused'`,
+        [journeyId, userId],
+      );
+
+      await client.query(
+        `UPDATE user_journey_progress
+         SET last_opened_at = $3, updated_at = $3
+         WHERE user_id = $1 AND journey_id = $2`,
+        [userId, journeyId, openedAt],
+      );
+    });
+  }
+
+  async touch({ userId, journeyId, openedAt = new Date() }) {
+    return inTransaction(this.database, async (client) => {
+      await client.query(
+        `UPDATE user_journey_progress
+         SET last_opened_at = $3, updated_at = $3
+         WHERE user_id = $1 AND journey_id = $2`,
+        [userId, journeyId, openedAt],
+      );
+    });
+  }
 }

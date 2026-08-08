@@ -36,9 +36,10 @@ export class CurrentLessonService {
     return this.#toView(lesson, lesson.is_current);
   }
 
-  async getHistoryForUser(userId) {
+  async getHistoryForUser(userId, journeyId) {
     const lessons = await this.lessonRepository.findCompletedHistoryByUserId(
       userId,
+      journeyId,
     );
 
     return lessons.map((lesson) => ({

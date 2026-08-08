@@ -15,6 +15,7 @@ import { CompleteLessonService } from './services/complete-lesson-service.js';
 import { CreateJourneyService } from './services/create-journey-service.js';
 import { CurrentLessonService } from './services/current-lesson-service.js';
 import { HighlightService } from './services/highlight-service.js';
+import { JourneyService } from './services/journey-service.js';
 import { LessonGenerationService } from './services/lesson-generation-service.js';
 import { RegenerateLessonService } from './services/regenerate-lesson-service.js';
 import { StatsService } from './services/stats-service.js';
@@ -30,6 +31,7 @@ export function createApp({
   topicRepository = new TopicRepository(database),
   createJourneyService,
   highlightService = new HighlightService(new HighlightRepository(database)),
+  journeyService,
 } = {}) {
   const app = express();
   const workflowRepository = new LessonWorkflowRepository(database);
@@ -66,6 +68,12 @@ export function createApp({
       lessonGenerationService: generationService,
       currentLessonService,
     });
+  const resolvedJourneyService =
+    journeyService ??
+    new JourneyService({
+      journeyRepository: new JourneyRepository(database),
+      currentLessonService,
+    });
 
   app.disable('x-powered-by');
   app.use(express.json({ limit: '32kb' }));
@@ -88,10 +96,11 @@ export function createApp({
     }
   });
 
-  app.get('/api/lessons/history', async (_request, response, next) => {
+  app.get('/api/lessons/history', async (request, response, next) => {
     try {
       const lessons = await currentLessonService.getHistoryForUser(
         config.demoUserId,
+        request.query.journeyId,
       );
       response.json({ data: lessons });
     } catch (error) {
@@ -163,6 +172,29 @@ export function createApp({
         level,
       });
       response.status(201).json({ data: lesson });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get('/api/journeys', async (_request, response, next) => {
+    try {
+      const journeys = await resolvedJourneyService.listForUser(
+        config.demoUserId,
+      );
+      response.json({ data: journeys });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/api/journeys/:journeyId/open', async (request, response, next) => {
+    try {
+      const result = await resolvedJourneyService.openForUser({
+        userId: config.demoUserId,
+        journeyId: request.params.journeyId,
+      });
+      response.json({ data: result });
     } catch (error) {
       next(error);
     }
