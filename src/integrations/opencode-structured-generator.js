@@ -1,4 +1,33 @@
 import { createOpencode } from '@opencode-ai/sdk/v2';
+import net from 'node:net';
+
+function isPortAvailable(hostname, port) {
+  return new Promise((resolve) => {
+    const socket = new net.Socket();
+    socket.setTimeout(700);
+    socket.once('connect', () => {
+      socket.destroy();
+      resolve(false);
+    });
+    socket.once('timeout', () => {
+      socket.destroy();
+      resolve(true);
+    });
+    socket.once('error', () => resolve(true));
+    socket.connect(port, hostname);
+  });
+}
+
+async function findAvailablePort(hostname, startPort, maxAttempts = 32) {
+  let port = startPort;
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    if (await isPortAvailable(hostname, port)) return port;
+    port += 1;
+  }
+  return startPort;
+}
+
+export { findAvailablePort, isPortAvailable };
 
 class OpenCodeProviderError extends Error {
   constructor(infoError) {
@@ -82,9 +111,10 @@ export class OpenCodeStructuredGenerator {
 
   async #runtime() {
     if (!this.runtimePromise) {
+      const port = await findAvailablePort(this.hostname, this.port);
       this.runtimePromise = this.runtimeFactory({
         hostname: this.hostname,
-        port: this.port,
+        port,
         timeout: this.startTimeoutMs,
         config: this.model ? { model: this.model } : {},
       });

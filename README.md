@@ -46,7 +46,7 @@ npm run db:seed
 | `OPENCODE_MODEL` | `opencode-go/deepseek-v4-flash` | Model dùng để sinh structured lesson; phải xuất hiện trong `opencode models` |
 
 > Ghi chú: một số model thinking (ví dụ `opencode-go/deepseek-v4-flash`) không hỗ trợ `tool_choice` mà structured output (json_schema) cần dùng. Generator tự thử structured output trước, nếu gặp lỗi `Thinking mode does not support this tool_choice` thì tự fallback sang yêu cầu JSON dạng text và parse + validate lại. Metadata `generationMetadata.structured` trong `ai_generation_requests.output_payload` cho biết đường nào đã dùng.
-| `OPENCODE_PORT` | `4096` | Cổng server OpenCode nhúng |
+| `OPENCODE_PORT` | `4096` | Cổng server OpenCode nhúng. Nếu cổng này đang bị chiếm, ứng dụng tự chọn một cổng trống kế tiếp |
 | `OPENCODE_GENERATION_TIMEOUT_MS` | `180000` | Timeout cho một lần sinh bài |
 
 ## Luồng hiện tại

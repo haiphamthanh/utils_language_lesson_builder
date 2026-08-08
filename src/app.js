@@ -41,6 +41,7 @@ export function createApp({
     config.generationProvider,
     config.opencode,
   );
+  app.locals.journeyGenerator = journeyGenerator;
   const generationService = new LessonGenerationService(
     workflowRepository,
     generator,
