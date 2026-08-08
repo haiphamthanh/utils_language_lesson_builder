@@ -37,8 +37,8 @@ HTTP routes (src/app.js)
 
 services
   → lesson generator interface
-    → sample provider (MVP)
-    → provider AI thật (giai đoạn sau)
+    → OpenCode SDK provider (mặc định)
+    → sample provider (test/offline)
 ```
 
 Vanilla HTML/CSS/JS chỉ hiển thị trạng thái và phát action. Toàn bộ quy tắc lock, current lesson, cycle và số liệu nằm ở backend.
@@ -50,7 +50,7 @@ Vanilla HTML/CSS/JS chỉ hiển thị trạng thái và phát action. Toàn b�
 - `lesson_versions`: nội dung bất biến theo version; review tạm lưu JSONB.
 - `user_journey_progress`: bookmark để mở đúng bài.
 - `study_days`: một hàng mỗi user/ngày, chỉ cập nhật bởi Done.
-- `ai_generation_requests`: audit cho regenerate.
+- `ai_generation_requests`: audit context/output/lỗi cho cả bài kế tiếp và regenerate.
 
 Chưa tách vocabulary thành nhiều bảng. Khi cần tìm kiếm/tổng hợp ở quy mô lớn, migrate dữ liệu JSONB sang `vocabulary_items`, `lesson_vocabulary` và `user_vocabulary_progress`; không cần thay đổi luồng Done.
 
@@ -58,8 +58,7 @@ Chưa tách vocabulary thành nhiều bảng. Khi cần tìm kiếm/tổng hợp
 
 1. Authentication và user context thật, thay user demo.
 2. API/UI tạo topic, journey và outline.
-3. Provider AI production sau interface hiện tại, kèm timeout và retry có giới hạn.
-4. Worker generation chỉ khi request AI thực sự chậm; chưa cần queue ở MVP.
-5. Chuẩn hóa vocabulary khi dashboard JSONB không còn đáp ứng.
+3. Worker generation chỉ khi request AI thực sự chậm; chưa cần queue ở MVP.
+4. Chuẩn hóa vocabulary khi dashboard JSONB không còn đáp ứng.
 
 Không thêm Redis, microservice hay realtime trước khi có số liệu cho thấy một process Express + PostgreSQL là không đủ.

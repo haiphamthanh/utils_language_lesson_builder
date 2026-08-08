@@ -24,6 +24,15 @@ test('sample next lesson follows the same validated contract', async () => {
   assert.equal(validateGeneratedLesson(lesson), lesson);
 });
 
+test('sample provider can bootstrap the first lesson without seeded content', async () => {
+  const lesson = await new SampleLessonGenerator().generate({
+    requestType: 'next_lesson',
+    sequenceNumber: 1,
+  });
+
+  assert.equal(validateGeneratedLesson(lesson), lesson);
+});
+
 test('sample regeneration follows the same validated contract', async () => {
   const lesson = await new SampleLessonGenerator().generate({
     requestType: 'regenerate',

@@ -297,7 +297,7 @@ export class LessonWorkflowRepository {
     };
   }
 
-  async claimForGeneration({ userId, lessonId }) {
+  async claimForGeneration({ userId, lessonId, promptVersion }) {
     return inTransaction(this.database, async (client) => {
       const loaded = await this.#loadGenerationContext(client, {
         userId,
@@ -324,11 +324,28 @@ export class LessonWorkflowRepository {
         [lessonId],
       );
 
-      return { ...loaded.context, requestType: 'next_lesson' };
+      const requestId = randomUUID();
+      const context = { ...loaded.context, requestType: 'next_lesson' };
+      await client.query(
+        `INSERT INTO ai_generation_requests
+           (id, user_id, journey_id, lesson_id, request_type, prompt_version,
+            input_context, status)
+         VALUES ($1, $2, $3, $4, 'next_lesson', $5, $6::jsonb, 'pending')`,
+        [
+          requestId,
+          userId,
+          loaded.lesson.journey_id,
+          lessonId,
+          promptVersion,
+          JSON.stringify(context),
+        ],
+      );
+
+      return { requestId, context };
     });
   }
 
-  async finishGeneration(lessonId, generatedLesson) {
+  async finishGeneration({ lessonId, requestId, generatedLesson }) {
     return inTransaction(this.database, async (client) => {
       const lessonResult = await client.query(
         `SELECT id
@@ -357,8 +374,8 @@ export class LessonWorkflowRepository {
       await client.query(
         `INSERT INTO lesson_versions
            (id, lesson_id, version_number, title, content, summary,
-            review_content, prompt_version, is_active)
-         VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, true)`,
+            review_content, prompt_version, generation_request_id, is_active)
+         VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, true)`,
         [
           versionId,
           lessonId,
@@ -368,6 +385,7 @@ export class LessonWorkflowRepository {
           generatedLesson.summary,
           JSON.stringify(generatedLesson.review),
           generatedLesson.promptVersion,
+          requestId,
         ],
       );
       await client.query(
@@ -379,21 +397,37 @@ export class LessonWorkflowRepository {
          WHERE id = $1`,
         [lessonId, versionId],
       );
+      await client.query(
+        `UPDATE ai_generation_requests
+         SET status = 'success',
+             output_payload = $2::jsonb,
+             completed_at = now()
+         WHERE id = $1 AND status = 'pending'`,
+        [requestId, JSON.stringify(generatedLesson)],
+      );
 
       return versionId;
     });
   }
 
-  async failGeneration(lessonId) {
-    await this.database.query(
-      `UPDATE lessons
-       SET status = 'failed', updated_at = now()
-       WHERE id = $1 AND status = 'generating'`,
-      [lessonId],
-    );
+  async failGeneration({ lessonId, requestId, error }) {
+    await inTransaction(this.database, async (client) => {
+      await client.query(
+        `UPDATE lessons
+         SET status = 'failed', updated_at = now()
+         WHERE id = $1 AND status = 'generating'`,
+        [lessonId],
+      );
+      await client.query(
+        `UPDATE ai_generation_requests
+         SET status = 'failed', error_message = $2, completed_at = now()
+         WHERE id = $1 AND status = 'pending'`,
+        [requestId, error.message.slice(0, 2_000)],
+      );
+    });
   }
 
-  async claimForRegeneration({ userId, lessonId }) {
+  async claimForRegeneration({ userId, lessonId, promptVersion }) {
     return inTransaction(this.database, async (client) => {
       const loaded = await this.#loadGenerationContext(client, {
         userId,
@@ -451,12 +485,13 @@ export class LessonWorkflowRepository {
         `INSERT INTO ai_generation_requests
            (id, user_id, journey_id, lesson_id, request_type, prompt_version,
             input_context, status)
-         VALUES ($1, $2, $3, $4, 'regenerate', 'sample-v1', $5::jsonb, 'pending')`,
+         VALUES ($1, $2, $3, $4, 'regenerate', $5, $6::jsonb, 'pending')`,
         [
           requestId,
           userId,
           lesson.journey_id,
           lesson.id,
+          promptVersion,
           JSON.stringify(context),
         ],
       );

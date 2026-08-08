@@ -3,6 +3,22 @@ export class LessonRepository {
     this.database = database;
   }
 
+  async findCurrentStateByUserId(userId) {
+    const result = await this.database.query(
+      `SELECT l.id, l.status
+       FROM user_journey_progress p
+       JOIN journeys j ON j.id = p.journey_id
+       JOIN lessons l ON l.id = p.current_lesson_id
+       WHERE p.user_id = $1
+         AND j.status IN ('active', 'reviewing')
+       ORDER BY p.last_opened_at DESC
+       LIMIT 1`,
+      [userId],
+    );
+
+    return result.rows[0] ?? null;
+  }
+
   async findCurrentByUserId(userId) {
     const result = await this.database.query(
       `SELECT

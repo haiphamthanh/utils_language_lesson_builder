@@ -10,6 +10,7 @@ const server = app.listen(config.port, () => {
 async function shutdown(signal) {
   console.log(`${signal} received; shutting down.`);
   server.close(async () => {
+    await app.locals.lessonGenerator?.close?.();
     await pool.end();
     process.exit(0);
   });

@@ -24,7 +24,8 @@ export function createApp({
 } = {}) {
   const app = express();
   const workflowRepository = new LessonWorkflowRepository(database);
-  const generator = createLessonGenerator(config.generationProvider);
+  const generator = createLessonGenerator(config.generationProvider, config.opencode);
+  app.locals.lessonGenerator = generator;
   const generationService = new LessonGenerationService(
     workflowRepository,
     generator,

@@ -10,7 +10,6 @@ const ids = {
     '00000000-0000-4000-8000-000000000033',
   ],
   lesson: '00000000-0000-4000-8000-000000000041',
-  version: '00000000-0000-4000-8000-000000000051',
   progress: '00000000-0000-4000-8000-000000000061',
 };
 
@@ -58,85 +57,9 @@ export async function seed(database = pool) {
     await client.query(
       `INSERT INTO lessons
          (id, journey_id, journey_step_id, sequence_number, cycle_number, status, generated_at)
-       VALUES ($1, $2, $3, 1, 1, 'ready', now())
+       VALUES ($1, $2, $3, 1, 1, 'draft', NULL)
        ON CONFLICT (id) DO NOTHING`,
       [ids.lesson, ids.journey, ids.steps[0]],
-    );
-    await client.query(
-      `INSERT INTO lesson_versions
-         (id, lesson_id, version_number, title, content, summary, review_content, prompt_version)
-       VALUES (
-         $1, $2, 1, 'My First Day as a Developer',
-         'I am a junior software developer. I work with a small product team. Every morning, I read my tasks and ask questions. I write simple code and test it carefully. My teammates help me when I am stuck. I enjoy learning something new every day.',
-         'A junior developer introduces their role, team, and daily learning.',
-         $3::jsonb,
-         'sample-v2'
-       )
-       ON CONFLICT (id) DO UPDATE
-       SET review_content = EXCLUDED.review_content,
-           prompt_version = EXCLUDED.prompt_version`,
-      [
-        ids.version,
-        ids.lesson,
-        JSON.stringify({
-          vocabulary: [
-            {
-              text: 'software developer',
-              meaning: 'lập trình viên phần mềm',
-              examples: [
-                'I am a junior software developer.',
-                'A software developer writes and tests code.',
-                'Our software developer improved the home page.',
-                'She works as a software developer in a small team.',
-                'The software developer asked users for feedback.',
-              ],
-            },
-            {
-              text: 'task',
-              meaning: 'nhiệm vụ',
-              examples: [
-                'Every morning, I read my tasks.',
-                'I choose one small task to finish first.',
-                'This task needs a simple code change.',
-                'My teammate explained the task clearly.',
-                'We completed the important task before lunch.',
-              ],
-            },
-          ],
-          phrases: [
-            {
-              text: 'be stuck',
-              meaning: 'gặp khó khăn, bị mắc kẹt',
-              examples: [
-                'I ask for help when I am stuck.',
-                'She was stuck on a difficult bug.',
-                'We check the logs when we are stuck.',
-                'Do not stay stuck for too long.',
-                'My teammate helped me when I got stuck.',
-              ],
-            },
-          ],
-          grammar: [
-            {
-              pattern: 'enjoy + V-ing',
-              meaning: 'thích làm một hoạt động nào đó',
-              examples: [
-                'I enjoy learning something new every day.',
-                'She enjoys working with a small team.',
-                'We enjoy solving useful problems.',
-                'They enjoy testing new features.',
-                'He enjoys helping other developers.',
-              ],
-            },
-          ],
-        }),
-      ],
-    );
-    await client.query(
-      `UPDATE lessons
-       SET active_version_id = $1, updated_at = now()
-       WHERE id = $2 AND active_version_id IS NULL`,
-      [ids.version, ids.lesson],
     );
     await client.query(
       `INSERT INTO user_journey_progress

@@ -228,15 +228,25 @@ const regeneratedExamples = {
 };
 
 export class SampleLessonGenerator {
+  promptVersion = 'sample-v2';
+
   async generate(context) {
     const source =
       context.requestType === 'regenerate' ? regeneratedExamples : examples;
-    const example = source[context.sequenceNumber];
+    const example =
+      source[context.sequenceNumber] ??
+      (context.requestType === 'next_lesson' && context.sequenceNumber === 1
+        ? regeneratedExamples[1]
+        : null);
 
     if (!example) {
       throw new Error(`No sample lesson exists for step ${context.sequenceNumber}.`);
     }
 
-    return { ...example, promptVersion: 'sample-v2' };
+    return {
+      ...example,
+      promptVersion: this.promptVersion,
+      generationMetadata: { provider: 'sample' },
+    };
   }
 }

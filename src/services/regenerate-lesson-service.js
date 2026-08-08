@@ -9,7 +9,11 @@ export class RegenerateLessonService {
 
   async regenerateForUser({ userId, lessonId }) {
     const { requestId, context } =
-      await this.workflowRepository.claimForRegeneration({ userId, lessonId });
+      await this.workflowRepository.claimForRegeneration({
+        userId,
+        lessonId,
+        promptVersion: this.generator.promptVersion,
+      });
 
     try {
       const generatedLesson = validateGeneratedLesson(

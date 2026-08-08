@@ -54,6 +54,9 @@ fi
 echo "Applying database migrations and seed…"
 npm run db:setup
 
+echo "Ensuring the first lesson is generated…"
+npm run app:bootstrap
+
 echo
 echo "Ready. Open http://localhost:${PORT:-9999}"
 echo "Press Ctrl+C to stop the server."

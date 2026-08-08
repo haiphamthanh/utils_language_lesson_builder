@@ -4,13 +4,13 @@ Một walking skeleton cho hành trình luyện viết ngoại ngữ: hệ thố
 
 ## Chạy example
 
-Yêu cầu: Node.js 22+ và Docker.
+Yêu cầu: Node.js 22+, PostgreSQL (Docker hoặc local), và OpenCode đã đăng nhập/configure provider.
 
 ```bash
 ./start.sh
 ```
 
-`start.sh` là cách nhanh nhất: tự cài dependencies khi cần, khởi động PostgreSQL qua Docker (hoặc dùng PostgreSQL local), chạy migration/seed và mở server.
+`start.sh` là cách nhanh nhất: tự cài dependencies khi cần, khởi động PostgreSQL qua Docker (hoặc dùng PostgreSQL local), chạy migration/seed, sinh bài đầu tiên qua OpenCode và mở server.
 
 Hoặc chạy thủ công:
 
@@ -19,6 +19,7 @@ cp .env.example .env
 docker compose up -d
 npm install
 npm run db:setup
+npm run app:bootstrap
 npm start
 ```
 
@@ -41,7 +42,10 @@ npm run db:seed
 | `DATABASE_URL` | PostgreSQL trong `compose.yaml` | Nguồn dữ liệu duy nhất |
 | `APP_TIME_ZONE` | `Asia/Ho_Chi_Minh` | Timezone của user demo để tính ngày học/streak |
 | `DEMO_USER_ID` | UUID cố định | Danh tính tạm trước khi có authentication |
-| `GENERATION_PROVIDER` | `sample` | Provider sinh bài; MVP mới hỗ trợ `sample` |
+| `GENERATION_PROVIDER` | `opencode` | `opencode` cho bài thật; `sample` cho test/offline |
+| `OPENCODE_MODEL` | `opencode-go/gpt-5.6-luna` | Model dùng để sinh structured lesson; phải xuất hiện trong `opencode models` |
+| `OPENCODE_PORT` | `4096` | Cổng server OpenCode nhúng |
+| `OPENCODE_GENERATION_TIMEOUT_MS` | `180000` | Timeout cho một lần sinh bài |
 
 ## Luồng hiện tại
 
@@ -49,17 +53,18 @@ npm run db:seed
 2. Người học đọc rồi chép bài bằng tay trên giấy.
 3. Nút **Đã chép xong** khóa vĩnh viễn bài hiện tại.
 4. Cùng transaction đó ghi ngày học và chuyển bookmark.
-5. Example generator chuẩn bị bài tiếp theo; hết vòng một thì dùng lại nội dung đã khóa cho vòng ôn.
+5. OpenCode sinh bài kế tiếp từ topic, level, outline, bài đã khóa và các từ/cụm từ đã gặp; hết vòng một thì dùng lại nội dung đã khóa cho vòng ôn.
 6. **Tạo bài khác** tạo version mới nhưng giữ lịch sử; bài đã Done hoặc đang ôn bị backend từ chối regenerate.
 7. Thanh tiến độ đếm bài đã khóa, ngày học, streak và từ/cụm từ đã tiếp xúc; chỉ Done mới làm thay đổi số liệu.
+8. Mỗi từ vựng, cụm từ và cấu trúc có đúng 5 câu ví dụ trong target language.
 
 ## Ranh giới MVP hiện tại
 
 - Một user demo, chưa có authentication.
-- `GENERATION_PROVIDER=sample` dùng example generator xác định trước; điểm mở rộng provider đã tách riêng nhưng chưa gọi dịch vụ AI bên ngoài.
+- OpenCode SDK chạy server nhúng, yêu cầu provider/model đã được cấu hình trong OpenCode. `GENERATION_PROVIDER=sample` vẫn có thể dùng khi test offline.
 - Không có editor: người học viết trên giấy.
 - Core dữ liệu gồm journey, lesson/version, bookmark và study day.
 
-Các ranh giới này giữ hệ thống nhỏ trước khi bổ sung tài khoản thật, màn hình tạo journey và provider AI production.
+Các ranh giới này giữ hệ thống nhỏ trước khi bổ sung tài khoản thật và màn hình tạo journey.
 
 Chi tiết các invariant và hướng mở rộng nằm tại [docs/architecture.md](docs/architecture.md).

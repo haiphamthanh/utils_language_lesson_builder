@@ -10,12 +10,14 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
-    "test": "node --test",
+    "test": "node --test test/*.test.js",
     "db:migrate": "node src/db/migrate.js",
     "db:seed": "node src/db/seed.js",
-    "db:setup": "npm run db:migrate && npm run db:seed"
+    "db:setup": "npm run db:migrate && npm run db:seed",
+    "app:bootstrap": "node src/db/bootstrap-demo.js"
   },
   "dependencies": {
+    "@opencode-ai/sdk": "^1.18.15",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "pg": "^8.22.0"
