@@ -10,7 +10,6 @@ const elements = {
   objective: document.querySelector('#objective'),
   lessonContent: document.querySelector('#lesson-content'),
   reviewList: document.querySelector('#review-list'),
-  reviewDetail: document.querySelector('#review-detail'),
   lessonStatus: document.querySelector('#lesson-status'),
   completeButton: document.querySelector('#complete-button'),
   regenerateButton: document.querySelector('#regenerate-button'),
@@ -52,6 +51,12 @@ const elements = {
   bookCover: document.querySelector('#book-cover'),
   bookCoverTitle: document.querySelector('#book-cover-title'),
   bookFlip: document.querySelector('#book-flip'),
+  reviewPopover: document.querySelector('#review-popover'),
+  reviewPopoverKind: document.querySelector('#review-popover-kind'),
+  reviewPopoverWord: document.querySelector('#review-popover-word'),
+  reviewPopoverMeaning: document.querySelector('#review-popover-meaning'),
+  reviewPopoverExamples: document.querySelector('#review-popover-examples'),
+  reviewPopoverClose: document.querySelector('#review-popover-close'),
 };
 
 const LANGUAGES = ['English', 'Japanese', 'Chinese'];
@@ -200,62 +205,33 @@ function reviewGroups(review) {
   ].filter((group) => group.items.length > 0);
 }
 
-function renderReviewDetail(item) {
-  const detail = elements.reviewDetail;
-  detail.replaceChildren();
-
-  if (!item) {
-    const placeholder = document.createElement('div');
-    placeholder.className = 'review-detail-placeholder';
-    const icon = document.createElement('div');
-    icon.className = 'review-detail-placeholder-icon';
-    icon.textContent = '→';
-    const text = document.createElement('p');
-    text.textContent = 'Chọn một mục bên trái để xem nghĩa và ví dụ.';
-    placeholder.append(icon, text);
-    detail.append(placeholder);
-    return;
-  }
-
-  const card = document.createElement('div');
-  card.className = 'review-detail-card';
-
-  const kind = document.createElement('small');
-  kind.className = 'review-detail-kind';
-  kind.textContent = item.kind;
-
-  const word = document.createElement('h3');
-  word.className = 'review-detail-word';
-  word.textContent = item.text;
-
-  const meaning = document.createElement('p');
-  meaning.className = 'review-detail-meaning';
-  meaning.textContent = item.meaning;
-
-  const examplesTitle = document.createElement('span');
-  examplesTitle.className = 'review-detail-examples-title';
-  examplesTitle.textContent = 'Ví dụ';
-
-  const examples = document.createElement('ol');
-  examples.className = 'review-detail-examples';
-  for (const example of item.examples) {
+function openReviewPopover(item) {
+  if (!item) return;
+  elements.reviewPopoverKind.textContent = item.kind;
+  elements.reviewPopoverWord.textContent = item.text;
+  elements.reviewPopoverMeaning.textContent = item.meaning;
+  const examples = elements.reviewPopoverExamples;
+  examples.replaceChildren();
+  for (const example of item.examples ?? []) {
     const listItem = document.createElement('li');
     listItem.textContent = example;
     examples.append(listItem);
   }
-
-  card.append(kind, word, meaning, examplesTitle, examples);
-  detail.append(card);
+  elements.reviewPopover.hidden = false;
 }
 
-function selectReviewItem(index) {
+function closeReviewPopover() {
+  elements.reviewPopover.hidden = true;
+}
+
+function selectReviewItem(index, { open = false } = {}) {
   selectedReviewIndex = index;
   elements.reviewList.querySelectorAll('.review-item-button').forEach((button, i) => {
     const selected = i === index;
     button.classList.toggle('is-active', selected);
     button.setAttribute('aria-selected', selected ? 'true' : 'false');
   });
-  renderReviewDetail(reviewItems[index] ?? null);
+  if (open) openReviewPopover(reviewItems[index]);
 }
 
 function renderReview(lesson) {
@@ -273,7 +249,6 @@ function renderReview(lesson) {
     empty.className = 'review-empty';
     empty.textContent = 'Bài này không có mục ôn tập.';
     list.append(empty);
-    renderReviewDetail(null);
     return;
   }
 
@@ -308,7 +283,7 @@ function renderReview(lesson) {
       text.textContent = item.text;
 
       button.append(kindLabel, text);
-      button.addEventListener('click', () => selectReviewItem(index));
+      button.addEventListener('click', () => selectReviewItem(index, { open: true }));
       listItem.append(button);
       listEl.append(listItem);
       flatIndex += 1;
@@ -701,6 +676,7 @@ function showLesson(lesson, { animateBook = false } = {}) {
   editingHighlightId = null;
   popoverActiveHighlight = null;
   elements.highlightPopover.hidden = true;
+  closeReviewPopover();
   activeJourneyId = lesson.journey?.id ?? null;
   elements.mastheadEyebrow.textContent = 'Hành trình chi tiết';
   elements.journeyTitle.textContent = `${lesson.journey.title} · ${lesson.journey.level}`;
@@ -738,6 +714,7 @@ function showJourneyCompleted(journey) {
   bookmarkedLesson = null;
   activeJourneyId = journey?.id ?? null;
   hideHighlightPopover();
+  closeReviewPopover();
   resetBook();
   elements.mastheadEyebrow.textContent = 'Hành trình hoàn thành';
   elements.completionJourneyTitle.textContent = journey?.title ?? '';
@@ -754,6 +731,7 @@ function showJourneySetup() {
   bookmarkedLesson = null;
   activeJourneyId = null;
   hideHighlightPopover();
+  closeReviewPopover();
   resetBook();
   elements.mastheadEyebrow.textContent = 'Hành trình mới';
   elements.loading.hidden = true;
@@ -940,6 +918,7 @@ function showHome() {
   currentLesson = null;
   bookmarkedLesson = null;
   hideHighlightPopover();
+  closeReviewPopover();
   resetBook();
   renderHome();
   elements.mastheadEyebrow.textContent = 'Kệ sách hành trình';
@@ -958,6 +937,7 @@ function showHomeOrSetup() {
 
 async function openJourney(journeyId) {
   hideHighlightPopover();
+  closeReviewPopover();
   elements.error.hidden = true;
   showBusy('Đang mở hành trình…');
 
@@ -1496,4 +1476,15 @@ document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && !elements.highlightPopover.hidden) {
     hideHighlightPopover();
   }
+  if (event.key === 'Escape' && !elements.reviewPopover.hidden) {
+    closeReviewPopover();
+  }
+});
+
+elements.reviewPopoverClose.addEventListener('click', () => {
+  closeReviewPopover();
+});
+
+elements.reviewPopover.addEventListener('click', (event) => {
+  if (event.target === elements.reviewPopover) closeReviewPopover();
 });

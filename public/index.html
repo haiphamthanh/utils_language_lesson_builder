@@ -167,10 +167,16 @@
       <article id="lesson" class="lesson" hidden>
         <div id="book" class="open-book">
           <div id="book-cover" class="book-cover" aria-hidden="true">
+            <span class="book-cover-foreedge"></span>
+            <span class="book-cover-spine"></span>
             <div class="book-cover-inner">
-              <span class="book-cover-mark">✦</span>
-              <span id="book-cover-title" class="book-cover-title"></span>
-              <span class="book-cover-subtitle">Writing Journey</span>
+              <span class="book-cover-fleuron">✦</span>
+              <div class="book-cover-panel">
+                <span id="book-cover-title" class="book-cover-title"></span>
+                <span class="book-cover-rule"></span>
+                <span class="book-cover-subtitle">Writing Journey</span>
+              </div>
+              <span class="book-cover-fleuron">✦</span>
             </div>
           </div>
 
@@ -193,23 +199,22 @@
 
             <div class="book-page book-page-right">
               <div class="book-page-inner">
-                <details class="review" aria-label="Từ vựng và cấu trúc của bài">
-                  <summary>
-                    <svg class="review-summary-icon" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                    </svg>
-                    <span class="review-summary-title">Từ vựng và cấu trúc</span>
-                    <span class="review-summary-hint">Mở ra để xem danh sách từ và ví dụ</span>
-                    <svg class="review-summary-chevron" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="m6 9 6 6 6-6" />
-                    </svg>
-                  </summary>
-                  <div class="review-layout">
-                    <div id="review-list" class="review-list" role="tablist" aria-label="Danh sách từ vựng"></div>
-                    <div id="review-detail" class="review-detail" aria-live="polite"></div>
-                  </div>
-                </details>
+                  <details class="review" aria-label="Từ vựng và cấu trúc của bài">
+                    <summary>
+                      <svg class="review-summary-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                      </svg>
+                      <span class="review-summary-title">Từ vựng và cấu trúc</span>
+                      <span class="review-summary-hint">Bấm vào một từ để xem nghĩa và ví dụ</span>
+                      <svg class="review-summary-chevron" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m6 9 6 6 6-6" />
+                      </svg>
+                    </summary>
+                    <div class="review-layout">
+                      <div id="review-list" class="review-list" role="tablist" aria-label="Danh sách từ vựng"></div>
+                    </div>
+                  </details>
 
                 <div class="paper-note">
                   <svg class="paper-note-icon" viewBox="0 0 24 24" aria-hidden="true">
@@ -273,6 +278,26 @@
         </div>
       </article>
     </main>
+
+    <div id="review-popover" class="review-popover" hidden>
+      <div class="review-popover-card">
+        <button
+          id="review-popover-close"
+          class="review-popover-close"
+          type="button"
+          aria-label="Đóng ghi chú"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12" />
+          </svg>
+        </button>
+        <small id="review-popover-kind" class="review-detail-kind"></small>
+        <h3 id="review-popover-word" class="review-detail-word"></h3>
+        <p id="review-popover-meaning" class="review-detail-meaning"></p>
+        <span class="review-detail-examples-title">Ví dụ</span>
+        <ol id="review-popover-examples" class="review-detail-examples"></ol>
+      </div>
+    </div>
 
     <div id="busy-overlay" class="busy-overlay" hidden aria-live="polite">
       <div class="busy-card">
