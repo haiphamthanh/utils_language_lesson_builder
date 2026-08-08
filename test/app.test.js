@@ -79,3 +79,31 @@ test('POST /api/lessons/:id/complete advances the lesson', async (context) => {
     },
   });
 });
+
+test('POST /api/lessons/:id/regenerate returns the active version', async (context) => {
+  const regenerateLessonService = {
+    async regenerateForUser({ lessonId }) {
+      return { id: lessonId, title: 'A New Developer', versionNumber: 2 };
+    },
+  };
+  const database = { query: async () => ({ rows: [] }) };
+  const currentLessonService = { getForUser: async () => null };
+  const app = createApp({
+    database,
+    currentLessonService,
+    regenerateLessonService,
+  });
+  const server = await listen(app);
+  context.after(() => server.close());
+
+  const address = server.address();
+  const response = await fetch(
+    `http://127.0.0.1:${address.port}/api/lessons/lesson-1/regenerate`,
+    { method: 'POST' },
+  );
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), {
+    data: { id: 'lesson-1', title: 'A New Developer', versionNumber: 2 },
+  });
+});

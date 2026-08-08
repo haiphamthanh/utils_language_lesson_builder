@@ -8,6 +8,7 @@ test('loadConfig provides small local defaults', () => {
 
   assert.equal(result.port, 3000);
   assert.equal(result.timeZone, 'Asia/Ho_Chi_Minh');
+  assert.equal(result.generationProvider, 'sample');
   assert.match(result.databaseUrl, /^postgres:/);
 });
 

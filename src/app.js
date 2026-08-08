@@ -3,12 +3,13 @@ import express from 'express';
 import { config } from './config/env.js';
 import { errorHandler, notFoundHandler } from './http/error-handler.js';
 import { pool } from './db/pool.js';
-import { SampleLessonGenerator } from './integrations/sample-lesson-generator.js';
+import { createLessonGenerator } from './integrations/create-lesson-generator.js';
 import { LessonRepository } from './repositories/lesson-repository.js';
 import { LessonWorkflowRepository } from './repositories/lesson-workflow-repository.js';
 import { CompleteLessonService } from './services/complete-lesson-service.js';
 import { CurrentLessonService } from './services/current-lesson-service.js';
 import { LessonGenerationService } from './services/lesson-generation-service.js';
+import { RegenerateLessonService } from './services/regenerate-lesson-service.js';
 
 export function createApp({
   database = pool,
@@ -16,18 +17,27 @@ export function createApp({
     new LessonRepository(database),
   ),
   completeLessonService,
+  regenerateLessonService,
 } = {}) {
   const app = express();
   const workflowRepository = new LessonWorkflowRepository(database);
+  const generator = createLessonGenerator(config.generationProvider);
   const generationService = new LessonGenerationService(
     workflowRepository,
-    new SampleLessonGenerator(),
+    generator,
   );
   const resolvedCompleteLessonService =
     completeLessonService ??
     new CompleteLessonService(
       workflowRepository,
       generationService,
+      currentLessonService,
+    );
+  const resolvedRegenerateLessonService =
+    regenerateLessonService ??
+    new RegenerateLessonService(
+      workflowRepository,
+      generator,
       currentLessonService,
     );
 
@@ -59,6 +69,18 @@ export function createApp({
         lessonId: request.params.lessonId,
       });
       response.json({ data: result });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/api/lessons/:lessonId/regenerate', async (request, response, next) => {
+    try {
+      const lesson = await resolvedRegenerateLessonService.regenerateForUser({
+        userId: config.demoUserId,
+        lessonId: request.params.lessonId,
+      });
+      response.json({ data: lesson });
     } catch (error) {
       next(error);
     }

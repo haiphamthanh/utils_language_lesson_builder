@@ -317,4 +317,192 @@ export class LessonWorkflowRepository {
       [lessonId],
     );
   }
+
+  async claimForRegeneration({ userId, lessonId }) {
+    return inTransaction(this.database, async (client) => {
+      const result = await client.query(
+        `SELECT
+           l.id,
+           l.status,
+           l.is_locked,
+           l.cycle_number,
+           l.sequence_number,
+           l.active_version_id,
+           p.current_lesson_id,
+           j.id AS journey_id,
+           j.language,
+           j.level,
+           j.title AS journey_title,
+           js.title AS step_title,
+           js.objective,
+           lv.version_number
+         FROM lessons l
+         JOIN journeys j ON j.id = l.journey_id
+         JOIN journey_steps js ON js.id = l.journey_step_id
+         JOIN user_journey_progress p
+           ON p.journey_id = j.id AND p.user_id = j.user_id
+         JOIN lesson_versions lv ON lv.id = l.active_version_id
+         WHERE l.id = $1 AND j.user_id = $2
+         FOR UPDATE OF l`,
+        [lessonId, userId],
+      );
+      const lesson = result.rows[0];
+
+      if (!lesson) {
+        throw new AppError(404, 'LESSON_NOT_FOUND', 'The lesson was not found.');
+      }
+      if (lesson.status === 'completed' || lesson.is_locked) {
+        throw new AppError(
+          403,
+          'LESSON_LOCKED',
+          'Completed lessons cannot be regenerated.',
+        );
+      }
+      if (lesson.current_lesson_id !== lesson.id) {
+        throw new AppError(
+          403,
+          'NOT_CURRENT_LESSON',
+          'Only the current lesson can be regenerated.',
+        );
+      }
+      if (lesson.cycle_number !== 1) {
+        throw new AppError(
+          403,
+          'REVIEW_LESSON_LOCKED',
+          'Review-cycle lessons reuse locked content and cannot be regenerated.',
+        );
+      }
+      if (lesson.status !== 'ready') {
+        throw new AppError(
+          409,
+          'LESSON_NOT_READY',
+          'The lesson is not ready to be regenerated.',
+        );
+      }
+
+      const requestId = randomUUID();
+      const context = {
+        ...lesson,
+        request_type: 'regenerate',
+        next_version_number: lesson.version_number + 1,
+      };
+
+      await client.query(
+        `UPDATE lessons
+         SET status = 'generating', updated_at = now()
+         WHERE id = $1`,
+        [lesson.id],
+      );
+      await client.query(
+        `INSERT INTO ai_generation_requests
+           (id, user_id, journey_id, lesson_id, request_type, prompt_version,
+            input_context, status)
+         VALUES ($1, $2, $3, $4, 'regenerate', 'sample-v1', $5::jsonb, 'pending')`,
+        [
+          requestId,
+          userId,
+          lesson.journey_id,
+          lesson.id,
+          JSON.stringify({
+            language: lesson.language,
+            level: lesson.level,
+            journeyTitle: lesson.journey_title,
+            stepTitle: lesson.step_title,
+            objective: lesson.objective,
+            sequenceNumber: lesson.sequence_number,
+            previousVersionNumber: lesson.version_number,
+          }),
+        ],
+      );
+
+      return { requestId, context };
+    });
+  }
+
+  async finishRegeneration({ lessonId, requestId, generatedLesson }) {
+    return inTransaction(this.database, async (client) => {
+      const lessonResult = await client.query(
+        `SELECT id
+         FROM lessons
+         WHERE id = $1 AND status = 'generating'
+         FOR UPDATE`,
+        [lessonId],
+      );
+
+      if (!lessonResult.rows[0]) {
+        throw new AppError(
+          409,
+          'GENERATION_STATE_CHANGED',
+          'The lesson generation state changed before it could be saved.',
+        );
+      }
+
+      const versionResult = await client.query(
+        `SELECT COALESCE(MAX(version_number), 0) + 1 AS next_version
+         FROM lesson_versions
+         WHERE lesson_id = $1`,
+        [lessonId],
+      );
+      const versionId = randomUUID();
+
+      await client.query(
+        `UPDATE lesson_versions SET is_active = false
+         WHERE lesson_id = $1 AND is_active = true`,
+        [lessonId],
+      );
+      await client.query(
+        `INSERT INTO lesson_versions
+           (id, lesson_id, version_number, title, content, summary,
+            review_content, prompt_version, generation_request_id, is_active)
+         VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, true)`,
+        [
+          versionId,
+          lessonId,
+          versionResult.rows[0].next_version,
+          generatedLesson.title,
+          generatedLesson.content,
+          generatedLesson.summary,
+          JSON.stringify(generatedLesson.review),
+          generatedLesson.promptVersion,
+          requestId,
+        ],
+      );
+      await client.query(
+        `UPDATE lessons
+         SET status = 'ready',
+             active_version_id = $2,
+             generated_at = now(),
+             updated_at = now()
+         WHERE id = $1`,
+        [lessonId, versionId],
+      );
+      await client.query(
+        `UPDATE ai_generation_requests
+         SET status = 'success',
+             output_payload = $2::jsonb,
+             completed_at = now()
+         WHERE id = $1 AND status = 'pending'`,
+        [requestId, JSON.stringify(generatedLesson)],
+      );
+
+      return versionId;
+    });
+  }
+
+  async failRegeneration({ lessonId, requestId, error }) {
+    await inTransaction(this.database, async (client) => {
+      await client.query(
+        `UPDATE lessons
+         SET status = 'ready', updated_at = now()
+         WHERE id = $1 AND status = 'generating'`,
+        [lessonId],
+      );
+      await client.query(
+        `UPDATE ai_generation_requests
+         SET status = 'failed', error_message = $2, completed_at = now()
+         WHERE id = $1 AND status = 'pending'`,
+        [requestId, error.message.slice(0, 2_000)],
+      );
+    });
+  }
 }

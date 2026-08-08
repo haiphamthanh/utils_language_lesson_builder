@@ -16,6 +16,7 @@ export function loadConfig(environment = process.env) {
       'postgres://lesson_builder:lesson_builder@localhost:5432/lesson_builder',
     timeZone: environment.APP_TIME_ZONE ?? 'Asia/Ho_Chi_Minh',
     demoUserId: environment.DEMO_USER_ID ?? DEFAULT_DEMO_USER_ID,
+    generationProvider: environment.GENERATION_PROVIDER ?? 'sample',
   });
 }
 

@@ -157,6 +157,22 @@ h1 {
   font-weight: 750;
 }
 
+.button-group { display: flex; gap: 10px; }
+
+.secondary-button {
+  padding: 12px 18px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.secondary-button:hover { border-color: var(--accent); color: var(--accent); }
+.secondary-button:disabled { cursor: wait; opacity: 0.6; }
+
 .primary-button:hover { background: #194b3b; }
 .primary-button:disabled { cursor: wait; opacity: 0.6; }
 
@@ -169,4 +185,5 @@ h1 {
   .lesson-meta { display: block; }
   .position { margin-top: 12px; }
   .lesson-actions { align-items: stretch; flex-direction: column; }
+  .button-group { align-items: stretch; flex-direction: column-reverse; }
 }

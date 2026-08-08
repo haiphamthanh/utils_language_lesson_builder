@@ -10,6 +10,7 @@ const elements = {
   reviewContent: document.querySelector('#review-content'),
   lessonStatus: document.querySelector('#lesson-status'),
   completeButton: document.querySelector('#complete-button'),
+  regenerateButton: document.querySelector('#regenerate-button'),
 };
 
 let currentLesson = null;
@@ -55,6 +56,8 @@ function showLesson(lesson) {
   elements.loading.hidden = true;
   elements.lesson.hidden = false;
   elements.completeButton.hidden = lesson.status === 'completed';
+  elements.regenerateButton.hidden =
+    lesson.status !== 'ready' || lesson.isLocked || lesson.cycleNumber !== 1;
   elements.lessonStatus.textContent = lesson.isLocked
     ? 'Bài đã hoàn thành và được khóa.'
     : '';
@@ -103,6 +106,30 @@ elements.completeButton.addEventListener('click', async () => {
   } catch (error) {
     elements.lessonStatus.textContent = error.message;
   } finally {
+    elements.completeButton.disabled = false;
+  }
+});
+
+elements.regenerateButton.addEventListener('click', async () => {
+  if (!currentLesson) return;
+
+  elements.regenerateButton.disabled = true;
+  elements.completeButton.disabled = true;
+  elements.lessonStatus.textContent = 'Đang tạo một phiên bản khác…';
+
+  try {
+    const response = await fetch(`/api/lessons/${currentLesson.id}/regenerate`, {
+      method: 'POST',
+    });
+    const payload = await response.json();
+
+    if (!response.ok) throw new Error(payload.message ?? 'Không thể tạo lại bài.');
+    showLesson(payload.data);
+    elements.lessonStatus.textContent = `Đang dùng phiên bản ${payload.data.versionNumber}.`;
+  } catch (error) {
+    elements.lessonStatus.textContent = error.message;
+  } finally {
+    elements.regenerateButton.disabled = false;
     elements.completeButton.disabled = false;
   }
 });

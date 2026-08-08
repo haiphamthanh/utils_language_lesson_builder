@@ -32,11 +32,12 @@ npm run db:seed
 3. Nút **Đã chép xong** khóa vĩnh viễn bài hiện tại.
 4. Cùng transaction đó ghi ngày học và chuyển bookmark.
 5. Example generator chuẩn bị bài tiếp theo; hết vòng một thì dùng lại nội dung đã khóa cho vòng ôn.
+6. **Tạo bài khác** tạo version mới nhưng giữ lịch sử; bài đã Done hoặc đang ôn bị backend từ chối regenerate.
 
 ## Ranh giới MVP hiện tại
 
 - Một user demo, chưa có authentication.
-- Nội dung dùng example generator xác định trước; chưa gọi dịch vụ AI bên ngoài.
+- `GENERATION_PROVIDER=sample` dùng example generator xác định trước; điểm mở rộng provider đã tách riêng nhưng chưa gọi dịch vụ AI bên ngoài.
 - Không có editor: người học viết trên giấy.
 - Core dữ liệu gồm journey, lesson/version, bookmark và study day.
 
