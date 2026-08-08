@@ -50,6 +50,7 @@ Vanilla HTML/CSS/JS chỉ hiển thị trạng thái và phát action. Toàn b�
 - `users`, `topics`, `journeys`, `journey_steps`: người học và outline.
 - `lessons`: danh tính/trạng thái logic của một lượt học.
 - `lesson_versions`: nội dung bất biến theo version; review tạm lưu JSONB.
+- `lesson_highlights`: đánh dấu + ghi chú theo lesson, định vị bằng `paragraph_index`/`start_offset`/`end_offset` (offset vào dòng của nội dung active version). Khi render, highlight chỉ hiện nếu đoạn văn bản hiện tại vẫn khớp `text` đã lưu, nên nội dung bị regenerate thì highlight cũ tự ẩn.
 - `user_journey_progress`: bookmark để mở đúng bài.
 - `study_days`: một hàng mỗi user/ngày, chỉ cập nhật bởi Done.
 - `ai_generation_requests`: audit context/output/lỗi cho cả bài kế tiếp và regenerate.

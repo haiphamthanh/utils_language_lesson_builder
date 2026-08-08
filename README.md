@@ -61,8 +61,9 @@ npm run db:seed
 8. Khi hết vòng ôn, hành trình chuyển sang **completed** và hiện màn hình hoàn thành với nút **Tạo bài mới** để bắt đầu một hành trình khác (journey cũ được đặt tạm dừng, không bị xóa).
 9. Thanh tiến độ đếm bài đã khóa, ngày học, streak và từ/cụm từ đã tiếp xúc; chỉ Done mới làm thay đổi số liệu.
 10. Phần **Ôn lại** chỉ hiện danh sách các từ/cụm từ/cấu trúc; bấm vào một mục sẽ mở panel kế bên hiện nghĩa và 5 câu ví dụ.
-11. Mỗi từ vựng, cụm từ và cấu trúc có đúng 5 câu ví dụ trong target language.
-12. Hai nút mũi tên cho phép đi qua các bài đã khóa rồi quay về bài hiện tại; thao tác xem không thay đổi bookmark hoặc thống kê.
+11. **Đánh dấu (highlight)**: bôi đen một đoạn trong bài để đánh dấu kèm ghi chú; đoạn đánh dấu hiển thị như bút highlight có số, bấm vào để sửa/xoá. Dữ liệu lưu trong `lesson_highlights` theo lesson, offset theo từng đoạn.
+12. Mỗi từ vựng, cụm từ và cấu trúc có đúng 5 câu ví dụ trong target language.
+13. Hai nút mũi tên cho phép đi qua các bài đã khóa rồi quay về bài hiện tại; thao tác xem không thay đổi bookmark hoặc thống kê.
 
 ## Ranh giới MVP hiện tại
 

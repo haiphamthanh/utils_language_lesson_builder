@@ -6,6 +6,7 @@ import { pool } from './db/pool.js';
 import { createJourneyGenerator } from './integrations/create-journey-generator.js';
 import { createLessonGenerator } from './integrations/create-lesson-generator.js';
 import { JourneyRepository } from './repositories/journey-repository.js';
+import { HighlightRepository } from './repositories/highlight-repository.js';
 import { LessonRepository } from './repositories/lesson-repository.js';
 import { LessonWorkflowRepository } from './repositories/lesson-workflow-repository.js';
 import { StatsRepository } from './repositories/stats-repository.js';
@@ -13,6 +14,7 @@ import { TopicRepository } from './repositories/topic-repository.js';
 import { CompleteLessonService } from './services/complete-lesson-service.js';
 import { CreateJourneyService } from './services/create-journey-service.js';
 import { CurrentLessonService } from './services/current-lesson-service.js';
+import { HighlightService } from './services/highlight-service.js';
 import { LessonGenerationService } from './services/lesson-generation-service.js';
 import { RegenerateLessonService } from './services/regenerate-lesson-service.js';
 import { StatsService } from './services/stats-service.js';
@@ -27,6 +29,7 @@ export function createApp({
   statsService = new StatsService(new StatsRepository(database)),
   topicRepository = new TopicRepository(database),
   createJourneyService,
+  highlightService = new HighlightService(new HighlightRepository(database)),
 } = {}) {
   const app = express();
   const workflowRepository = new LessonWorkflowRepository(database);
@@ -160,6 +163,68 @@ export function createApp({
         level,
       });
       response.status(201).json({ data: lesson });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get('/api/lessons/:lessonId/highlights', async (request, response, next) => {
+    try {
+      const highlights = await highlightService.listForLesson({
+        userId: config.demoUserId,
+        lessonId: request.params.lessonId,
+      });
+      response.json({ data: highlights });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/api/lessons/:lessonId/highlights', async (request, response, next) => {
+    try {
+      const {
+        paragraphIndex,
+        startOffset,
+        endOffset,
+        text,
+        comment,
+      } = request.body ?? {};
+      const highlight = await highlightService.create({
+        userId: config.demoUserId,
+        lessonId: request.params.lessonId,
+        paragraphIndex,
+        startOffset,
+        endOffset,
+        text,
+        comment,
+      });
+      response.status(201).json({ data: highlight });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch('/api/highlights/:highlightId', async (request, response, next) => {
+    try {
+      const { comment } = request.body ?? {};
+      const highlight = await highlightService.updateComment({
+        userId: config.demoUserId,
+        highlightId: request.params.highlightId,
+        comment,
+      });
+      response.json({ data: highlight });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.delete('/api/highlights/:highlightId', async (request, response, next) => {
+    try {
+      await highlightService.delete({
+        userId: config.demoUserId,
+        highlightId: request.params.highlightId,
+      });
+      response.status(204).end();
     } catch (error) {
       next(error);
     }

@@ -29,6 +29,17 @@ const elements = {
   completion: document.querySelector('#completion'),
   completionJourneyTitle: document.querySelector('#completion-journey-title'),
   newJourneyButton: document.querySelector('#new-journey-button'),
+  highlightPopover: document.querySelector('#highlight-popover'),
+  highlightCreateView: document.querySelector('#highlight-create-view'),
+  highlightViewView: document.querySelector('#highlight-view-view'),
+  highlightPreview: document.querySelector('#highlight-preview'),
+  highlightCommentInput: document.querySelector('#highlight-comment-input'),
+  highlightSaveButton: document.querySelector('#highlight-save-button'),
+  highlightCancelButton: document.querySelector('#highlight-cancel-button'),
+  highlightViewText: document.querySelector('#highlight-view-text'),
+  highlightViewComment: document.querySelector('#highlight-view-comment'),
+  highlightEditButton: document.querySelector('#highlight-edit-button'),
+  highlightDeleteButton: document.querySelector('#highlight-delete-button'),
 };
 
 const LANGUAGES = ['English', 'Japanese'];
@@ -43,6 +54,10 @@ let selectedLanguage = null;
 let selectedLevel = null;
 let reviewItems = [];
 let selectedReviewIndex = 0;
+let lessonHighlights = [];
+let pendingHighlight = null;
+let editingHighlightId = null;
+let popoverActiveHighlight = null;
 
 function reviewGroups(review) {
   return [
@@ -193,14 +208,390 @@ function renderReview(lesson) {
   selectReviewItem(0);
 }
 
+/* ---------- Highlights ---------- */
+
+function normalizeSelectionText(text) {
+  return String(text ?? '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function getPlainTextFromNode(root) {
+  if (!root) return '';
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      return node.parentElement?.closest('.highlight-index-badge')
+        ? NodeFilter.FILTER_REJECT
+        : NodeFilter.FILTER_ACCEPT;
+    },
+  });
+
+  let result = '';
+  let current = walker.nextNode();
+  while (current) {
+    result += current.nodeValue || '';
+    current = walker.nextNode();
+  }
+  return result;
+}
+
+function getClosestParagraph(node) {
+  if (!node) return null;
+  if (node.nodeType === Node.TEXT_NODE) {
+    return node.parentElement?.closest('[data-paragraph-index]') || null;
+  }
+  if (typeof node.closest === 'function') {
+    return node.closest('[data-paragraph-index]');
+  }
+  return null;
+}
+
+function getOffsetWithinParagraph(paragraphElement, container, offset) {
+  const range = document.createRange();
+  range.selectNodeContents(paragraphElement);
+  range.setEnd(container, offset);
+  return getPlainTextFromNode(range.cloneContents()).length;
+}
+
+function getTrimmedSelectionRange(rawText, startOffset, endOffset) {
+  const source = String(rawText || '');
+  const leadingWhitespace = source.match(/^\s*/u)?.[0].length || 0;
+  const trailingWhitespace = source.match(/\s*$/u)?.[0].length || 0;
+  return {
+    startOffset: startOffset + leadingWhitespace,
+    endOffset: Math.max(
+      startOffset + leadingWhitespace,
+      endOffset - trailingWhitespace,
+    ),
+    text: normalizeSelectionText(source),
+  };
+}
+
+function getHighlightRangesForParagraph(paragraphIndex, text) {
+  const ranges = lessonHighlights
+    .filter((item) => item.paragraphIndex === paragraphIndex)
+    .filter((item) => {
+      const storedText = normalizeSelectionText(item.text);
+      const currentText = normalizeSelectionText(
+        text.slice(item.startOffset, item.endOffset),
+      );
+      return storedText === currentText;
+    })
+    .sort((left, right) => left.startOffset - right.startOffset)
+    .reduce((acc, item) => {
+      const startOffset = Math.max(0, item.startOffset);
+      const endOffset = Math.min(text.length, item.endOffset);
+      const previous = acc.at(-1);
+      if (endOffset <= startOffset) return acc;
+      if (previous && startOffset < previous.endOffset) return acc;
+      acc.push({ ...item, type: 'saved', startOffset, endOffset });
+      return acc;
+    }, []);
+
+  if (
+    pendingHighlight &&
+    pendingHighlight.paragraphIndex === paragraphIndex &&
+    pendingHighlight.endOffset > pendingHighlight.startOffset
+  ) {
+    const overlaps = ranges.some(
+      (item) =>
+        pendingHighlight.startOffset < item.endOffset &&
+        pendingHighlight.endOffset > item.startOffset,
+    );
+    if (!overlaps) {
+      ranges.push({
+        id: '__pending__',
+        ...pendingHighlight,
+        type: 'pending',
+      });
+    }
+  }
+
+  return ranges.sort((left, right) => left.startOffset - right.startOffset);
+}
+
+function buildParagraphFragment(paragraphIndex, text) {
+  const ranges = getHighlightRangesForParagraph(paragraphIndex, text);
+  const fragment = document.createDocumentFragment();
+  let cursor = 0;
+
+  ranges.forEach((range, index) => {
+    if (range.startOffset > cursor) {
+      fragment.append(document.createTextNode(text.slice(cursor, range.startOffset)));
+    }
+
+    const mark = document.createElement('mark');
+    mark.className =
+      range.type === 'pending' ? 'pending-note-highlight' : 'saved-note-highlight';
+    mark.setAttribute('role', 'button');
+    mark.setAttribute('tabindex', '0');
+
+    if (range.type === 'saved') {
+      mark.dataset.highlightId = range.id;
+      const badge = document.createElement('span');
+      badge.className = 'highlight-index-badge';
+      badge.setAttribute('aria-hidden', 'true');
+      badge.textContent = String(index + 1);
+      mark.append(badge);
+      mark.addEventListener('click', (event) => {
+        event.stopPropagation();
+        openHighlightPopover(range.id, mark);
+      });
+      mark.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          openHighlightPopover(range.id, mark);
+        }
+      });
+    }
+
+    mark.append(document.createTextNode(text.slice(range.startOffset, range.endOffset)));
+    fragment.append(mark);
+    cursor = range.endOffset;
+  });
+
+  if (cursor < text.length) {
+    fragment.append(document.createTextNode(text.slice(cursor)));
+  }
+
+  return fragment;
+}
+
+function renderLessonContent(content) {
+  const container = elements.lessonContent;
+  container.replaceChildren();
+
+  const paragraphs = String(content ?? '').split('\n');
+  paragraphs.forEach((text, index) => {
+    const paragraph = document.createElement('p');
+    paragraph.className = 'lesson-paragraph';
+    paragraph.dataset.paragraphIndex = String(index);
+    paragraph.append(buildParagraphFragment(index, text));
+    container.append(paragraph);
+  });
+}
+
+async function loadHighlights(lessonId) {
+  try {
+    const response = await fetch(`/api/lessons/${lessonId}/highlights`);
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.message ?? 'Không thể tải các đánh dấu.');
+    lessonHighlights = payload.data ?? [];
+    renderLessonContent(currentLesson?.content ?? '');
+  } catch {
+    lessonHighlights = [];
+  }
+}
+
+function hideHighlightPopover({ clearSelection = true } = {}) {
+  pendingHighlight = null;
+  editingHighlightId = null;
+  popoverActiveHighlight = null;
+  elements.highlightPopover.hidden = true;
+  elements.highlightPopover.style.left = '';
+  elements.highlightPopover.style.top = '';
+  elements.highlightCommentInput.value = '';
+  if (clearSelection) window.getSelection()?.removeAllRanges();
+  if (currentLesson) renderLessonContent(currentLesson.content);
+}
+
+function positionHighlightPopover(anchorRect) {
+  const popover = elements.highlightPopover;
+  const width = popover.offsetWidth || 320;
+  const gap = 10;
+  const centerX = anchorRect
+    ? anchorRect.left + anchorRect.width / 2
+    : window.innerWidth / 2;
+  const centerY = anchorRect
+    ? anchorRect.top + anchorRect.height / 2
+    : window.innerHeight / 2;
+  const left = Math.min(
+    Math.max(gap, centerX - width / 2),
+    window.innerWidth - width - gap,
+  );
+  const top = anchorRect ? centerY + gap : Math.max(gap, centerY);
+  popover.style.left = `${left}px`;
+  popover.style.top = `${top}px`;
+}
+
+function showHighlightCreateView(selectionData, anchorRect, comment = '') {
+  popoverActiveHighlight = null;
+  elements.highlightViewView.hidden = true;
+  elements.highlightCreateView.hidden = false;
+  elements.highlightPreview.textContent = `“${selectionData.text}”`;
+  elements.highlightCommentInput.value = comment;
+  elements.highlightSaveButton.textContent = editingHighlightId ? 'Lưu' : 'Đánh dấu';
+  elements.highlightPopover.hidden = false;
+  positionHighlightPopover(anchorRect);
+  window.setTimeout(() => elements.highlightCommentInput.focus(), 0);
+}
+
+function showHighlightViewPopover(highlight, anchorElement) {
+  elements.highlightCreateView.hidden = true;
+  elements.highlightViewView.hidden = false;
+  elements.highlightViewText.textContent = `“${highlight.text}”`;
+  const hasComment = Boolean(highlight.comment?.trim());
+  elements.highlightViewComment.textContent = highlight.comment ?? '';
+  elements.highlightViewComment.hidden = !hasComment;
+  elements.highlightPopover.hidden = false;
+  const rect =
+    anchorElement?.getBoundingClientRect() ??
+    elements.highlightViewText.getBoundingClientRect();
+  positionHighlightPopover(rect);
+}
+
+function getSelectionAnchorRect(range) {
+  const rects = [...range.getClientRects()].filter(
+    (rect) => rect.width || rect.height,
+  );
+  if (rects.length) return rects[rects.length - 1];
+  return range.getBoundingClientRect();
+}
+
+function maybeShowHighlightPopover() {
+  if (!currentLesson) {
+    hideHighlightPopover();
+    return;
+  }
+
+  const selection = window.getSelection();
+  if (!selection || selection.isCollapsed || !selection.rangeCount) {
+    hideHighlightPopover();
+    return;
+  }
+
+  const range = selection.getRangeAt(0);
+  const startParagraph = getClosestParagraph(range.startContainer);
+  const endParagraph = getClosestParagraph(range.endContainer);
+  if (
+    !startParagraph ||
+    startParagraph !== endParagraph ||
+    !elements.lessonContent.contains(startParagraph)
+  ) {
+    hideHighlightPopover();
+    return;
+  }
+
+  const rawText = getPlainTextFromNode(range.cloneContents());
+  const normalizedText = normalizeSelectionText(rawText);
+  if (!normalizedText) {
+    hideHighlightPopover();
+    return;
+  }
+
+  const paragraphIndex = Number(startParagraph.dataset.paragraphIndex);
+  const rawStartOffset = getOffsetWithinParagraph(
+    startParagraph,
+    range.startContainer,
+    range.startOffset,
+  );
+  const rawEndOffset = getOffsetWithinParagraph(
+    startParagraph,
+    range.endContainer,
+    range.endOffset,
+  );
+  const trimmed = getTrimmedSelectionRange(rawText, rawStartOffset, rawEndOffset);
+
+  if (
+    !Number.isInteger(paragraphIndex) ||
+    trimmed.endOffset <= trimmed.startOffset
+  ) {
+    hideHighlightPopover();
+    return;
+  }
+
+  pendingHighlight = {
+    paragraphIndex,
+    startOffset: trimmed.startOffset,
+    endOffset: trimmed.endOffset,
+    text: trimmed.text,
+  };
+  editingHighlightId = null;
+  renderLessonContent(currentLesson.content);
+  showHighlightCreateView(pendingHighlight, getSelectionAnchorRect(range));
+}
+
+function openHighlightPopover(highlightId, anchorElement) {
+  const highlight = lessonHighlights.find((item) => item.id === highlightId);
+  if (!highlight) return;
+  popoverActiveHighlight = highlight;
+  window.getSelection()?.removeAllRanges();
+  showHighlightViewPopover(highlight, anchorElement);
+}
+
+async function saveHighlight() {
+  if (!currentLesson || !pendingHighlight) return;
+
+  const comment = elements.highlightCommentInput.value.trim();
+  elements.highlightSaveButton.disabled = true;
+
+  try {
+    if (editingHighlightId) {
+      const response = await fetch(`/api/highlights/${editingHighlightId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comment }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.message ?? 'Không thể lưu ghi chú.');
+    } else {
+      const response = await fetch(
+        `/api/lessons/${currentLesson.id}/highlights`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...pendingHighlight, comment }),
+        },
+      );
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.message ?? 'Không thể tạo đánh dấu.');
+    }
+
+    hideHighlightPopover();
+    await loadHighlights(currentLesson.id);
+  } catch (error) {
+    elements.highlightPreview.textContent = error.message;
+  } finally {
+    elements.highlightSaveButton.disabled = false;
+  }
+}
+
+async function deleteHighlight() {
+  if (!currentLesson || !popoverActiveHighlight) return;
+
+  elements.highlightDeleteButton.disabled = true;
+  try {
+    const response = await fetch(
+      `/api/highlights/${popoverActiveHighlight.id}`,
+      { method: 'DELETE' },
+    );
+    if (!response.ok) {
+      const payload = await response.json();
+      throw new Error(payload.message ?? 'Không thể xoá đánh dấu.');
+    }
+    hideHighlightPopover();
+    await loadHighlights(currentLesson.id);
+  } catch (error) {
+    elements.highlightViewComment.textContent = error.message;
+    elements.highlightViewComment.hidden = false;
+  } finally {
+    elements.highlightDeleteButton.disabled = false;
+  }
+}
+
 function showLesson(lesson) {
   currentLesson = lesson;
+  lessonHighlights = [];
+  pendingHighlight = null;
+  editingHighlightId = null;
+  popoverActiveHighlight = null;
+  elements.highlightPopover.hidden = true;
   elements.mastheadEyebrow.textContent = 'Bài học hôm nay';
   elements.journeyTitle.textContent = `${lesson.journey.title} · ${lesson.journey.level}`;
   elements.lessonTitle.textContent = lesson.title;
   elements.lessonPosition.textContent = `Bài ${lesson.sequenceNumber}/${lesson.journey.plannedLessonCount} · Vòng ${lesson.cycleNumber}`;
   elements.objective.textContent = lesson.objective;
-  elements.lessonContent.textContent = lesson.content;
+  renderLessonContent(lesson.content);
   renderReview(lesson);
 
   elements.loading.hidden = true;
@@ -220,11 +611,13 @@ function showLesson(lesson) {
     ? 'Bài đã hoàn thành và được khóa.'
     : '';
   updateNavigation(lesson.id, lesson.isCurrent);
+  loadHighlights(lesson.id);
 }
 
 function showJourneyCompleted(journey) {
   currentLesson = null;
   bookmarkedLesson = null;
+  hideHighlightPopover();
   elements.mastheadEyebrow.textContent = 'Hành trình hoàn thành';
   elements.completionJourneyTitle.textContent = journey?.title ?? '';
   elements.loading.hidden = true;
@@ -237,6 +630,7 @@ function showJourneyCompleted(journey) {
 function showJourneySetup() {
   currentLesson = null;
   bookmarkedLesson = null;
+  hideHighlightPopover();
   elements.mastheadEyebrow.textContent = 'Hành trình mới';
   elements.loading.hidden = true;
   elements.error.hidden = true;
@@ -559,5 +953,61 @@ elements.regenerateButton.addEventListener('click', async () => {
   } finally {
     elements.regenerateButton.disabled = false;
     elements.completeButton.disabled = false;
+  }
+});
+
+elements.lessonContent.addEventListener('mouseup', (event) => {
+  if (event.target.closest?.('.saved-note-highlight')) return;
+  window.setTimeout(() => maybeShowHighlightPopover(), 0);
+});
+
+elements.lessonContent.addEventListener('keyup', (event) => {
+  if (event.target.closest?.('.saved-note-highlight')) return;
+  window.setTimeout(() => maybeShowHighlightPopover(), 0);
+});
+
+elements.highlightSaveButton.addEventListener('click', () => {
+  saveHighlight();
+});
+
+elements.highlightCommentInput.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    saveHighlight();
+  }
+});
+
+elements.highlightCancelButton.addEventListener('click', () => {
+  hideHighlightPopover();
+});
+
+elements.highlightEditButton.addEventListener('click', () => {
+  const highlight = popoverActiveHighlight;
+  if (!highlight || !currentLesson) return;
+  pendingHighlight = {
+    paragraphIndex: highlight.paragraphIndex,
+    startOffset: highlight.startOffset,
+    endOffset: highlight.endOffset,
+    text: highlight.text,
+  };
+  editingHighlightId = highlight.id;
+  renderLessonContent(currentLesson.content);
+  showHighlightCreateView(pendingHighlight, undefined, highlight.comment ?? '');
+});
+
+elements.highlightDeleteButton.addEventListener('click', () => {
+  deleteHighlight();
+});
+
+document.addEventListener('click', (event) => {
+  if (elements.highlightPopover.hidden) return;
+  if (elements.highlightPopover.contains(event.target)) return;
+  if (event.target.closest?.('.saved-note-highlight')) return;
+  hideHighlightPopover();
+});
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && !elements.highlightPopover.hidden) {
+    hideHighlightPopover();
   }
 });

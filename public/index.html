@@ -104,6 +104,32 @@
 
         <p id="objective" class="objective"></p>
         <div id="lesson-content" class="lesson-content"></div>
+        <p class="highlight-hint">Bôi đen một đoạn trong bài để đánh dấu và ghi chú.</p>
+
+        <div id="highlight-popover" class="highlight-popover" hidden>
+          <div id="highlight-create-view" class="highlight-view">
+            <p id="highlight-preview" class="highlight-preview"></p>
+            <input
+              id="highlight-comment-input"
+              class="highlight-comment-input"
+              type="text"
+              placeholder="Ghi chú (tuỳ chọn)…"
+              maxlength="200"
+            />
+            <div class="highlight-actions">
+              <button id="highlight-cancel-button" class="secondary-button" type="button">Huỷ</button>
+              <button id="highlight-save-button" class="primary-button" type="button">Đánh dấu</button>
+            </div>
+          </div>
+          <div id="highlight-view-view" class="highlight-view" hidden>
+            <p id="highlight-view-text" class="highlight-preview"></p>
+            <p id="highlight-view-comment" class="highlight-view-comment" hidden></p>
+            <div class="highlight-actions">
+              <button id="highlight-edit-button" class="secondary-button" type="button">Sửa ghi chú</button>
+              <button id="highlight-delete-button" class="danger-button" type="button">Xoá</button>
+            </div>
+          </div>
+        </div>
 
         <details class="review" aria-label="Từ vựng và cấu trúc của bài">
           <summary>

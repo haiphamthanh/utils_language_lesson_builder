@@ -224,3 +224,101 @@ test('POST /api/journeys creates a journey and returns the first lesson', async 
   assert.equal(response.status, 201);
   assert.equal((await response.json()).data.title, 'Introducing Travel');
 });
+
+test('GET /api/lessons/:id/highlights lists the lesson highlights', async (context) => {
+  const highlightService = {
+    async listForLesson({ lessonId }) {
+      return [{ id: 'h1', lessonId, text: 'developer' }];
+    },
+  };
+  const database = { query: async () => ({ rows: [] }) };
+  const app = createApp({ database, highlightService });
+  const server = await listen(app);
+  context.after(() => server.close());
+
+  const address = server.address();
+  const response = await fetch(
+    `http://127.0.0.1:${address.port}/api/lessons/lesson-1/highlights`,
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).data[0].text, 'developer');
+});
+
+test('POST /api/lessons/:id/highlights creates a highlight', async (context) => {
+  const highlightService = {
+    async create({ lessonId, text }) {
+      return { id: 'h1', lessonId, text, comment: 'a verb' };
+    },
+  };
+  const database = { query: async () => ({ rows: [] }) };
+  const app = createApp({ database, highlightService });
+  const server = await listen(app);
+  context.after(() => server.close());
+
+  const address = server.address();
+  const response = await fetch(
+    `http://127.0.0.1:${address.port}/api/lessons/lesson-1/highlights`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        paragraphIndex: 0,
+        startOffset: 0,
+        endOffset: 4,
+        text: 'hello',
+        comment: 'a verb',
+      }),
+    },
+  );
+
+  assert.equal(response.status, 201);
+  assert.equal((await response.json()).data.comment, 'a verb');
+});
+
+test('PATCH /api/highlights/:id updates the comment', async (context) => {
+  const highlightService = {
+    async updateComment({ highlightId, comment }) {
+      return { id: highlightId, comment };
+    },
+  };
+  const database = { query: async () => ({ rows: [] }) };
+  const app = createApp({ database, highlightService });
+  const server = await listen(app);
+  context.after(() => server.close());
+
+  const address = server.address();
+  const response = await fetch(
+    `http://127.0.0.1:${address.port}/api/highlights/h1`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ comment: 'updated note' }),
+    },
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).data.comment, 'updated note');
+});
+
+test('DELETE /api/highlights/:id removes a highlight', async (context) => {
+  let deleted = null;
+  const highlightService = {
+    async delete({ highlightId }) {
+      deleted = highlightId;
+    },
+  };
+  const database = { query: async () => ({ rows: [] }) };
+  const app = createApp({ database, highlightService });
+  const server = await listen(app);
+  context.after(() => server.close());
+
+  const address = server.address();
+  const response = await fetch(
+    `http://127.0.0.1:${address.port}/api/highlights/h1`,
+    { method: 'DELETE' },
+  );
+
+  assert.equal(response.status, 204);
+  assert.equal(deleted, 'h1');
+});
