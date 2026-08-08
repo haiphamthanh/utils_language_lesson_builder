@@ -4,14 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="Một hành trình nhỏ giúp bạn luyện viết ngoại ngữ bằng tay." />
-    <title>Language Lesson Builder</title>
+    <title>Writing Journey</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
     <main class="shell">
       <header class="masthead">
-        <a class="brand" href="/">Writing Journey</a>
-        <span class="eyebrow">Bài học hôm nay</span>
+        <div>
+          <a class="brand" href="/">Writing Journey</a>
+          <p id="masthead-eyebrow" class="eyebrow">Bài học hôm nay</p>
+        </div>
       </header>
 
       <section class="stats" aria-label="Tiến độ học">
@@ -23,6 +25,59 @@
 
       <section id="loading" class="notice">Đang mở đúng bài bạn đang học…</section>
       <section id="error" class="notice notice-error" hidden></section>
+
+      <section id="journey-setup" class="panel" hidden>
+        <div class="panel-inner">
+          <p class="eyebrow">Hành trình mới</p>
+          <h1>Bạn muốn luyện viết gì hôm nay?</h1>
+          <p class="panel-intro">
+            Chọn một chủ đề, ngôn ngữ và trình độ. Hệ thống sẽ vẽ lộ trình và
+            sinh bài đầu tiên để bạn chép tay.
+          </p>
+
+          <div class="setup-field">
+            <h2><span class="setup-number">1</span> Chủ đề</h2>
+            <div id="topic-list" class="topic-list" role="radiogroup" aria-label="Chọn chủ đề"></div>
+          </div>
+
+          <div class="setup-field">
+            <h2><span class="setup-number">2</span> Ngôn ngữ</h2>
+            <div id="language-list" class="choice-list" role="radiogroup" aria-label="Chọn ngôn ngữ"></div>
+          </div>
+
+          <div class="setup-field">
+            <h2><span class="setup-number">3</span> Trình độ</h2>
+            <div id="level-list" class="choice-list" role="radiogroup" aria-label="Chọn trình độ"></div>
+          </div>
+
+          <div class="setup-actions">
+            <button id="create-journey-button" class="primary-button setup-submit" type="button" disabled>
+              Tạo hành trình
+            </button>
+            <p id="setup-status" class="status" aria-live="polite"></p>
+          </div>
+        </div>
+      </section>
+
+      <section id="completion" class="panel" hidden>
+        <div class="panel-inner completion-inner">
+          <div class="completion-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M20 6 9 17l-5-5" />
+            </svg>
+          </div>
+          <p class="eyebrow">Đã hoàn thành</p>
+          <h1>Bạn đã viết xong hành trình này.</h1>
+          <p id="completion-journey-title" class="completion-journey-title"></p>
+          <p class="panel-intro">
+            Tất cả bài học và vòng ôn đã được khóa lại. Hãy tạo một hành trình
+            mới để tiếp tục rèn luyện mỗi ngày.
+          </p>
+          <button id="new-journey-button" class="primary-button completion-action" type="button">
+            Tạo bài mới
+          </button>
+        </div>
+      </section>
 
       <article id="lesson" class="lesson" hidden>
         <nav class="lesson-navigation" aria-label="Điều hướng lịch sử bài học">
@@ -50,10 +105,16 @@
         <p id="objective" class="objective"></p>
         <div id="lesson-content" class="lesson-content"></div>
 
-        <details class="review">
-          <summary>Xem từ vựng và cấu trúc</summary>
-          <div id="review-content" class="review-grid"></div>
-        </details>
+        <section class="review" aria-label="Từ vựng và cấu trúc của bài">
+          <div class="review-heading">
+            <h2>Ôn lại</h2>
+            <p>Chọn một mục để xem nghĩa và ví dụ</p>
+          </div>
+          <div class="review-layout">
+            <div id="review-list" class="review-list" role="tablist" aria-label="Danh sách từ vựng"></div>
+            <div id="review-detail" class="review-detail" aria-live="polite"></div>
+          </div>
+        </section>
 
         <p class="paper-note">Đọc chậm, chép bài vào vở, rồi quay lại đây khi bạn đã hoàn thành.</p>
         <div class="lesson-actions">

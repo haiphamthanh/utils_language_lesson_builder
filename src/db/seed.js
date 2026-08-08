@@ -13,6 +13,44 @@ const ids = {
   progress: '00000000-0000-4000-8000-000000000061',
 };
 
+const systemTopics = [
+  {
+    id: '00000000-0000-4000-8000-000000000010',
+    name: 'Software Engineering',
+    slug: 'software-engineering',
+    description: 'Describe everyday software work, features, and team habits.',
+    languageScope: 'English',
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000011',
+    name: 'Artificial Intelligence',
+    slug: 'artificial-intelligence',
+    description: 'Write about AI ideas, tools, and small projects.',
+    languageScope: 'English',
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000012',
+    name: 'Daily Life',
+    slug: 'daily-life',
+    description: 'Write about routines, habits, and small everyday moments.',
+    languageScope: null,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000013',
+    name: 'Travel',
+    slug: 'travel',
+    description: 'Write about trips, places, and experiences on the road.',
+    languageScope: null,
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000014',
+    name: 'My Current Project',
+    slug: 'my-current-project',
+    description: 'Describe a project you are working on right now.',
+    languageScope: null,
+  },
+];
+
 export async function seed(database = pool) {
   const client = await database.connect();
 
@@ -24,13 +62,14 @@ export async function seed(database = pool) {
        ON CONFLICT (id) DO NOTHING`,
       [config.demoUserId, config.timeZone],
     );
-    await client.query(
-      `INSERT INTO topics (id, name, slug, description, language_scope, is_system)
-       VALUES ($1, 'Software Engineering', 'software-engineering',
-         'Practice describing everyday software work.', 'English', true)
-       ON CONFLICT (id) DO NOTHING`,
-      [ids.topic],
-    );
+    for (const topic of systemTopics) {
+      await client.query(
+        `INSERT INTO topics (id, name, slug, description, language_scope, is_system)
+         VALUES ($1, $2, $3, $4, $5, true)
+         ON CONFLICT (id) DO NOTHING`,
+        [topic.id, topic.name, topic.slug, topic.description, topic.languageScope],
+      );
+    }
     await client.query(
       `INSERT INTO journeys
          (id, user_id, topic_id, language, level, title, status, max_cycles, planned_lesson_count)

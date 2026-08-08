@@ -180,3 +180,47 @@ test('GET /api/stats/overview returns objective progress', async (context) => {
   assert.equal(response.status, 200);
   assert.equal((await response.json()).data.vocabulary.encountered, 8);
 });
+
+test('GET /api/topics lists available topics', async (context) => {
+  const topicRepository = {
+    async listAvailable() {
+      return [{ id: 'topic-1', name: 'Travel', slug: 'travel' }];
+    },
+  };
+  const database = { query: async () => ({ rows: [] }) };
+  const app = createApp({ database, topicRepository });
+  const server = await listen(app);
+  context.after(() => server.close());
+
+  const address = server.address();
+  const response = await fetch(`http://127.0.0.1:${address.port}/api/topics`);
+
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).data[0].name, 'Travel');
+});
+
+test('POST /api/journeys creates a journey and returns the first lesson', async (context) => {
+  const createJourneyService = {
+    async createForUser({ topicId, language, level }) {
+      return { id: 'lesson-1', title: 'Introducing Travel', journey: { title: 'Travel' } };
+    },
+  };
+  const database = { query: async () => ({ rows: [] }) };
+  const app = createApp({ database, createJourneyService });
+  const server = await listen(app);
+  context.after(() => server.close());
+
+  const address = server.address();
+  const response = await fetch(`http://127.0.0.1:${address.port}/api/journeys`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      topicId: 'topic-1',
+      language: 'English',
+      level: 'Beginner',
+    }),
+  });
+
+  assert.equal(response.status, 201);
+  assert.equal((await response.json()).data.title, 'Introducing Travel');
+});

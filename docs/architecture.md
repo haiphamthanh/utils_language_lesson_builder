@@ -27,6 +27,7 @@ Hệ thống không có editor, submission hay chấm bài. `Done` là tín hi�
 7. Thống kê chỉ tính lesson đã Done. Mở web hoặc regenerate không tạo ngày học.
 8. “Từ đã gặp” là thống kê tiếp xúc, không được gọi là “từ đã thuộc”.
 9. Đọc bài lịch sử là read-only: không đổi `user_journey_progress`, không tăng thống kê và không hiện action mutate.
+10. Tạo journey mới (POST /api/journeys) chuyển các journey `active`/`reviewing` khác của user sang `paused` trong cùng transaction, để `current lesson` luôn chỉ một hành trình rõ ràng.
 
 ## Ranh giới module
 
@@ -58,7 +59,7 @@ Chưa tách vocabulary thành nhiều bảng. Khi cần tìm kiếm/tổng hợp
 ## Thứ tự mở rộng đề xuất
 
 1. Authentication và user context thật, thay user demo.
-2. API/UI tạo topic, journey và outline.
+2. Màn hình thêm chủ đề mới (custom topic) và chọn lại hành trình đã tạm dừng.
 3. Worker generation chỉ khi request AI thực sự chậm; chưa cần queue ở MVP.
 4. Chuẩn hóa vocabulary khi dashboard JSONB không còn đáp ứng.
 

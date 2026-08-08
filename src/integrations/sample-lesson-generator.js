@@ -50,49 +50,135 @@ const examples = {
       ],
     },
   },
-  3: {
-    title: 'A Small Feature',
-    content:
-      'Last week, I worked on a small feature. Users needed a clearer button on the home page. I changed the button text and added a helpful message. Then I tested the page on my computer. A teammate reviewed my code and suggested one improvement. We released the feature, and the page became easier to use.',
-    summary:
-      'The developer explains how a small interface improvement was built, reviewed, and released.',
-    review: {
-      vocabulary: [
-        reviewItem('feature', 'tính năng', [
-          'I worked on a new search feature.',
-          'This feature helps users find their orders.',
-          'We tested the feature on mobile devices.',
-          'The team released the feature on Friday.',
-          'Users asked for a simpler feature.',
-        ]),
-        reviewItem('release', 'phát hành', [
-          'We plan to release the update tomorrow.',
-          'The team released a small fix.',
-          'I tested the page before the release.',
-          'Our next release includes two features.',
-          'They release improvements every week.',
-        ]),
-      ],
-      phrases: [
-        reviewItem('easier to use', 'dễ sử dụng hơn', [
-          'The new menu is easier to use.',
-          'Clear labels make the form easier to use.',
-          'This keyboard shortcut is easier to use.',
-          'The mobile page became easier to use.',
-          'We want every feature to be easier to use.',
-        ]),
-      ],
-      grammar: [
-        grammarItem('make + noun + adjective', 'làm cho một vật trở nên như thế nào', [
-          'The new color makes the button clearer.',
-          'Short labels make the form simpler.',
-          'This change makes the page faster.',
-          'Good feedback makes my code better.',
-          'A clear plan makes the task easier.',
-        ]),
-      ],
-    },
-  },
+      3: {
+        title: 'A Small Feature',
+        content:
+          'Last week, I worked on a small feature. Users needed a clearer button on the home page. I changed the button text and added a helpful message. Then I tested the page on my computer. A teammate reviewed my code and suggested one improvement. We released the feature, and the page became easier to use.',
+        summary:
+          'The developer explains how a small interface improvement was built, reviewed, and released.',
+        review: {
+          vocabulary: [
+            reviewItem('feature', 'tính năng', [
+              'I worked on a new search feature.',
+              'This feature helps users find their orders.',
+              'We tested the feature on mobile devices.',
+              'The team released the feature on Friday.',
+              'Users asked for a simpler feature.',
+            ]),
+            reviewItem('release', 'phát hành', [
+              'We plan to release the update tomorrow.',
+              'The team released a small fix.',
+              'I tested the page before the release.',
+              'Our next release includes two features.',
+              'They release improvements every week.',
+            ]),
+          ],
+          phrases: [
+            reviewItem('easier to use', 'dễ sử dụng hơn', [
+              'The new menu is easier to use.',
+              'Clear labels make the form easier to use.',
+              'This keyboard shortcut is easier to use.',
+              'The mobile page became easier to use.',
+              'We want every feature to be easier to use.',
+            ]),
+          ],
+          grammar: [
+            grammarItem('make + noun + adjective', 'làm cho một vật trở nên như thế nào', [
+              'The new color makes the button clearer.',
+              'Short labels make the form simpler.',
+              'This change makes the page faster.',
+              'Good feedback makes my code better.',
+              'A clear plan makes the task easier.',
+            ]),
+          ],
+        },
+      },
+      4: {
+        title: 'A Problem I Faced',
+        content:
+          'One day, a task seemed too hard. I did not know why the page did not open. I stayed calm and wrote down what I saw. Then I read the error message slowly and found the cause. I fixed the small mistake and tested the page again. This taught me to describe problems clearly and solve them step by step.',
+        summary:
+          'The developer describes how a confusing problem was broken down and solved with patience.',
+        review: {
+          vocabulary: [
+            reviewItem('error', 'lỗi, lỗi hệ thống', [
+              'The error message was not clear.',
+              'I found the error in the log.',
+              'Please copy the error into the chat.',
+              'This error only appears at night.',
+              'We fixed the error before the release.',
+            ]),
+            reviewItem('solve', 'giải quyết', [
+              'We solved the problem together.',
+              'A clear plan helps me solve tasks.',
+              'She solved the issue in minutes.',
+              'Small steps can solve big problems.',
+              'I like solving tricky errors.',
+            ]),
+          ],
+          phrases: [
+            reviewItem('step by step', 'từng bước một', [
+              'I fixed the bug step by step.',
+              'Read the instructions step by step.',
+              'We rebuilt the page step by step.',
+              'She learned the tool step by step.',
+              'Follow the plan step by step.',
+            ]),
+          ],
+          grammar: [
+            grammarItem('teach + someone + to + verb', 'dạy ai đó cách làm gì', [
+              'The project taught me to ask questions.',
+              'This book taught me to plan first.',
+              'My mentor taught me to test everything.',
+              'Mistakes taught me to read carefully.',
+              'The course taught me to write clearly.',
+            ]),
+          ],
+        },
+      },
+      5: {
+        title: 'What I Learned',
+        content:
+          'After this journey, I can describe my work in simple English. I learned to introduce a topic, explain the basics, and share a real example. I also learned to stay calm when something goes wrong. Writing one small piece every day helped me the most. I will keep practicing and make my next writing journey even better.',
+        summary:
+          'The developer reflects on the writing journey and commits to keep practicing daily.',
+        review: {
+          vocabulary: [
+            reviewItem('journey', 'hành trình', [
+              'This writing journey helped me a lot.',
+              'Every journey begins with one small step.',
+              'My journey started last month.',
+              'I enjoyed every part of the journey.',
+              'The next journey will be harder but fun.',
+            ]),
+            reviewItem('practice', 'thực hành, luyện tập', [
+              'Daily practice improves my writing.',
+              'I practice English every morning.',
+              'Practice makes the words easier.',
+              'She practices with short sentences.',
+              'Good practice leads to real progress.',
+            ]),
+          ],
+          phrases: [
+            reviewItem('look forward to', 'mong chờ, trông đợi', [
+              'I look forward to the next lesson.',
+              'She looks forward to writing again.',
+              'We look forward to better results.',
+              'He looks forward to the new project.',
+              'I look forward to seeing my progress.',
+            ]),
+          ],
+          grammar: [
+            grammarItem('the + comparative, the + comparative', 'càng … càng …', [
+              'The more I write, the easier it becomes.',
+              'The more I practice, the better I speak.',
+              'The simpler the plan, the clearer the task.',
+              'The sooner we start, the sooner we finish.',
+              'The more feedback I get, the faster I improve.',
+            ]),
+          ],
+        },
+      },
 };
 
 const regeneratedExamples = {
@@ -182,49 +268,135 @@ const regeneratedExamples = {
       ],
     },
   },
-  3: {
-    title: 'Improving a Search Button',
-    content:
-      'Our website had a search button that was hard to see. I gave it a stronger color and moved it near the search box. Next, I asked two teammates to try the page. They found the button quickly, but one label was confusing. I fixed the label and tested the page again. The small update made searching simpler for everyone.',
-    summary:
-      'The developer improves a search button through a small design change and teammate feedback.',
-    review: {
-      vocabulary: [
-        reviewItem('confusing', 'gây khó hiểu', [
-          'The old button label was confusing.',
-          'This error message is confusing for new users.',
-          'A long menu can be confusing.',
-          'The instructions became less confusing.',
-          'We changed the confusing part of the form.',
-        ]),
-        reviewItem('update', 'bản cập nhật', [
-          'The update fixed the search button.',
-          'We released a small update yesterday.',
-          'This update makes the page faster.',
-          'I tested the update on my phone.',
-          'Users liked the latest update.',
-        ]),
-      ],
-      phrases: [
-        reviewItem('hard to see', 'khó nhìn thấy', [
-          'The gray icon is hard to see.',
-          'Small text can be hard to see on a phone.',
-          'The button was hard to see at night.',
-          'This error is hard to see in the logs.',
-          'Light colors are hard to see on this background.',
-        ]),
-      ],
-      grammar: [
-        grammarItem('make + noun + adjective', 'làm cho một vật trở nên như thế nào', [
-          'The update made searching simpler.',
-          'A stronger color made the button clearer.',
-          'Short labels make the form easier.',
-          'The fix made our users happier.',
-          'Good spacing makes the page cleaner.',
-        ]),
-      ],
-    },
-  },
+      3: {
+        title: 'Improving a Search Button',
+        content:
+          'Our website had a search button that was hard to see. I gave it a stronger color and moved it near the search box. Next, I asked two teammates to try the page. They found the button quickly, but one label was confusing. I fixed the label and tested the page again. The small update made searching simpler for everyone.',
+        summary:
+          'The developer improves a search button through a small design change and teammate feedback.',
+        review: {
+          vocabulary: [
+            reviewItem('confusing', 'gây khó hiểu', [
+              'The old button label was confusing.',
+              'This error message is confusing for new users.',
+              'A long menu can be confusing.',
+              'The instructions became less confusing.',
+              'We changed the confusing part of the form.',
+            ]),
+            reviewItem('update', 'bản cập nhật', [
+              'The update fixed the search button.',
+              'We released a small update yesterday.',
+              'This update makes the page faster.',
+              'I tested the update on my phone.',
+              'Users liked the latest update.',
+            ]),
+          ],
+          phrases: [
+            reviewItem('hard to see', 'khó nhìn thấy', [
+              'The gray icon is hard to see.',
+              'Small text can be hard to see on a phone.',
+              'The button was hard to see at night.',
+              'This error is hard to see in the logs.',
+              'Light colors are hard to see on this background.',
+            ]),
+          ],
+          grammar: [
+            grammarItem('make + noun + adjective', 'làm cho một vật trở nên như thế nào', [
+              'The update made searching simpler.',
+              'A stronger color made the button clearer.',
+              'Short labels make the form easier.',
+              'The fix made our users happier.',
+              'Good spacing makes the page cleaner.',
+            ]),
+          ],
+        },
+      },
+      4: {
+        title: 'Solving a Small Problem',
+        content:
+          'Yesterday, a page stopped working. I did not panic. I checked the error message and the newest change. The cause was a small typo in my code. I fixed the typo, tested the page, and shared the result with my team. Now I always read errors carefully before I ask for help.',
+        summary:
+          'The developer stays calm and finds a small typo by reading the error carefully.',
+        review: {
+          vocabulary: [
+            reviewItem('typo', 'lỗi gõ nhầm', [
+              'A small typo broke the page.',
+              'I found the typo in the log.',
+              'Please check the text for typos.',
+              'This typo was hard to spot.',
+              'One typo can change the meaning.',
+            ]),
+            reviewItem('panic', 'hoảng loạn', [
+              'Do not panic when a test fails.',
+              'I never panic before a release.',
+              'She stayed calm and did not panic.',
+              'Panic makes problems harder to solve.',
+              'He did not panic during the outage.',
+            ]),
+          ],
+          phrases: [
+            reviewItem('look for', 'tìm kiếm', [
+              'I look for clues in the error.',
+              'She looked for the missing file.',
+              'We look for simple causes first.',
+              'He is looking for a better label.',
+              'They look for feedback every week.',
+            ]),
+          ],
+          grammar: [
+            grammarItem('so + adjective + that', 'đến mức mà', [
+              'The error was so small that I missed it.',
+              'The task was so easy that we finished early.',
+              'The label was so clear that users understood it.',
+              'The log was so long that I searched it.',
+              'The change was so simple that nobody worried.',
+            ]),
+          ],
+        },
+      },
+      5: {
+        title: 'The Next Goal',
+        content:
+          'I have learned a lot in this journey. I can describe my work, explain a feature, and share a problem. My next goal is to write without checking the dictionary too often. I will read a short article every day and copy one paragraph into my notebook. Small daily habits will help me keep improving.',
+        summary:
+          'The developer sets a concrete next goal and a simple daily habit to keep improving.',
+        review: {
+          vocabulary: [
+            reviewItem('goal', 'mục tiêu', [
+              'My next goal is clear and small.',
+              'I wrote down three learning goals.',
+              'A good goal is easy to measure.',
+              'She reached her goal this month.',
+              'We set a goal for the whole team.',
+            ]),
+            reviewItem('habit', 'thói quen', [
+              'Writing daily became a good habit.',
+              'Small habits lead to big changes.',
+              'I built a habit of reading at night.',
+              'This habit helps me remember words.',
+              'He turned practice into a habit.',
+            ]),
+          ],
+          phrases: [
+            reviewItem('keep + verb-ing', 'tiếp tục làm gì', [
+              'I will keep improving every day.',
+              'She keeps practicing new words.',
+              'We keep reviewing the old lessons.',
+              'He keeps writing even when busy.',
+              'They keep learning from mistakes.',
+            ]),
+          ],
+          grammar: [
+            grammarItem('without + verb-ing', 'mà không làm gì', [
+              'I want to write without stopping.',
+              'She solved it without asking for help.',
+              'He finished the task without errors.',
+              'We released the page without delays.',
+              'You can learn without a teacher.',
+            ]),
+          ],
+        },
+      },
 };
 
 export class SampleLessonGenerator {
