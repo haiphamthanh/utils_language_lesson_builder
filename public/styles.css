@@ -349,28 +349,51 @@ body {
 
 .review {
   margin-top: 36px;
-  padding-top: 26px;
   border-top: 1px solid var(--line);
 }
 
-.review-heading {
+.review summary {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 18px;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 0 2px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
 }
 
-.review-heading h2 {
-  margin: 0;
-  font-size: 1.15rem;
+.review summary::-webkit-details-marker { display: none; }
+
+.review-summary-title {
+  color: var(--accent);
   font-weight: 750;
+  font-size: 0.98rem;
 }
 
-.review-heading p {
-  margin: 0;
+.review-summary-hint {
+  flex: 1;
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: 0.82rem;
+}
+
+.review-summary-chevron {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  color: var(--accent);
+  transition: transform 0.15s ease;
+}
+
+.review[open] .review-summary-chevron { transform: rotate(180deg); }
+
+.review .review-layout {
+  margin-top: 16px;
+  padding-bottom: 4px;
 }
 
 .review-layout {
@@ -608,7 +631,7 @@ a:focus-visible {
   .lesson-meta { display: block; }
   .position { margin-top: 12px; }
 
-  .review-heading { flex-direction: column; gap: 6px; }
+  .review-summary-hint { display: none; }
   .review-layout { grid-template-columns: 1fr; }
   .review-detail { position: static; min-height: 0; }
   .review-detail-placeholder { min-height: 140px; }

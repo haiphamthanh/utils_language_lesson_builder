@@ -105,16 +105,19 @@
         <p id="objective" class="objective"></p>
         <div id="lesson-content" class="lesson-content"></div>
 
-        <section class="review" aria-label="Từ vựng và cấu trúc của bài">
-          <div class="review-heading">
-            <h2>Ôn lại</h2>
-            <p>Chọn một mục để xem nghĩa và ví dụ</p>
-          </div>
+        <details class="review" aria-label="Từ vựng và cấu trúc của bài">
+          <summary>
+            <span class="review-summary-title">Từ vựng và cấu trúc</span>
+            <span class="review-summary-hint">Mở ra để xem danh sách từ và ví dụ</span>
+            <svg class="review-summary-chevron" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </summary>
           <div class="review-layout">
             <div id="review-list" class="review-list" role="tablist" aria-label="Danh sách từ vựng"></div>
             <div id="review-detail" class="review-detail" aria-live="polite"></div>
           </div>
-        </section>
+        </details>
 
         <p class="paper-note">Đọc chậm, chép bài vào vở, rồi quay lại đây khi bạn đã hoàn thành.</p>
         <div class="lesson-actions">
