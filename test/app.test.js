@@ -107,3 +107,27 @@ test('POST /api/lessons/:id/regenerate returns the active version', async (conte
     data: { id: 'lesson-1', title: 'A New Developer', versionNumber: 2 },
   });
 });
+
+test('GET /api/stats/overview returns objective progress', async (context) => {
+  const statsService = {
+    async getOverview() {
+      return {
+        lessons: { completed: 3, reviewCompletions: 1, totalCompletions: 4 },
+        studyDays: { total: 2, currentStreak: 2, longestStreak: 2 },
+        vocabulary: { encountered: 8, repeated: 1 },
+      };
+    },
+  };
+  const database = { query: async () => ({ rows: [] }) };
+  const app = createApp({ database, statsService });
+  const server = await listen(app);
+  context.after(() => server.close());
+
+  const address = server.address();
+  const response = await fetch(
+    `http://127.0.0.1:${address.port}/api/stats/overview`,
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).data.vocabulary.encountered, 8);
+});

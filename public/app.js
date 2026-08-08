@@ -11,6 +11,10 @@ const elements = {
   lessonStatus: document.querySelector('#lesson-status'),
   completeButton: document.querySelector('#complete-button'),
   regenerateButton: document.querySelector('#regenerate-button'),
+  completedCount: document.querySelector('#completed-count'),
+  studyDaysCount: document.querySelector('#study-days-count'),
+  streakCount: document.querySelector('#streak-count'),
+  vocabularyCount: document.querySelector('#vocabulary-count'),
 };
 
 let currentLesson = null;
@@ -77,7 +81,23 @@ async function loadCurrentLesson() {
   }
 }
 
+async function loadStats() {
+  try {
+    const response = await fetch('/api/stats/overview');
+    const payload = await response.json();
+    if (!response.ok) return;
+
+    elements.completedCount.textContent = payload.data.lessons.completed;
+    elements.studyDaysCount.textContent = payload.data.studyDays.total;
+    elements.streakCount.textContent = payload.data.studyDays.currentStreak;
+    elements.vocabularyCount.textContent = payload.data.vocabulary.encountered;
+  } catch {
+    // The lesson remains usable when optional statistics cannot be loaded.
+  }
+}
+
 loadCurrentLesson();
+loadStats();
 
 elements.completeButton.addEventListener('click', async () => {
   if (!currentLesson) return;
@@ -96,6 +116,7 @@ elements.completeButton.addEventListener('click', async () => {
     if (payload.data.journeyCompleted) {
       elements.lessonStatus.textContent = 'Bạn đã hoàn thành hành trình này.';
       elements.completeButton.hidden = true;
+      loadStats();
       return;
     }
 
@@ -103,6 +124,7 @@ elements.completeButton.addEventListener('click', async () => {
     elements.lessonStatus.textContent = payload.data.alreadyCompleted
       ? 'Bài này đã được ghi nhận trước đó.'
       : 'Đã khóa bài trước. Đây là bài tiếp theo.';
+    loadStats();
   } catch (error) {
     elements.lessonStatus.textContent = error.message;
   } finally {

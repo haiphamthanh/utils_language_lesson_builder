@@ -36,8 +36,23 @@ body {
 
 .masthead {
   align-items: center;
-  margin-bottom: 64px;
+  margin-bottom: 28px;
 }
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin-bottom: 52px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgb(255 253 248 / 72%);
+}
+
+.stats div { padding: 16px; border-right: 1px solid var(--line); }
+.stats div:last-child { border-right: 0; }
+.stats strong { display: block; font-family: Georgia, serif; font-size: 1.35rem; }
+.stats span { color: var(--muted); font-size: 0.72rem; }
 
 .brand {
   color: var(--ink);
@@ -182,6 +197,9 @@ h1 {
 
 @media (max-width: 560px) {
   .masthead { margin-bottom: 32px; }
+  .stats { grid-template-columns: repeat(2, 1fr); margin-bottom: 28px; }
+  .stats div:nth-child(2) { border-right: 0; }
+  .stats div:nth-child(-n + 2) { border-bottom: 1px solid var(--line); }
   .lesson-meta { display: block; }
   .position { margin-top: 12px; }
   .lesson-actions { align-items: stretch; flex-direction: column; }

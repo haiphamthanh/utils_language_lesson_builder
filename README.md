@@ -33,6 +33,7 @@ npm run db:seed
 4. Cùng transaction đó ghi ngày học và chuyển bookmark.
 5. Example generator chuẩn bị bài tiếp theo; hết vòng một thì dùng lại nội dung đã khóa cho vòng ôn.
 6. **Tạo bài khác** tạo version mới nhưng giữ lịch sử; bài đã Done hoặc đang ôn bị backend từ chối regenerate.
+7. Thanh tiến độ đếm bài đã khóa, ngày học, streak và từ/cụm từ đã tiếp xúc; chỉ Done mới làm thay đổi số liệu.
 
 ## Ranh giới MVP hiện tại
 

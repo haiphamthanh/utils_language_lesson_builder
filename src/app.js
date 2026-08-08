@@ -6,10 +6,12 @@ import { pool } from './db/pool.js';
 import { createLessonGenerator } from './integrations/create-lesson-generator.js';
 import { LessonRepository } from './repositories/lesson-repository.js';
 import { LessonWorkflowRepository } from './repositories/lesson-workflow-repository.js';
+import { StatsRepository } from './repositories/stats-repository.js';
 import { CompleteLessonService } from './services/complete-lesson-service.js';
 import { CurrentLessonService } from './services/current-lesson-service.js';
 import { LessonGenerationService } from './services/lesson-generation-service.js';
 import { RegenerateLessonService } from './services/regenerate-lesson-service.js';
+import { StatsService } from './services/stats-service.js';
 
 export function createApp({
   database = pool,
@@ -18,6 +20,7 @@ export function createApp({
   ),
   completeLessonService,
   regenerateLessonService,
+  statsService = new StatsService(new StatsRepository(database)),
 } = {}) {
   const app = express();
   const workflowRepository = new LessonWorkflowRepository(database);
@@ -81,6 +84,15 @@ export function createApp({
         lessonId: request.params.lessonId,
       });
       response.json({ data: lesson });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get('/api/stats/overview', async (_request, response, next) => {
+    try {
+      const overview = await statsService.getOverview(config.demoUserId);
+      response.json({ data: overview });
     } catch (error) {
       next(error);
     }
