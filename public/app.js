@@ -51,6 +51,10 @@ const elements = {
   backHomeButton: document.querySelector('#back-home-button'),
   busyOverlay: document.querySelector('#busy-overlay'),
   busyMessage: document.querySelector('#busy-message'),
+  book: document.querySelector('#book'),
+  bookCover: document.querySelector('#book-cover'),
+  bookCoverTitle: document.querySelector('#book-cover-title'),
+  bookFlip: document.querySelector('#book-flip'),
 };
 
 const LANGUAGES = ['English', 'Japanese', 'Chinese'];
@@ -693,7 +697,7 @@ async function deleteHighlight() {
   }
 }
 
-function showLesson(lesson) {
+function showLesson(lesson, { animateBook = false } = {}) {
   currentLesson = lesson;
   lessonHighlights = [];
   pendingHighlight = null;
@@ -728,6 +732,8 @@ function showLesson(lesson) {
     : '';
   updateNavigation(lesson.id, lesson.isCurrent);
   loadHighlights(lesson.id);
+
+  if (animateBook) openBook(lesson.journey?.title);
 }
 
 function showJourneyCompleted(journey) {
@@ -735,6 +741,7 @@ function showJourneyCompleted(journey) {
   bookmarkedLesson = null;
   activeJourneyId = journey?.id ?? null;
   hideHighlightPopover();
+  resetBook();
   elements.mastheadEyebrow.textContent = 'Hành trình hoàn thành';
   elements.completionJourneyTitle.textContent = journey?.title ?? '';
   elements.loading.hidden = true;
@@ -750,6 +757,7 @@ function showJourneySetup() {
   bookmarkedLesson = null;
   activeJourneyId = null;
   hideHighlightPopover();
+  resetBook();
   elements.mastheadEyebrow.textContent = 'Hành trình mới';
   elements.loading.hidden = true;
   elements.error.hidden = true;
@@ -935,6 +943,7 @@ function showHome() {
   currentLesson = null;
   bookmarkedLesson = null;
   hideHighlightPopover();
+  resetBook();
   renderHome();
   elements.mastheadEyebrow.textContent = 'Kệ sách hành trình';
   elements.loading.hidden = true;
@@ -969,7 +978,7 @@ async function openJourney(journeyId) {
       await loadHistory(null);
     } else {
       bookmarkedLesson = payload.data.lesson;
-      showLesson(payload.data.lesson);
+      showLesson(payload.data.lesson, { animateBook: true });
       await loadHistory(payload.data.lesson);
     }
     await loadLibrary();
@@ -1143,10 +1152,50 @@ function updateNavigation(lessonId, isCurrent) {
   elements.previousLessonButton.disabled = index <= 0;
   elements.nextLessonButton.disabled =
     index < 0 || index >= lessonTimeline.length - 1;
-  elements.viewingStatus.textContent = isCurrent ? 'Bài hiện tại' : 'Bài đã khóa';
 }
 
-async function openTimelineLesson(offset) {
+/* ---------- Book opening & page flipping ---------- */
+
+const BOOK_OPEN_MS = 850;
+const BOOK_FLIP_MS = 620;
+
+function resetBook() {
+  elements.bookCover.hidden = true;
+  elements.bookCover.classList.remove('is-open');
+  elements.bookFlip.replaceChildren();
+}
+
+function openBook(title) {
+  resetBook();
+  elements.bookCoverTitle.textContent = title ?? '';
+  elements.bookCover.hidden = false;
+  elements.bookCover.classList.remove('is-open');
+  void elements.bookCover.offsetWidth;
+  requestAnimationFrame(() => {
+    elements.bookCover.classList.add('is-open');
+  });
+  window.setTimeout(() => {
+    elements.bookCover.hidden = true;
+  }, BOOK_OPEN_MS);
+}
+
+function createFlipSheet(offset) {
+  const sheet = document.createElement('div');
+  sheet.className = 'book-flip-sheet';
+  sheet.classList.add(offset > 0 ? 'is-next' : 'is-prev');
+
+  const front = document.createElement('div');
+  front.className = 'book-flip-front';
+  const source = offset > 0
+    ? elements.book.querySelector('.book-page-right')
+    : elements.book.querySelector('.book-page-left');
+  front.append(source?.cloneNode(true) ?? document.createElement('span'));
+  sheet.append(front);
+  elements.bookFlip.append(sheet);
+  return sheet;
+}
+
+async function flipTimelineLesson(offset) {
   const index = lessonTimeline.findIndex(
     (lesson) => lesson.id === currentLesson?.id,
   );
@@ -1155,20 +1204,37 @@ async function openTimelineLesson(offset) {
 
   elements.previousLessonButton.disabled = true;
   elements.nextLessonButton.disabled = true;
+  hideHighlightPopover();
+
+  let lesson;
   try {
     if (target.id === bookmarkedLesson?.id) {
-      showLesson(bookmarkedLesson);
-      return;
+      lesson = bookmarkedLesson;
+    } else {
+      const response = await fetch(`/api/lessons/${target.id}`);
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.message ?? 'Không thể mở bài cũ.');
+      lesson = payload.data;
     }
-
-    const response = await fetch(`/api/lessons/${target.id}`);
-    const payload = await response.json();
-    if (!response.ok) throw new Error(payload.message ?? 'Không thể mở bài cũ.');
-    showLesson(payload.data);
   } catch (error) {
     elements.lessonStatus.textContent = error.message;
     updateNavigation(currentLesson?.id, currentLesson?.isCurrent);
+    return;
   }
+
+  const sheet = createFlipSheet(offset);
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => sheet.classList.add('is-flipping'));
+  });
+
+  window.setTimeout(() => {
+    showLesson(lesson);
+  }, BOOK_FLIP_MS / 2);
+
+  window.setTimeout(() => {
+    sheet.remove();
+    updateNavigation(lesson.id, lesson.isCurrent);
+  }, BOOK_FLIP_MS + 80);
 }
 
 async function loadStats() {
@@ -1225,11 +1291,11 @@ elements.backHomeButton.addEventListener('click', () => {
 });
 
 elements.previousLessonButton.addEventListener('click', () => {
-  openTimelineLesson(-1);
+  flipTimelineLesson(-1);
 });
 
 elements.nextLessonButton.addEventListener('click', () => {
-  openTimelineLesson(1);
+  flipTimelineLesson(1);
 });
 
 elements.newJourneyButton.addEventListener('click', () => {

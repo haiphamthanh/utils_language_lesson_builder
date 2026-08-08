@@ -82,8 +82,7 @@ body[data-theme="dark"] {
   padding: 32px 0 72px;
 }
 
-.masthead,
-.lesson-meta {
+.masthead {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -723,56 +722,230 @@ body[data-theme="dark"] .theme-toggle .icon-sun { display: none; }
   margin-top: 30px;
 }
 
-/* ---------- Lesson (content card) ---------- */
+/* ---------- Lesson (open book) ---------- */
 
 .lesson {
   position: relative;
-  overflow: clip;
-  padding: clamp(24px, 5vw, 52px);
-  border: 1px solid var(--line-soft);
-  border-radius: 26px 18px 24px 20px;
+}
+
+.book {
+  position: relative;
+  padding: 16px;
+  border-radius: 18px;
   background:
-    radial-gradient(
-      circle at 14% 6%,
-      rgb(216 195 162 / 10%),
-      transparent 30%
-    ),
+    repeating-linear-gradient(0deg, rgb(0 0 0 / 8%) 0 2px, transparent 2px 6px),
+    linear-gradient(180deg, #6b4529, #4d2f1a);
+  box-shadow:
+    inset 0 0 0 1px rgb(0 0 0 / 26%),
+    0 30px 60px rgb(44 40 33 / 32%);
+  perspective: 2000px;
+}
+
+.book-spread {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr);
+  height: min(72vh, 660px);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.book-page {
+  position: relative;
+  padding: clamp(20px, 2.4vw, 36px) clamp(16px, 2vw, 30px);
+  background:
     repeating-linear-gradient(
       0deg,
-      rgb(91 75 53 / 1.6%) 0 1px,
+      rgb(91 75 53 / 1.4%) 0 1px,
       transparent 1px 5px
     ),
     var(--surface);
-  box-shadow:
-    var(--shadow),
-    inset 0 0 70px rgb(205 185 150 / 7%);
+  color: var(--ink);
 }
 
-.lesson::before {
+.book-page-left {
+  border-radius: 12px 0 0 12px;
+  box-shadow:
+    inset 0 0 0 1px rgb(155 128 95 / 16%),
+    inset 30px 0 60px rgb(205 185 150 / 10%);
+}
+
+.book-page-right {
+  border-radius: 0 12px 12px 0;
+  box-shadow:
+    inset 0 0 0 1px rgb(155 128 95 / 16%),
+    inset -30px 0 60px rgb(205 185 150 / 10%);
+}
+
+.book-page-inner {
+  height: 100%;
+  overflow-y: auto;
+  padding-right: 6px;
+  scrollbar-width: thin;
+}
+
+.book-page-head .eyebrow { margin-top: 0; }
+
+.book-page-head h1 {
+  margin: 0;
+  font-family: Georgia, serif;
+  font-size: clamp(1.4rem, 3vw, 2.05rem);
+  font-weight: 500;
+  line-height: 1.12;
+}
+
+.book-gutter {
+  position: relative;
+  background: linear-gradient(
+    90deg,
+    rgb(0 0 0 / 22%),
+    rgb(0 0 0 / 4%) 30%,
+    rgb(0 0 0 / 4%) 70%,
+    rgb(0 0 0 / 22%)
+  );
+}
+
+.book-gutter::before,
+.book-gutter::after {
   content: "";
   position: absolute;
-  top: -22px;
-  left: -24px;
-  width: 150px;
-  height: 130px;
-  pointer-events: none;
-  opacity: 0.5;
-  background:
-    radial-gradient(ellipse at 36% 34%, rgb(165 190 149 / 55%) 0 15%, transparent 17%),
-    radial-gradient(ellipse at 66% 30%, rgb(214 169 164 / 45%) 0 13%, transparent 15%),
-    radial-gradient(ellipse at 50% 70%, rgb(188 207 177 / 42%) 0 20%, transparent 22%);
-  transform: rotate(-18deg);
+  top: 0;
+  bottom: 0;
+  width: 26px;
 }
 
-.lesson::after {
-  content: "✦";
+.book-gutter::before {
+  left: 0;
+  background: linear-gradient(90deg, rgb(0 0 0 / 22%), transparent);
+}
+
+.book-gutter::after {
+  right: 0;
+  background: linear-gradient(270deg, rgb(0 0 0 / 22%), transparent);
+}
+
+.book-cover {
   position: absolute;
-  right: 30px;
-  bottom: 24px;
-  pointer-events: none;
-  color: rgb(183 134 83 / 30%);
+  inset: 16px;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  border-radius: 14px 4px 4px 14px;
+  background:
+    radial-gradient(ellipse at 30% 18%, rgb(255 255 255 / 12%), transparent 45%),
+    linear-gradient(135deg, #7a2f26, #4a1812);
+  color: #f2e4cf;
+  box-shadow:
+    inset 0 0 0 2px rgb(0 0 0 / 18%),
+    0 24px 50px rgb(0 0 0 / 45%);
+  transform-origin: left center;
+  transform: rotateY(0deg);
+  transition: transform 850ms cubic-bezier(0.5, 0.1, 0.2, 1);
+  backface-visibility: hidden;
+}
+
+.book-cover.is-open { transform: rotateY(-168deg); }
+
+.book-cover-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: 320px;
+  padding: 0 30px;
+  text-align: center;
+}
+
+.book-cover-mark {
+  font-size: 1.6rem;
+  color: rgb(255 255 255 / 70%);
+}
+
+.book-cover-title {
   font-family: Georgia, serif;
-  font-size: 1.1rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.02em;
+}
+
+.book-cover-subtitle {
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.book-flip {
+  position: absolute;
+  inset: 16px;
+  z-index: 20;
+  pointer-events: none;
+  perspective: 1600px;
+}
+
+.book-flip-sheet {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  background: var(--surface);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 22%);
+  pointer-events: none;
+  transform-style: preserve-3d;
+  transition: transform 620ms cubic-bezier(0.45, 0.05, 0.25, 1);
+}
+
+.book-flip-sheet.is-next {
+  right: 0;
+  transform-origin: left center;
+  transform: rotateY(0deg);
+}
+
+.book-flip-sheet.is-next.is-flipping { transform: rotateY(-180deg); }
+
+.book-flip-sheet.is-prev {
+  left: 0;
+  transform-origin: right center;
+  transform: rotateY(0deg);
+}
+
+.book-flip-sheet.is-prev.is-flipping { transform: rotateY(180deg); }
+
+.book-flip-front {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  backface-visibility: hidden;
+  border-radius: inherit;
+}
+
+.book-page-right .review {
+  margin-top: 24px;
+}
+
+.book-page-right .review-layout {
+  grid-template-columns: 1fr;
+}
+
+.book-page-right .review-list {
+  max-height: 260px;
+}
+
+.book-page-right .review-detail {
+  position: static;
+  min-height: 0;
+}
+
+.book-page-right .review-detail-placeholder {
+  min-height: 120px;
+}
+
+.book-page .lesson-content {
+  font-size: clamp(1.05rem, 1.9vw, 1.28rem);
+  line-height: 1.8;
 }
 
 .lesson-navigation {
@@ -828,13 +1001,13 @@ body[data-theme="dark"] .theme-toggle .icon-sun { display: none; }
 
 .viewing-status { min-width: 88px; color: var(--muted); font-size: 0.76rem; text-align: center; }
 
-.lesson h1 {
-  max-width: 580px;
+.lesson h1,
+.book-page-head h1 {
   margin: 0;
   font-family: Georgia, serif;
-  font-size: clamp(1.9rem, 6vw, 3.1rem);
+  font-size: clamp(1.4rem, 3vw, 2.05rem);
   font-weight: 500;
-  line-height: 1.08;
+  line-height: 1.12;
 }
 
 .position,
@@ -1351,29 +1524,23 @@ body[data-theme="dark"] .book {
 }
 
 body[data-theme="dark"] .lesson {
+  background: transparent;
+}
+
+body[data-theme="dark"] .book {
   background:
-    radial-gradient(
-      circle at 14% 6%,
-      rgb(216 195 162 / 5%),
-      transparent 30%
-    ),
+    repeating-linear-gradient(0deg, rgb(0 0 0 / 22%) 0 2px, transparent 2px 6px),
+    linear-gradient(180deg, #54331c, #3b2412);
+}
+
+body[data-theme="dark"] .book-page {
+  background:
     repeating-linear-gradient(
       0deg,
-      rgb(200 185 155 / 4%) 0 1px,
+      rgb(200 185 155 / 3%) 0 1px,
       transparent 1px 5px
     ),
     var(--surface);
-  box-shadow:
-    var(--shadow),
-    inset 0 0 70px rgb(0 0 0 / 28%);
-}
-
-body[data-theme="dark"] .lesson::before {
-  opacity: 0.16;
-}
-
-body[data-theme="dark"] .lesson::after {
-  color: rgb(210 180 130 / 18%);
 }
 
 body[data-theme="dark"] .objective,
@@ -1437,7 +1604,21 @@ body[data-theme="dark"] a:focus-visible {
   .back-button { order: 2; }
   .lesson-nav-history { order: 1; margin-left: auto; }
 
-  .lesson-meta { display: block; }
+  .book { padding: 10px; }
+  .book-spread {
+    grid-template-columns: 1fr;
+    height: auto;
+    overflow: visible;
+  }
+  .book-page { border-radius: 12px; }
+  .book-page-inner { max-height: 52vh; }
+  .book-gutter {
+    height: 34px;
+    background: linear-gradient(180deg, rgb(0 0 0 / 18%), rgb(0 0 0 / 5%));
+  }
+  .book-cover { inset: 10px; }
+  .book-flip { inset: 10px; }
+
   .position { margin-top: 12px; }
 
   .review-summary-hint { display: none; }
