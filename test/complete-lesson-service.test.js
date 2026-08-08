@@ -3,6 +3,19 @@ import test from 'node:test';
 
 import { CompleteLessonService } from '../src/services/complete-lesson-service.js';
 
+function lockMock(calls) {
+  return {
+    async begin({ userId, requestType }) {
+      calls.push(`begin:${requestType}`);
+      assert.equal(userId, 'user-1');
+    },
+    async finish({ userId }) {
+      calls.push('finish');
+      assert.equal(userId, 'user-1');
+    },
+  };
+}
+
 test('completion generates the next lesson after the transaction', async () => {
   const calls = [];
   const workflowRepository = {
@@ -31,6 +44,7 @@ test('completion generates the next lesson after the transaction', async () => {
     workflowRepository,
     generationService,
     currentLessonService,
+    lockMock(calls),
   );
 
   const result = await service.completeForUser({
@@ -38,7 +52,13 @@ test('completion generates the next lesson after the transaction', async () => {
     lessonId: 'lesson-1',
   });
 
-  assert.deepEqual(calls, ['complete', 'generate', 'read-current']);
+  assert.deepEqual(calls, [
+    'begin:lesson_generation',
+    'complete',
+    'generate',
+    'read-current',
+    'finish',
+  ]);
   assert.deepEqual(result.nextLesson, { id: 'lesson-2' });
 });
 
@@ -68,6 +88,7 @@ test('idempotent completion does not generate another lesson', async () => {
     workflowRepository,
     generationService,
     currentLessonService,
+    lockMock([]),
   );
 
   const result = await service.completeForUser({
@@ -105,6 +126,7 @@ test('idempotent completion retries a failed next-lesson generation', async () =
     workflowRepository,
     generationService,
     currentLessonService,
+    lockMock([]),
   );
 
   const result = await service.completeForUser({

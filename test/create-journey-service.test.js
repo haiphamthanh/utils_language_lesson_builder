@@ -52,12 +52,23 @@ test('creating a journey generates an outline, persists it, and generates the fi
       return { id: 'lesson-1', title: 'Introducing Travel' };
     },
   };
+  const generationStateRepository = {
+    async begin({ userId, requestType }) {
+      calls.push(`begin:${requestType}`);
+      assert.equal(userId, 'user-1');
+    },
+    async finish({ userId }) {
+      calls.push('finish');
+      assert.equal(userId, 'user-1');
+    },
+  };
   const service = new CreateJourneyService({
     topicRepository,
     journeyRepository,
     journeyGenerator,
     lessonGenerationService,
     currentLessonService,
+    generationStateRepository,
   });
 
   const result = await service.createForUser({
@@ -69,10 +80,12 @@ test('creating a journey generates an outline, persists it, and generates the fi
 
   assert.deepEqual(calls, [
     'find-topic',
+    'begin:journey_creation',
     'generate-outline',
     'create-journey',
     'generate-lesson',
     'read-current',
+    'finish',
   ]);
   assert.equal(result.id, 'lesson-1');
 });

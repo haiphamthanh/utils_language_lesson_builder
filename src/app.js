@@ -6,6 +6,7 @@ import { pool } from './db/pool.js';
 import { createJourneyGenerator } from './integrations/create-journey-generator.js';
 import { createLessonGenerator } from './integrations/create-lesson-generator.js';
 import { JourneyRepository } from './repositories/journey-repository.js';
+import { GenerationStateRepository } from './repositories/generation-state-repository.js';
 import { HighlightRepository } from './repositories/highlight-repository.js';
 import { LessonRepository } from './repositories/lesson-repository.js';
 import { LessonWorkflowRepository } from './repositories/lesson-workflow-repository.js';
@@ -32,6 +33,7 @@ export function createApp({
   createJourneyService,
   highlightService = new HighlightService(new HighlightRepository(database)),
   journeyService,
+  generationStateRepository = new GenerationStateRepository(database),
 } = {}) {
   const app = express();
   const workflowRepository = new LessonWorkflowRepository(database);
@@ -52,6 +54,7 @@ export function createApp({
       workflowRepository,
       generationService,
       currentLessonService,
+      generationStateRepository,
     );
   const resolvedRegenerateLessonService =
     regenerateLessonService ??
@@ -59,6 +62,7 @@ export function createApp({
       workflowRepository,
       generator,
       currentLessonService,
+      generationStateRepository,
     );
   const resolvedCreateJourneyService =
     createJourneyService ??
@@ -68,6 +72,7 @@ export function createApp({
       journeyGenerator,
       lessonGenerationService: generationService,
       currentLessonService,
+      generationStateRepository,
     });
   const resolvedJourneyService =
     journeyService ??
@@ -83,6 +88,20 @@ export function createApp({
     try {
       await database.query('SELECT 1');
       response.json({ status: 'ok' });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get('/api/status', async (_request, response, next) => {
+    try {
+      const state = await generationStateRepository.getForUser(config.demoUserId);
+      response.json({
+        data: {
+          busy: Boolean(state),
+          requestType: state?.request_type ?? null,
+        },
+      });
     } catch (error) {
       next(error);
     }

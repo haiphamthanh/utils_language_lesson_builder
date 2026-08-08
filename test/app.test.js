@@ -278,7 +278,22 @@ test('POST /api/journeys/:id/open resumes a paused journey', async (context) => 
   assert.equal((await response.json()).data.lesson.id, 'lesson-9');
 });
 
-test('GET /api/lessons/:id/highlights lists the lesson highlights', async (context) => {  const highlightService = {
+test('GET /api/status reports whether a generation is in flight', async (context) => {
+  const database = { query: async () => ({ rows: [] }) };
+  const app = createApp({ database });
+  const server = await listen(app);
+  context.after(() => server.close());
+
+  const address = server.address();
+  const response = await fetch(`http://127.0.0.1:${address.port}/api/status`);
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), {
+    data: { busy: false, requestType: null },
+  });
+});
+
+test('POST /api/lessons/:id/highlights lists the lesson highlights', async (context) => {  const highlightService = {
     async listForLesson({ lessonId }) {
       return [{ id: 'h1', lessonId, text: 'developer' }];
     },

@@ -49,6 +49,8 @@ const elements = {
   homeEmpty: document.querySelector('#home-empty'),
   backToHomeButton: document.querySelector('#back-to-home-button'),
   backHomeButton: document.querySelector('#back-home-button'),
+  busyOverlay: document.querySelector('#busy-overlay'),
+  busyMessage: document.querySelector('#busy-message'),
 };
 
 const LANGUAGES = ['English', 'Japanese', 'Chinese'];
@@ -115,6 +117,58 @@ let journeys = [];
 let libraryQuery = '';
 let libraryLanguageFilter = 'ALL';
 let activeJourneyId = null;
+
+/* ---------- Busy (single-flight generation) ---------- */
+
+const BUSY_MESSAGES = {
+  journey_creation:
+    'Đang vẽ lộ trình và sinh bài đầu tiên… có thể mất một chút thời gian.',
+  lesson_generation: 'Đang chuẩn bị bài tiếp theo… có thể mất một chút thời gian.',
+  regeneration: 'Đang tạo một phiên bản khác… có thể mất một chút thời gian.',
+};
+const BUSY_POLL_MS = 3_000;
+let busyPollTimer = null;
+
+function showBusy(message) {
+  elements.busyMessage.textContent = message ?? 'Đang xử lý…';
+  elements.busyOverlay.hidden = false;
+}
+
+function hideBusy() {
+  if (busyPollTimer) {
+    clearTimeout(busyPollTimer);
+    busyPollTimer = null;
+  }
+  elements.busyOverlay.hidden = true;
+}
+
+async function loadStatus() {
+  try {
+    const response = await fetch('/api/status');
+    const payload = await response.json();
+    if (!response.ok) return null;
+    return payload.data;
+  } catch {
+    return null;
+  }
+}
+
+async function refreshAfterGeneration() {
+  loadStats();
+  await loadLibrary();
+  showHomeOrSetup();
+}
+
+async function pollUntilIdle() {
+  const status = await loadStatus();
+  if (!status || !status.busy) {
+    hideBusy();
+    await refreshAfterGeneration();
+    return;
+  }
+  showBusy(BUSY_MESSAGES[status.requestType] ?? 'Đang xử lý…');
+  busyPollTimer = window.setTimeout(pollUntilIdle, BUSY_POLL_MS);
+}
 
 function reviewGroups(review) {
   return [
@@ -784,39 +838,40 @@ function getFilteredJourneys() {
   });
 }
 
-function buildBookCard(journey) {
+const BOOK_HEIGHTS = [168, 152, 182, 158, 176, 146, 188, 162];
+const BOOKS_PER_ROW = 7;
+
+function buildBookCard(journey, index = 0) {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'book';
   button.dataset.journeyId = journey.id;
   button.dataset.language = journey.language ?? '';
   if (journey.id === activeJourneyId) button.classList.add('is-open');
+  button.style.height = `${BOOK_HEIGHTS[index % BOOK_HEIGHTS.length]}px`;
   button.setAttribute(
     'aria-label',
-    `Mở hành trình ${journey.title} (${journey.language} · ${journey.level})`,
+    `Mở hành trình ${journey.title} (${journey.language} · ${journey.level}). Tiến độ ${journey.completedLessons}/${journey.totalLessons}.`,
   );
+  button.title = `${journey.title}\n${journey.language} · ${journey.level}\n${
+    JOURNEY_STATUS_LABELS[journey.status] ?? journey.status
+  }`;
 
   const spine = document.createElement('span');
   spine.className = 'book-spine';
   spine.setAttribute('aria-hidden', 'true');
 
-  const body = document.createElement('span');
-  body.className = 'book-body';
+  const dot = document.createElement('span');
+  dot.className = `book-status-dot book-status-${journey.status}`;
+  dot.setAttribute('aria-hidden', 'true');
 
   const title = document.createElement('strong');
   title.className = 'book-title';
   title.textContent = journey.title;
 
-  const meta = document.createElement('span');
-  meta.className = 'book-meta';
-  meta.textContent = `${journey.language} · ${journey.level}`;
-
-  const status = document.createElement('span');
-  status.className = `book-status book-status-${journey.status}`;
-  status.textContent = JOURNEY_STATUS_LABELS[journey.status] ?? journey.status;
-
   const progress = document.createElement('span');
   progress.className = 'book-progress';
+  progress.setAttribute('aria-hidden', 'true');
   const progressFill = document.createElement('span');
   progressFill.className = 'book-progress-fill';
   const percent =
@@ -826,8 +881,15 @@ function buildBookCard(journey) {
           Math.round((journey.completedLessons / journey.totalLessons) * 100),
         )
       : 0;
-  progressFill.style.width = `${percent}%`;
+  progressFill.style.height = `${percent}%`;
   progress.append(progressFill);
+
+  const footer = document.createElement('span');
+  footer.className = 'book-footer';
+
+  const meta = document.createElement('span');
+  meta.className = 'book-meta';
+  meta.textContent = `${journey.language} · ${journey.level}`;
 
   const position = document.createElement('span');
   position.className = 'book-position';
@@ -836,8 +898,8 @@ function buildBookCard(journey) {
     ? `Bài ${current.sequenceNumber}/${journey.plannedLessonCount} · Vòng ${current.cycleNumber}`
     : `${journey.completedLessons}/${journey.totalLessons} bài`;
 
-  body.append(title, meta, status, progress, position);
-  button.append(spine, body);
+  footer.append(meta, position);
+  button.append(spine, dot, title, progress, footer);
   button.addEventListener('click', () => openJourney(journey.id));
   return button;
 }
@@ -847,8 +909,13 @@ function renderHomeShelf() {
   const shelf = elements.homeShelf;
   shelf.replaceChildren();
 
-  for (const journey of filtered) {
-    shelf.append(buildBookCard(journey));
+  for (let start = 0; start < filtered.length; start += BOOKS_PER_ROW) {
+    const row = document.createElement('div');
+    row.className = 'bookshelf-row';
+    filtered
+      .slice(start, start + BOOKS_PER_ROW)
+      .forEach((journey, index) => row.append(buildBookCard(journey, start + index)));
+    shelf.append(row);
   }
 
   elements.homeEmpty.hidden = filtered.length > 0;
@@ -886,6 +953,7 @@ function showHomeOrSetup() {
 async function openJourney(journeyId) {
   hideHighlightPopover();
   elements.error.hidden = true;
+  showBusy('Đang mở hành trình…');
 
   try {
     const response = await fetch(`/api/journeys/${journeyId}/open`, {
@@ -909,6 +977,8 @@ async function openJourney(journeyId) {
   } catch (error) {
     elements.error.textContent = error.message;
     elements.error.hidden = false;
+  } finally {
+    hideBusy();
   }
 }
 
@@ -1119,6 +1189,14 @@ async function loadStats() {
 async function initialize() {
   loadStats();
   await loadLibrary();
+
+  const status = await loadStatus();
+  if (status?.busy) {
+    showBusy(BUSY_MESSAGES[status.requestType] ?? 'Đang xử lý…');
+    busyPollTimer = window.setTimeout(pollUntilIdle, BUSY_POLL_MS);
+    return;
+  }
+
   showHomeOrSetup();
 }
 
@@ -1160,8 +1238,9 @@ elements.newJourneyButton.addEventListener('click', () => {
 
 elements.createJourneyButton.addEventListener('click', async () => {
   elements.createJourneyButton.disabled = true;
-  elements.setupStatus.textContent =
-    'Đang vẽ lộ trình và sinh bài đầu tiên… có thể mất một chút thời gian.';
+  showBusy(
+    'Đang vẽ lộ trình và sinh bài đầu tiên… có thể mất một chút thời gian.',
+  );
 
   try {
     const response = await fetch('/api/journeys', {
@@ -1186,6 +1265,8 @@ elements.createJourneyButton.addEventListener('click', async () => {
   } catch (error) {
     elements.setupStatus.textContent = error.message;
     updateCreateJourneyButton();
+  } finally {
+    hideBusy();
   }
 });
 
@@ -1194,7 +1275,7 @@ elements.completeButton.addEventListener('click', async () => {
 
   const completedJourney = currentLesson.journey;
   elements.completeButton.disabled = true;
-  elements.lessonStatus.textContent = 'Đang khóa bài và chuẩn bị bài tiếp theo…';
+  showBusy('Đang khóa bài và chuẩn bị bài tiếp theo…');
 
   try {
     const response = await fetch(`/api/lessons/${currentLesson.id}/complete`, {
@@ -1224,6 +1305,7 @@ elements.completeButton.addEventListener('click', async () => {
     elements.lessonStatus.textContent = error.message;
   } finally {
     elements.completeButton.disabled = false;
+    hideBusy();
   }
 });
 
@@ -1232,7 +1314,7 @@ elements.regenerateButton.addEventListener('click', async () => {
 
   elements.regenerateButton.disabled = true;
   elements.completeButton.disabled = true;
-  elements.lessonStatus.textContent = 'Đang tạo một phiên bản khác…';
+  showBusy('Đang tạo một phiên bản khác…');
 
   try {
     const response = await fetch(`/api/lessons/${currentLesson.id}/regenerate`, {
@@ -1250,6 +1332,7 @@ elements.regenerateButton.addEventListener('click', async () => {
   } finally {
     elements.regenerateButton.disabled = false;
     elements.completeButton.disabled = false;
+    hideBusy();
   }
 });
 
