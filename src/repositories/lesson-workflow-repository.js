@@ -41,6 +41,21 @@ export class LessonWorkflowRepository {
       }
 
       if (lesson.status === 'completed') {
+        let nextLessonNeedsGeneration = false;
+
+        if (lesson.current_lesson_id !== lesson.id) {
+          const nextLessonResult = await client.query(
+            `SELECT status
+             FROM lessons
+             WHERE id = $1
+             FOR UPDATE`,
+            [lesson.current_lesson_id],
+          );
+          nextLessonNeedsGeneration = ['draft', 'failed'].includes(
+            nextLessonResult.rows[0]?.status,
+          );
+        }
+
         return {
           alreadyCompleted: true,
           journeyCompleted: lesson.journey_status === 'completed',
@@ -48,7 +63,7 @@ export class LessonWorkflowRepository {
             lesson.current_lesson_id === lesson.id
               ? null
               : lesson.current_lesson_id,
-          nextLessonNeedsGeneration: false,
+          nextLessonNeedsGeneration,
         };
       }
 

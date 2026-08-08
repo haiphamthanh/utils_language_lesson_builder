@@ -78,3 +78,41 @@ test('idempotent completion does not generate another lesson', async () => {
   assert.equal(generationCount, 0);
   assert.equal(result.alreadyCompleted, true);
 });
+
+test('idempotent completion retries a failed next-lesson generation', async () => {
+  let generationCount = 0;
+  const workflowRepository = {
+    async completeCurrent() {
+      return {
+        alreadyCompleted: true,
+        journeyCompleted: false,
+        nextLessonId: 'lesson-2',
+        nextLessonNeedsGeneration: true,
+      };
+    },
+  };
+  const generationService = {
+    async generateForUser() {
+      generationCount += 1;
+    },
+  };
+  const currentLessonService = {
+    async getForUser() {
+      return { id: 'lesson-2', status: 'ready' };
+    },
+  };
+  const service = new CompleteLessonService(
+    workflowRepository,
+    generationService,
+    currentLessonService,
+  );
+
+  const result = await service.completeForUser({
+    userId: 'user-1',
+    lessonId: 'lesson-1',
+  });
+
+  assert.equal(generationCount, 1);
+  assert.equal(result.alreadyCompleted, true);
+  assert.equal(result.nextLesson.status, 'ready');
+});
