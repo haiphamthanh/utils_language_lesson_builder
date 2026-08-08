@@ -728,7 +728,7 @@ body[data-theme="dark"] .theme-toggle .icon-sun { display: none; }
   position: relative;
 }
 
-.book {
+.open-book {
   position: relative;
   padding: 16px;
   border-radius: 18px;
@@ -890,32 +890,77 @@ body[data-theme="dark"] .theme-toggle .icon-sun { display: none; }
   top: 0;
   bottom: 0;
   width: 50%;
-  background: var(--surface);
-  box-shadow: 0 10px 30px rgb(0 0 0 / 22%);
+  background:
+    repeating-linear-gradient(0deg, rgb(91 75 53 / 1.2%) 0 1px, transparent 1px 5px),
+    var(--surface);
   pointer-events: none;
   transform-style: preserve-3d;
-  transition: transform 620ms cubic-bezier(0.45, 0.05, 0.25, 1);
+  transition: transform 640ms cubic-bezier(0.4, 0.05, 0.3, 1);
+  will-change: transform;
 }
 
 .book-flip-sheet.is-next {
   right: 0;
   transform-origin: left center;
-  transform: rotateY(0deg);
+  box-shadow: -12px 8px 24px rgb(0 0 0 / 18%), 0 14px 26px rgb(0 0 0 / 24%);
 }
-
-.book-flip-sheet.is-next.is-flipping { transform: rotateY(-180deg); }
 
 .book-flip-sheet.is-prev {
   left: 0;
   transform-origin: right center;
-  transform: rotateY(0deg);
+  box-shadow: 12px 8px 24px rgb(0 0 0 / 18%), 0 14px 26px rgb(0 0 0 / 24%);
 }
 
+.book-flip-sheet.is-next.is-flipping { transform: rotateY(-180deg); }
+
 .book-flip-sheet.is-prev.is-flipping { transform: rotateY(180deg); }
+
+/* fold shadow deepening toward the spine */
+.book-flip-sheet::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  backface-visibility: hidden;
+  opacity: 0.45;
+}
+
+.book-flip-sheet.is-next::before {
+  background: linear-gradient(90deg, rgb(0 0 0 / 32%), transparent 34%);
+}
+
+.book-flip-sheet.is-prev::before {
+  background: linear-gradient(270deg, rgb(0 0 0 / 32%), transparent 34%);
+}
+
+/* stacked-page edge on the free side of the turning page */
+.book-flip-sheet::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 1;
+  width: 14px;
+  pointer-events: none;
+  backface-visibility: hidden;
+  background: linear-gradient(90deg, transparent, rgb(0 0 0 / 18%));
+}
+
+.book-flip-sheet.is-next::after {
+  right: 0;
+  background: linear-gradient(90deg, transparent, rgb(0 0 0 / 18%));
+}
+
+.book-flip-sheet.is-prev::after {
+  left: 0;
+  background: linear-gradient(270deg, transparent, rgb(0 0 0 / 18%));
+}
 
 .book-flip-front {
   position: absolute;
   inset: 0;
+  z-index: 0;
   overflow: hidden;
   pointer-events: none;
   backface-visibility: hidden;
@@ -1527,7 +1572,7 @@ body[data-theme="dark"] .lesson {
   background: transparent;
 }
 
-body[data-theme="dark"] .book {
+body[data-theme="dark"] .open-book {
   background:
     repeating-linear-gradient(0deg, rgb(0 0 0 / 22%) 0 2px, transparent 2px 6px),
     linear-gradient(180deg, #54331c, #3b2412);
@@ -1604,7 +1649,7 @@ body[data-theme="dark"] a:focus-visible {
   .back-button { order: 2; }
   .lesson-nav-history { order: 1; margin-left: auto; }
 
-  .book { padding: 10px; }
+  .open-book { padding: 10px; }
   .book-spread {
     grid-template-columns: 1fr;
     height: auto;
