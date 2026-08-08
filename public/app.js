@@ -18,9 +18,6 @@ const elements = {
   studyDaysCount: document.querySelector('#study-days-count'),
   streakCount: document.querySelector('#streak-count'),
   vocabularyCount: document.querySelector('#vocabulary-count'),
-  previousLessonButton: document.querySelector('#previous-lesson-button'),
-  nextLessonButton: document.querySelector('#next-lesson-button'),
-  viewingStatus: document.querySelector('#viewing-status'),
   journeySetup: document.querySelector('#journey-setup'),
   topicList: document.querySelector('#topic-list'),
   languageList: document.querySelector('#language-list'),
@@ -47,8 +44,8 @@ const elements = {
   homeLanguageFilter: document.querySelector('#home-language-filter'),
   homeShelf: document.querySelector('#home-shelf'),
   homeEmpty: document.querySelector('#home-empty'),
-  backToHomeButton: document.querySelector('#back-to-home-button'),
   backHomeButton: document.querySelector('#back-home-button'),
+  pauseReadingButton: document.querySelector('#pause-reading-button'),
   busyOverlay: document.querySelector('#busy-overlay'),
   busyMessage: document.querySelector('#busy-message'),
   book: document.querySelector('#book'),
@@ -1149,15 +1146,21 @@ async function loadHistory(activeLesson = bookmarkedLesson) {
 
 function updateNavigation(lessonId, isCurrent) {
   const index = lessonTimeline.findIndex((lesson) => lesson.id === lessonId);
-  elements.previousLessonButton.disabled = index <= 0;
-  elements.nextLessonButton.disabled =
-    index < 0 || index >= lessonTimeline.length - 1;
+  const leftPage = elements.book.querySelector('.book-page-left');
+  const rightPage = elements.book.querySelector('.book-page-right');
+  leftPage.classList.toggle('can-flip', index > 0);
+  rightPage.classList.toggle(
+    'can-flip',
+    index >= 0 && index < lessonTimeline.length - 1,
+  );
 }
 
 /* ---------- Book opening & page flipping ---------- */
 
 const BOOK_OPEN_MS = 850;
 const BOOK_FLIP_MS = 620;
+let lastBookTitle = '';
+let isFlipping = false;
 
 function resetBook() {
   elements.bookCover.hidden = true;
@@ -1166,8 +1169,9 @@ function resetBook() {
 }
 
 function openBook(title) {
+  lastBookTitle = title ?? '';
   resetBook();
-  elements.bookCoverTitle.textContent = title ?? '';
+  elements.bookCoverTitle.textContent = lastBookTitle;
   elements.bookCover.hidden = false;
   elements.bookCover.classList.remove('is-open');
   void elements.bookCover.offsetWidth;
@@ -1176,6 +1180,25 @@ function openBook(title) {
   });
   window.setTimeout(() => {
     elements.bookCover.hidden = true;
+  }, BOOK_OPEN_MS);
+}
+
+function closeBook(onDone) {
+  const cover = elements.bookCover;
+  isFlipping = true;
+  cover.style.transition = 'none';
+  cover.classList.add('is-open');
+  void cover.offsetWidth;
+  cover.style.transition = '';
+  cover.hidden = false;
+  requestAnimationFrame(() => {
+    cover.classList.remove('is-open');
+  });
+  window.setTimeout(() => {
+    cover.hidden = true;
+    cover.classList.remove('is-open');
+    isFlipping = false;
+    onDone?.();
   }, BOOK_OPEN_MS);
 }
 
@@ -1196,14 +1219,15 @@ function createFlipSheet(offset) {
 }
 
 async function flipTimelineLesson(offset) {
+  if (isFlipping) return;
+
   const index = lessonTimeline.findIndex(
     (lesson) => lesson.id === currentLesson?.id,
   );
   const target = lessonTimeline[index + offset];
   if (!target) return;
 
-  elements.previousLessonButton.disabled = true;
-  elements.nextLessonButton.disabled = true;
+  isFlipping = true;
   hideHighlightPopover();
 
   let lesson;
@@ -1217,6 +1241,7 @@ async function flipTimelineLesson(offset) {
       lesson = payload.data;
     }
   } catch (error) {
+    isFlipping = false;
     elements.lessonStatus.textContent = error.message;
     updateNavigation(currentLesson?.id, currentLesson?.isCurrent);
     return;
@@ -1234,6 +1259,7 @@ async function flipTimelineLesson(offset) {
   window.setTimeout(() => {
     sheet.remove();
     updateNavigation(lesson.id, lesson.isCurrent);
+    isFlipping = false;
   }, BOOK_FLIP_MS + 80);
 }
 
@@ -1282,21 +1308,35 @@ elements.homeCreateButton.addEventListener('click', () => {
   showJourneySetup();
 });
 
-elements.backToHomeButton.addEventListener('click', () => {
-  goHome();
-});
-
 elements.backHomeButton.addEventListener('click', () => {
   goHome();
 });
 
-elements.previousLessonButton.addEventListener('click', () => {
-  flipTimelineLesson(-1);
+elements.pauseReadingButton.addEventListener('click', () => {
+  closeBook(() => goHome());
 });
 
-elements.nextLessonButton.addEventListener('click', () => {
-  flipTimelineLesson(1);
-});
+function handlePageClick(event, offset) {
+  if (!elements.highlightPopover.hidden) return;
+  if (
+    event.target.closest?.(
+      'button, a, input, textarea, select, summary, mark, [role="button"], [role="tab"], [role="radio"]',
+    )
+  ) {
+    return;
+  }
+  const selection = window.getSelection?.();
+  if (selection && !selection.isCollapsed) return;
+  flipTimelineLesson(offset);
+}
+
+elements.book
+  .querySelector('.book-page-right')
+  .addEventListener('click', (event) => handlePageClick(event, 1));
+
+elements.book
+  .querySelector('.book-page-left')
+  .addEventListener('click', (event) => handlePageClick(event, -1));
 
 elements.newJourneyButton.addEventListener('click', () => {
   showJourneySetup();

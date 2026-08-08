@@ -726,6 +726,8 @@ body[data-theme="dark"] .theme-toggle .icon-sun { display: none; }
 
 .lesson {
   position: relative;
+  width: min(1120px, calc(100vw - 32px));
+  margin-left: calc(50% - min(560px, 50vw - 16px));
 }
 
 .open-book {
@@ -784,6 +786,36 @@ body[data-theme="dark"] .theme-toggle .icon-sun { display: none; }
   scrollbar-width: thin;
 }
 
+.book-page { cursor: default; }
+.book-page.can-flip { cursor: pointer; }
+
+.book-page-left::after,
+.book-page-right::after {
+  content: "";
+  position: absolute;
+  bottom: 16px;
+  z-index: 2;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-weight: 800;
+  box-shadow: 0 3px 8px rgb(0 0 0 / 14%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.book-page-left::after { left: 16px; content: "‹"; }
+.book-page-right::after { right: 16px; content: "›"; }
+.book-page.can-flip::after { opacity: 0.65; }
+.book-page.can-flip:hover::after { opacity: 1; color: var(--accent); }
+
 .book-page-head .eyebrow { margin-top: 0; }
 
 .book-page-head h1 {
@@ -830,51 +862,92 @@ body[data-theme="dark"] .theme-toggle .icon-sun { display: none; }
   z-index: 30;
   display: grid;
   place-items: center;
-  border-radius: 14px 4px 4px 14px;
+  border-radius: 16px 5px 5px 16px;
   background:
-    radial-gradient(ellipse at 30% 18%, rgb(255 255 255 / 12%), transparent 45%),
-    linear-gradient(135deg, #7a2f26, #4a1812);
-  color: #f2e4cf;
+    radial-gradient(ellipse at 50% 0%, rgb(255 255 255 / 9%), transparent 52%),
+    radial-gradient(ellipse at 50% 100%, rgb(0 0 0 / 42%), transparent 58%),
+    linear-gradient(135deg, #5c2c1d 0%, #3b1a10 55%, #2b120a 100%);
+  color: #ecd9a4;
   box-shadow:
-    inset 0 0 0 2px rgb(0 0 0 / 18%),
-    0 24px 50px rgb(0 0 0 / 45%);
+    inset 0 0 0 1px rgb(0 0 0 / 45%),
+    inset 0 0 0 4px rgb(236 217 164 / 14%),
+    0 26px 52px rgb(0 0 0 / 48%);
   transform-origin: left center;
   transform: rotateY(0deg);
   transition: transform 850ms cubic-bezier(0.5, 0.1, 0.2, 1);
   backface-visibility: hidden;
 }
 
+.book-cover::before {
+  content: "";
+  position: absolute;
+  inset: 16px;
+  border: 2px solid rgb(236 217 164 / 52%);
+  border-radius: 12px 3px 3px 12px;
+  box-shadow:
+    inset 0 0 0 1px rgb(0 0 0 / 30%),
+    inset 0 0 0 5px rgb(236 217 164 / 10%);
+  pointer-events: none;
+}
+
+.book-cover::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 6px;
+  width: 30px;
+  pointer-events: none;
+  border-radius: 16px 0 0 5px;
+  background:
+    repeating-linear-gradient(
+      180deg,
+      transparent 0 12%,
+      rgb(0 0 0 / 30%) 12% 15%,
+      transparent 15% 85%,
+      rgb(0 0 0 / 30%) 85% 88%,
+      transparent 88%
+    ),
+    linear-gradient(90deg, rgb(0 0 0 / 32%), rgb(255 255 255 / 7%) 55%, rgb(0 0 0 / 32%));
+}
+
 .book-cover.is-open { transform: rotateY(-168deg); }
 
 .book-cover-inner {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
-  max-width: 320px;
-  padding: 0 30px;
+  gap: 18px;
+  max-width: 300px;
+  padding: 0 34px 0 44px;
   text-align: center;
 }
 
 .book-cover-mark {
-  font-size: 1.6rem;
-  color: rgb(255 255 255 / 70%);
+  font-family: Georgia, serif;
+  font-size: 1.4rem;
+  color: rgb(236 217 164 / 85%);
+  letter-spacing: 0.5em;
+  text-indent: 0.5em;
 }
 
 .book-cover-title {
-  font-family: Georgia, serif;
-  font-size: 1.5rem;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.3rem, 2vw, 1.7rem);
   font-weight: 600;
-  line-height: 1.3;
-  letter-spacing: 0.02em;
+  line-height: 1.35;
+  letter-spacing: 0.04em;
+  color: #f2e3b8;
+  text-shadow: 0 1px 0 rgb(0 0 0 / 45%);
 }
 
 .book-cover-subtitle {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 750;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.26em;
   text-transform: uppercase;
-  opacity: 0.7;
+  opacity: 0.72;
 }
 
 .book-flip {
@@ -993,58 +1066,39 @@ body[data-theme="dark"] .theme-toggle .icon-sun { display: none; }
   line-height: 1.8;
 }
 
-.lesson-navigation {
+.lesson-controls {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin: -16px -16px 24px 0;
+  justify-content: center;
+  margin-top: 26px;
 }
 
-.lesson-nav-history {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.back-button {
+.pause-button {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px 8px 10px;
+  gap: 8px;
+  padding: 11px 22px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  color: var(--accent);
-  background: transparent;
+  color: var(--ink);
+  background: var(--surface);
+  box-shadow: var(--shadow);
   cursor: pointer;
   font: inherit;
-  font-size: 0.84rem;
   font-weight: 750;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition: border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
 }
 
-.back-button:hover { border-color: var(--accent); background: var(--accent-soft); }
-.back-button svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
-
-.icon-button {
-  display: inline-grid;
-  width: 38px;
-  height: 38px;
-  padding: 0;
-  place-items: center;
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  color: var(--accent);
-  background: transparent;
-  cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
+.pause-button:hover { border-color: var(--accent); color: var(--accent); }
+.pause-button:active { transform: translateY(1px); }
+.pause-button svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
 }
-
-.icon-button:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
-.icon-button:disabled { cursor: default; opacity: 0.3; }
-.icon-button svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
-
-.viewing-status { min-width: 88px; color: var(--muted); font-size: 0.76rem; text-align: center; }
 
 .lesson h1,
 .book-page-head h1 {
@@ -1645,9 +1699,8 @@ body[data-theme="dark"] a:focus-visible {
   .bookshelf-row { gap: 9px; }
   .book { width: 56px; }
 
-  .lesson-navigation { flex-wrap: wrap; margin-bottom: 20px; }
-  .back-button { order: 2; }
-  .lesson-nav-history { order: 1; margin-left: auto; }
+  .lesson { margin-left: 0; }
+  .lesson-controls { margin-top: 20px; }
 
   .open-book { padding: 10px; }
   .book-spread {
