@@ -41,17 +41,17 @@ const elements = {
   highlightViewComment: document.querySelector('#highlight-view-comment'),
   highlightEditButton: document.querySelector('#highlight-edit-button'),
   highlightDeleteButton: document.querySelector('#highlight-delete-button'),
-  library: document.querySelector('#library'),
-  librarySearchInput: document.querySelector('#library-search-input'),
-  libraryLanguageFilter: document.querySelector('#library-language-filter'),
-  libraryNewJourneyButton: document.querySelector('#library-new-journey-button'),
-  libraryShelf: document.querySelector('#library-shelf'),
-  libraryEmptyMessage: document.querySelector('#library-empty-message'),
-  librarySelect: document.querySelector('#library-select'),
-  librarySelectCreateButton: document.querySelector('#library-select-create-button'),
+  home: document.querySelector('#home'),
+  homeCreateButton: document.querySelector('#home-create-button'),
+  homeSearchInput: document.querySelector('#home-search-input'),
+  homeLanguageFilter: document.querySelector('#home-language-filter'),
+  homeShelf: document.querySelector('#home-shelf'),
+  homeEmpty: document.querySelector('#home-empty'),
+  backToHomeButton: document.querySelector('#back-to-home-button'),
+  backHomeButton: document.querySelector('#back-home-button'),
 };
 
-const LANGUAGES = ['English', 'Japanese'];
+const LANGUAGES = ['English', 'Japanese', 'Chinese'];
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
 const THEME_STORAGE_KEY = 'writing-journey:theme';
 
@@ -647,8 +647,7 @@ function showLesson(lesson) {
   popoverActiveHighlight = null;
   elements.highlightPopover.hidden = true;
   activeJourneyId = lesson.journey?.id ?? null;
-  markActiveJourney();
-  elements.mastheadEyebrow.textContent = 'Bài học hôm nay';
+  elements.mastheadEyebrow.textContent = 'Hành trình chi tiết';
   elements.journeyTitle.textContent = `${lesson.journey.title} · ${lesson.journey.level}`;
   elements.lessonTitle.textContent = lesson.title;
   elements.lessonPosition.textContent = `Bài ${lesson.sequenceNumber}/${lesson.journey.plannedLessonCount} · Vòng ${lesson.cycleNumber}`;
@@ -658,9 +657,9 @@ function showLesson(lesson) {
 
   elements.loading.hidden = true;
   elements.error.hidden = true;
+  elements.home.hidden = true;
   elements.journeySetup.hidden = true;
   elements.completion.hidden = true;
-  elements.librarySelect.hidden = true;
   elements.lesson.hidden = false;
 
   elements.completeButton.hidden =
@@ -682,14 +681,13 @@ function showJourneyCompleted(journey) {
   bookmarkedLesson = null;
   activeJourneyId = journey?.id ?? null;
   hideHighlightPopover();
-  markActiveJourney();
   elements.mastheadEyebrow.textContent = 'Hành trình hoàn thành';
   elements.completionJourneyTitle.textContent = journey?.title ?? '';
   elements.loading.hidden = true;
   elements.error.hidden = true;
+  elements.home.hidden = true;
   elements.lesson.hidden = true;
   elements.journeySetup.hidden = true;
-  elements.librarySelect.hidden = true;
   elements.completion.hidden = false;
 }
 
@@ -698,13 +696,12 @@ function showJourneySetup() {
   bookmarkedLesson = null;
   activeJourneyId = null;
   hideHighlightPopover();
-  markActiveJourney();
   elements.mastheadEyebrow.textContent = 'Hành trình mới';
   elements.loading.hidden = true;
   elements.error.hidden = true;
+  elements.home.hidden = true;
   elements.lesson.hidden = true;
   elements.completion.hidden = true;
-  elements.librarySelect.hidden = true;
   elements.journeySetup.hidden = false;
   renderSetup();
 }
@@ -716,7 +713,7 @@ async function loadTopics() {
   return payload.data;
 }
 
-/* ---------- Journey library (bookshelf) ---------- */
+/* ---------- Home screen (journey library) ---------- */
 
 const JOURNEY_STATUS_LABELS = {
   active: 'Đang học',
@@ -724,6 +721,16 @@ const JOURNEY_STATUS_LABELS = {
   completed: 'Đã hoàn thành',
   paused: 'Tạm dừng',
 };
+
+function refreshActiveJourney() {
+  const current = journeys.find(
+    (journey) => journey.status === 'active' || journey.status === 'reviewing',
+  );
+  if (current) activeJourneyId = current.id;
+  else if (!journeys.some((journey) => journey.id === activeJourneyId)) {
+    activeJourneyId = null;
+  }
+}
 
 async function loadLibrary() {
   try {
@@ -734,11 +741,11 @@ async function loadLibrary() {
   } catch {
     // The shelf stays usable even when the library cannot load.
   }
-  renderLibrary();
+  renderHome();
 }
 
-function renderLibraryLanguageFilter() {
-  const container = elements.libraryLanguageFilter;
+function renderHomeLanguageFilter() {
+  const container = elements.homeLanguageFilter;
   container.replaceChildren();
 
   const languages = [
@@ -757,7 +764,7 @@ function renderLibraryLanguageFilter() {
     button.addEventListener('click', () => {
       libraryLanguageFilter = language;
       markSelected(container, '.library-filter-chip', language);
-      renderLibraryShelf();
+      renderHomeShelf();
     });
     container.append(button);
   }
@@ -835,54 +842,45 @@ function buildBookCard(journey) {
   return button;
 }
 
-function renderLibraryShelf() {
+function renderHomeShelf() {
   const filtered = getFilteredJourneys();
-  const shelf = elements.libraryShelf;
+  const shelf = elements.homeShelf;
   shelf.replaceChildren();
 
   for (const journey of filtered) {
     shelf.append(buildBookCard(journey));
   }
 
-  elements.libraryEmptyMessage.hidden = filtered.length > 0;
-  elements.libraryEmptyMessage.textContent =
+  elements.homeEmpty.hidden = filtered.length > 0;
+  elements.homeEmpty.textContent =
     journeys.length === 0
       ? 'Chưa có hành trình nào. Hãy bắt đầu một hành trình mới.'
       : 'Không có hành trình nào khớp với bộ lọc.';
 }
 
-function renderLibrary() {
-  renderLibraryLanguageFilter();
-  renderLibraryShelf();
+function renderHome() {
+  refreshActiveJourney();
+  renderHomeLanguageFilter();
+  renderHomeShelf();
 }
 
-function markActiveJourney() {
-  elements.libraryShelf.querySelectorAll('.book').forEach((book) => {
-    book.classList.toggle(
-      'is-open',
-      book.dataset.journeyId === activeJourneyId,
-    );
-  });
-}
-
-function showLibrarySelect() {
+function showHome() {
   currentLesson = null;
   bookmarkedLesson = null;
-  activeJourneyId = null;
   hideHighlightPopover();
-  markActiveJourney();
+  renderHome();
   elements.mastheadEyebrow.textContent = 'Kệ sách hành trình';
   elements.loading.hidden = true;
   elements.error.hidden = true;
   elements.lesson.hidden = true;
   elements.journeySetup.hidden = true;
   elements.completion.hidden = true;
-  elements.librarySelect.hidden = false;
+  elements.home.hidden = false;
 }
 
-function showLibrarySelectOrSetup() {
+function showHomeOrSetup() {
   if (journeys.length === 0) showJourneySetup();
-  else showLibrarySelect();
+  else showHome();
 }
 
 async function openJourney(journeyId) {
@@ -1041,28 +1039,6 @@ async function renderSetup() {
   selectLevel(LEVELS[0]);
 }
 
-async function loadCurrentLesson() {
-  try {
-    const response = await fetch('/api/lessons/current');
-    const payload = await response.json();
-
-    if (response.status === 404) {
-      showLibrarySelectOrSetup();
-      return null;
-    }
-    if (!response.ok) throw new Error(payload.message ?? 'Không thể tải bài học.');
-
-    bookmarkedLesson = payload.data;
-    showLesson(payload.data);
-    return payload.data;
-  } catch (error) {
-    elements.loading.hidden = true;
-    elements.error.textContent = error.message;
-    elements.error.hidden = false;
-    return null;
-  }
-}
-
 async function loadHistory(activeLesson = bookmarkedLesson) {
   try {
     const journeyId = currentLesson?.journey?.id;
@@ -1143,23 +1119,31 @@ async function loadStats() {
 async function initialize() {
   loadStats();
   await loadLibrary();
-  const lesson = await loadCurrentLesson();
-  if (lesson) await loadHistory(lesson);
+  showHomeOrSetup();
 }
 
 initialize();
 
-elements.librarySearchInput.addEventListener('input', (event) => {
+async function goHome() {
+  await loadLibrary();
+  showHome();
+}
+
+elements.homeSearchInput.addEventListener('input', (event) => {
   libraryQuery = event.target.value;
-  renderLibraryShelf();
+  renderHomeShelf();
 });
 
-elements.libraryNewJourneyButton.addEventListener('click', () => {
+elements.homeCreateButton.addEventListener('click', () => {
   showJourneySetup();
 });
 
-elements.librarySelectCreateButton.addEventListener('click', () => {
-  showJourneySetup();
+elements.backToHomeButton.addEventListener('click', () => {
+  goHome();
+});
+
+elements.backHomeButton.addEventListener('click', () => {
+  goHome();
 });
 
 elements.previousLessonButton.addEventListener('click', () => {

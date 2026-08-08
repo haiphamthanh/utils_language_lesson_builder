@@ -49,6 +49,34 @@ const systemTopics = [
     description: 'Describe a project you are working on right now.',
     languageScope: null,
   },
+  {
+    id: '00000000-0000-4000-8000-000000000020',
+    name: 'Software Engineering',
+    slug: 'software-engineering-jp',
+    description: 'Describe everyday software work, features, and team habits.',
+    languageScope: 'Japanese',
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000021',
+    name: 'Artificial Intelligence',
+    slug: 'artificial-intelligence-jp',
+    description: 'Write about AI ideas, tools, and small projects.',
+    languageScope: 'Japanese',
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000030',
+    name: 'Software Engineering',
+    slug: 'software-engineering-zh',
+    description: 'Describe everyday software work, features, and team habits.',
+    languageScope: 'Chinese',
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000031',
+    name: 'Artificial Intelligence',
+    slug: 'artificial-intelligence-zh',
+    description: 'Write about AI ideas, tools, and small projects.',
+    languageScope: 'Chinese',
+  },
 ];
 
 export async function seed(database = pool) {

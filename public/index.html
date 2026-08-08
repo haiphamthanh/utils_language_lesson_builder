@@ -12,7 +12,7 @@
       <header class="masthead">
         <div>
           <a class="brand" href="/">Writing Journey</a>
-          <p id="masthead-eyebrow" class="eyebrow">Bài học hôm nay</p>
+          <p id="masthead-eyebrow" class="eyebrow">Kệ sách hành trình</p>
         </div>
         <button
           id="theme-toggle"
@@ -31,49 +31,59 @@
         </button>
       </header>
 
-      <section id="library" class="library" aria-label="Kệ sách hành trình">
-        <div class="library-toolbar">
-          <label class="library-search" for="library-search-input">
+      <section id="home" class="home" hidden>
+        <div class="home-hero">
+          <p class="eyebrow">Kệ sách hành trình</p>
+          <h1>Chọn một hành trình để tiếp tục luyện viết.</h1>
+          <p class="home-intro">
+            Mỗi quyển sách là một hành trình rèn viết ngoại ngữ. Bấm vào một
+            quyển để mở bài học, hoặc bắt đầu một hành trình mới.
+          </p>
+          <button
+            id="home-create-button"
+            class="primary-button home-create-button"
+            type="button"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+            Tạo hành trình mới
+          </button>
+        </div>
+
+        <div class="home-toolbar">
+          <label class="library-search" for="home-search-input">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="11" cy="11" r="8" />
               <path d="m21 21-4.3-4.3" />
             </svg>
             <input
-              id="library-search-input"
+              id="home-search-input"
               type="search"
               placeholder="Tìm hành trình…"
               autocomplete="off"
             />
           </label>
           <div
-            id="library-language-filter"
+            id="home-language-filter"
             class="library-language-filter"
             role="radiogroup"
             aria-label="Lọc theo ngôn ngữ"
           ></div>
-          <button
-            id="library-new-journey-button"
-            class="primary-button library-new-button"
-            type="button"
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            Hành trình mới
-          </button>
         </div>
-        <div id="library-shelf" class="library-shelf"></div>
-        <p id="library-empty-message" class="library-empty" hidden></p>
+
+        <div id="home-shelf" class="library-shelf"></div>
+        <p id="home-empty" class="library-empty" hidden></p>
+
+        <section class="stats" aria-label="Tiến độ học">
+          <div><strong id="completed-count">—</strong><span>Bài hoàn thành</span></div>
+          <div><strong id="study-days-count">—</strong><span>Ngày học</span></div>
+          <div><strong id="streak-count">—</strong><span>Chuỗi hiện tại</span></div>
+          <div><strong id="vocabulary-count">—</strong><span>Từ/cụm từ đã gặp</span></div>
+        </section>
       </section>
 
-      <section class="stats" aria-label="Tiến độ học">
-        <div><strong id="completed-count">—</strong><span>Bài hoàn thành</span></div>
-        <div><strong id="study-days-count">—</strong><span>Ngày học</span></div>
-        <div><strong id="streak-count">—</strong><span>Chuỗi hiện tại</span></div>
-        <div><strong id="vocabulary-count">—</strong><span>Từ/cụm từ đã gặp</span></div>
-      </section>
-
-      <section id="loading" class="notice">Đang mở đúng bài bạn đang học…</section>
+      <section id="loading" class="notice">Đang mở kệ sách…</section>
       <section id="error" class="notice notice-error" hidden></section>
 
       <section id="journey-setup" class="panel" hidden>
@@ -129,37 +139,52 @@
         </div>
       </section>
 
-      <section id="library-select" class="panel" hidden>
-        <div class="panel-inner library-select-inner">
-          <p class="eyebrow">Chọn hành trình</p>
-          <h1>Mở một hành trình để tiếp tục.</h1>
+      <section id="completion" class="panel" hidden>
+        <div class="panel-inner completion-inner">
+          <div class="completion-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M20 6 9 17l-5-5" />
+            </svg>
+          </div>
+          <p class="eyebrow">Đã hoàn thành</p>
+          <h1>Bạn đã viết xong hành trình này.</h1>
+          <p id="completion-journey-title" class="completion-journey-title"></p>
           <p class="panel-intro">
-            Bấm vào một quyển sách trên kệ để quay lại hành trình của bạn, hoặc
-            bắt đầu một hành trình mới.
+            Tất cả bài học và vòng ôn đã được khóa lại. Hãy tạo một hành trình
+            mới để tiếp tục rèn luyện mỗi ngày.
           </p>
-          <button
-            id="library-select-create-button"
-            class="primary-button"
-            type="button"
-          >
-            Tạo hành trình mới
-          </button>
+          <div class="completion-actions">
+            <button id="back-home-button" class="secondary-button" type="button">
+              Về kệ sách
+            </button>
+            <button id="new-journey-button" class="primary-button" type="button">
+              Tạo hành trình mới
+            </button>
+          </div>
         </div>
       </section>
 
       <article id="lesson" class="lesson" hidden>
-        <nav class="lesson-navigation" aria-label="Điều hướng lịch sử bài học">
-          <button id="previous-lesson-button" class="icon-button" type="button" aria-label="Xem bài đã hoàn thành trước đó" disabled>
+        <nav class="lesson-navigation" aria-label="Điều hướng hành trình">
+          <button id="back-to-home-button" class="back-button" type="button">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="m15 18-6-6 6-6" />
             </svg>
+            Tất cả hành trình
           </button>
-          <span id="viewing-status" class="viewing-status">Bài hiện tại</span>
-          <button id="next-lesson-button" class="icon-button" type="button" aria-label="Xem bài tiếp theo" disabled>
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="m9 18 6-6-6-6" />
-            </svg>
-          </button>
+          <div class="lesson-nav-history">
+            <button id="previous-lesson-button" class="icon-button" type="button" aria-label="Xem bài đã hoàn thành trước đó" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m15 18-6-6 6-6" />
+              </svg>
+            </button>
+            <span id="viewing-status" class="viewing-status">Bài hiện tại</span>
+            <button id="next-lesson-button" class="icon-button" type="button" aria-label="Xem bài tiếp theo" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m9 18 6-6-6-6" />
+              </svg>
+            </button>
+          </div>
         </nav>
 
         <div class="lesson-meta">
