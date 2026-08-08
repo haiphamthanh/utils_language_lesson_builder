@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Một hành trình nhỏ giúp bạn luyện viết ngoại ngữ bằng tay." />
+    <title>Language Lesson Builder</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="masthead">
+        <a class="brand" href="/">Writing Journey</a>
+        <span class="eyebrow">Bài học hôm nay</span>
+      </header>
+
+      <section id="loading" class="notice">Đang mở đúng bài bạn đang học…</section>
+      <section id="error" class="notice notice-error" hidden></section>
+
+      <article id="lesson" class="lesson" hidden>
+        <div class="lesson-meta">
+          <div>
+            <p id="journey-title" class="eyebrow"></p>
+            <h1 id="lesson-title"></h1>
+          </div>
+          <p id="lesson-position" class="position"></p>
+        </div>
+
+        <p id="objective" class="objective"></p>
+        <div id="lesson-content" class="lesson-content"></div>
+
+        <details class="review">
+          <summary>Xem từ vựng và cấu trúc</summary>
+          <div id="review-content" class="review-grid"></div>
+        </details>
+
+        <p class="paper-note">Đọc chậm, chép bài vào vở, rồi quay lại đây khi bạn đã hoàn thành.</p>
+      </article>
+    </main>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
