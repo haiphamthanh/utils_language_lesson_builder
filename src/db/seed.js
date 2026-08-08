@@ -70,9 +70,11 @@ export async function seed(database = pool) {
          'I am a junior software developer. I work with a small product team. Every morning, I read my tasks and ask questions. I write simple code and test it carefully. My teammates help me when I am stuck. I enjoy learning something new every day.',
          'A junior developer introduces their role, team, and daily learning.',
          $3::jsonb,
-         'sample-v1'
+         'sample-v2'
        )
-       ON CONFLICT (id) DO NOTHING`,
+       ON CONFLICT (id) DO UPDATE
+       SET review_content = EXCLUDED.review_content,
+           prompt_version = EXCLUDED.prompt_version`,
       [
         ids.version,
         ids.lesson,
@@ -81,21 +83,50 @@ export async function seed(database = pool) {
             {
               text: 'software developer',
               meaning: 'lập trình viên phần mềm',
-              example: 'I am a junior software developer.',
+              examples: [
+                'I am a junior software developer.',
+                'A software developer writes and tests code.',
+                'Our software developer improved the home page.',
+                'She works as a software developer in a small team.',
+                'The software developer asked users for feedback.',
+              ],
             },
             {
               text: 'task',
               meaning: 'nhiệm vụ',
-              example: 'Every morning, I read my tasks.',
+              examples: [
+                'Every morning, I read my tasks.',
+                'I choose one small task to finish first.',
+                'This task needs a simple code change.',
+                'My teammate explained the task clearly.',
+                'We completed the important task before lunch.',
+              ],
             },
           ],
           phrases: [
-            { text: 'be stuck', meaning: 'gặp khó khăn, bị mắc kẹt' },
+            {
+              text: 'be stuck',
+              meaning: 'gặp khó khăn, bị mắc kẹt',
+              examples: [
+                'I ask for help when I am stuck.',
+                'She was stuck on a difficult bug.',
+                'We check the logs when we are stuck.',
+                'Do not stay stuck for too long.',
+                'My teammate helped me when I got stuck.',
+              ],
+            },
           ],
           grammar: [
             {
               pattern: 'enjoy + V-ing',
-              example: 'I enjoy learning something new every day.',
+              meaning: 'thích làm một hoạt động nào đó',
+              examples: [
+                'I enjoy learning something new every day.',
+                'She enjoys working with a small team.',
+                'We enjoy solving useful problems.',
+                'They enjoy testing new features.',
+                'He enjoys helping other developers.',
+              ],
             },
           ],
         }),

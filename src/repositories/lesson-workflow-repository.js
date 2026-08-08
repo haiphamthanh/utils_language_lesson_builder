@@ -2,10 +2,76 @@ import { randomUUID } from 'node:crypto';
 
 import { inTransaction } from '../db/transaction.js';
 import { AppError } from '../http/errors.js';
+import { buildGenerationContext } from '../services/generation-context.js';
 
 export class LessonWorkflowRepository {
   constructor(database) {
     this.database = database;
+  }
+
+  async #loadGenerationContext(client, { userId, lessonId, lock = false }) {
+    const result = await client.query(
+      `SELECT
+         l.id,
+         l.status,
+         l.is_locked,
+         l.cycle_number,
+         l.sequence_number,
+         l.active_version_id,
+         p.current_lesson_id,
+         j.id AS journey_id,
+         j.language,
+         j.level,
+         j.title AS journey_title,
+         j.planned_lesson_count,
+         t.name AS topic_name,
+         t.description AS topic_description,
+         js.title AS step_title,
+         js.objective,
+         js.continuation_hint,
+         js.is_final_step,
+         lv.version_number,
+         lv.title AS current_title,
+         lv.content AS current_content,
+         lv.summary AS current_summary,
+         lv.review_content AS current_review
+       FROM lessons l
+       JOIN journeys j ON j.id = l.journey_id
+       JOIN topics t ON t.id = j.topic_id
+       JOIN journey_steps js ON js.id = l.journey_step_id
+       JOIN user_journey_progress p
+         ON p.journey_id = j.id AND p.user_id = j.user_id
+       LEFT JOIN lesson_versions lv ON lv.id = l.active_version_id
+       WHERE l.id = $1 AND j.user_id = $2
+       ${lock ? 'FOR UPDATE OF l' : ''}`,
+      [lessonId, userId],
+    );
+    const lesson = result.rows[0];
+
+    if (!lesson) return null;
+
+    const previousResult = await client.query(
+      `SELECT
+         prior.id,
+         prior.sequence_number,
+         version.title,
+         version.content,
+         version.summary,
+         version.review_content
+       FROM lessons prior
+       JOIN lesson_versions version ON version.id = prior.active_version_id
+       WHERE prior.journey_id = $1
+         AND prior.cycle_number = 1
+         AND prior.status = 'completed'
+         AND prior.sequence_number < $2
+       ORDER BY prior.sequence_number`,
+      [lesson.journey_id, lesson.sequence_number],
+    );
+
+    return {
+      lesson,
+      context: buildGenerationContext(lesson, previousResult.rows),
+    };
   }
 
   async completeCurrent({ userId, lessonId, completedAt = new Date() }) {
@@ -232,40 +298,34 @@ export class LessonWorkflowRepository {
   }
 
   async claimForGeneration({ userId, lessonId }) {
-    const result = await this.database.query(
-      `UPDATE lessons l
-       SET status = 'generating', updated_at = now()
-       FROM journeys j,
-            journey_steps js,
-            user_journey_progress p
-       WHERE l.id = $1
-         AND l.journey_id = j.id
-         AND l.journey_step_id = js.id
-         AND p.journey_id = j.id
-         AND p.user_id = j.user_id
-         AND p.current_lesson_id = l.id
-         AND j.user_id = $2
-         AND l.status IN ('draft', 'failed')
-       RETURNING
-         l.id,
-         l.sequence_number,
-         j.language,
-         j.level,
-         j.title AS journey_title,
-         js.title AS step_title,
-         js.objective`,
-      [lessonId, userId],
-    );
+    return inTransaction(this.database, async (client) => {
+      const loaded = await this.#loadGenerationContext(client, {
+        userId,
+        lessonId,
+        lock: true,
+      });
 
-    if (!result.rows[0]) {
-      throw new AppError(
-        409,
-        'LESSON_NOT_GENERATABLE',
-        'The lesson cannot be generated in its current state.',
+      if (
+        !loaded ||
+        loaded.lesson.current_lesson_id !== lessonId ||
+        !['draft', 'failed'].includes(loaded.lesson.status)
+      ) {
+        throw new AppError(
+          409,
+          'LESSON_NOT_GENERATABLE',
+          'The lesson cannot be generated in its current state.',
+        );
+      }
+
+      await client.query(
+        `UPDATE lessons
+         SET status = 'generating', updated_at = now()
+         WHERE id = $1`,
+        [lessonId],
       );
-    }
 
-    return result.rows[0];
+      return { ...loaded.context, requestType: 'next_lesson' };
+    });
   }
 
   async finishGeneration(lessonId, generatedLesson) {
@@ -335,33 +395,12 @@ export class LessonWorkflowRepository {
 
   async claimForRegeneration({ userId, lessonId }) {
     return inTransaction(this.database, async (client) => {
-      const result = await client.query(
-        `SELECT
-           l.id,
-           l.status,
-           l.is_locked,
-           l.cycle_number,
-           l.sequence_number,
-           l.active_version_id,
-           p.current_lesson_id,
-           j.id AS journey_id,
-           j.language,
-           j.level,
-           j.title AS journey_title,
-           js.title AS step_title,
-           js.objective,
-           lv.version_number
-         FROM lessons l
-         JOIN journeys j ON j.id = l.journey_id
-         JOIN journey_steps js ON js.id = l.journey_step_id
-         JOIN user_journey_progress p
-           ON p.journey_id = j.id AND p.user_id = j.user_id
-         JOIN lesson_versions lv ON lv.id = l.active_version_id
-         WHERE l.id = $1 AND j.user_id = $2
-         FOR UPDATE OF l`,
-        [lessonId, userId],
-      );
-      const lesson = result.rows[0];
+      const loaded = await this.#loadGenerationContext(client, {
+        userId,
+        lessonId,
+        lock: true,
+      });
+      const lesson = loaded?.lesson;
 
       if (!lesson) {
         throw new AppError(404, 'LESSON_NOT_FOUND', 'The lesson was not found.');
@@ -397,9 +436,9 @@ export class LessonWorkflowRepository {
 
       const requestId = randomUUID();
       const context = {
-        ...lesson,
-        request_type: 'regenerate',
-        next_version_number: lesson.version_number + 1,
+        ...loaded.context,
+        requestType: 'regenerate',
+        nextVersionNumber: lesson.version_number + 1,
       };
 
       await client.query(
@@ -418,15 +457,7 @@ export class LessonWorkflowRepository {
           userId,
           lesson.journey_id,
           lesson.id,
-          JSON.stringify({
-            language: lesson.language,
-            level: lesson.level,
-            journeyTitle: lesson.journey_title,
-            stepTitle: lesson.step_title,
-            objective: lesson.objective,
-            sequenceNumber: lesson.sequence_number,
-            previousVersionNumber: lesson.version_number,
-          }),
+          JSON.stringify(context),
         ],
       );
 

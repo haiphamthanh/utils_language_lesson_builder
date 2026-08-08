@@ -1,3 +1,5 @@
+import { validateGeneratedLesson } from '../domain/generated-lesson.js';
+
 export class RegenerateLessonService {
   constructor(workflowRepository, generator, currentLessonService) {
     this.workflowRepository = workflowRepository;
@@ -10,7 +12,9 @@ export class RegenerateLessonService {
       await this.workflowRepository.claimForRegeneration({ userId, lessonId });
 
     try {
-      const generatedLesson = await this.generator.generate(context);
+      const generatedLesson = validateGeneratedLesson(
+        await this.generator.generate(context),
+      );
       await this.workflowRepository.finishRegeneration({
         lessonId,
         requestId,

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { RegenerateLessonService } from '../src/services/regenerate-lesson-service.js';
+import { generatedLessonFixture } from './fixtures/generated-lesson.js';
 
 test('regenerate preserves the workflow order and returns the new active version', async () => {
   const calls = [];
@@ -23,7 +24,7 @@ test('regenerate preserves the workflow order and returns the new active version
   const generator = {
     async generate() {
       calls.push('generate');
-      return { title: 'New version' };
+      return generatedLessonFixture({ title: 'New version' });
     },
   };
   const currentLessonService = {

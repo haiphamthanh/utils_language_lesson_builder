@@ -22,16 +22,22 @@ let currentLesson = null;
 function reviewItems(review) {
   return [
     ...(review.vocabulary ?? []).map((item) => ({
-      title: item.text,
-      detail: `${item.meaning} · ${item.example}`,
-    })),
-    ...(review.phrases ?? []).map((item) => ({
+      kind: 'Từ vựng',
       title: item.text,
       detail: item.meaning,
+      examples: item.examples ?? [item.example].filter(Boolean),
+    })),
+    ...(review.phrases ?? []).map((item) => ({
+      kind: 'Cụm từ',
+      title: item.text,
+      detail: item.meaning,
+      examples: item.examples ?? [item.example].filter(Boolean),
     })),
     ...(review.grammar ?? []).map((item) => ({
+      kind: 'Cấu trúc',
       title: item.pattern,
-      detail: item.example,
+      detail: item.meaning ?? '',
+      examples: item.examples ?? [item.example].filter(Boolean),
     })),
   ];
 }
@@ -48,11 +54,19 @@ function showLesson(lesson) {
       const container = document.createElement('div');
       container.className = 'review-item';
 
+      const kind = document.createElement('small');
+      kind.textContent = item.kind;
       const title = document.createElement('strong');
       title.textContent = item.title;
       const detail = document.createElement('span');
       detail.textContent = item.detail;
-      container.append(title, detail);
+      const examples = document.createElement('ol');
+      for (const example of item.examples) {
+        const listItem = document.createElement('li');
+        listItem.textContent = example;
+        examples.append(listItem);
+      }
+      container.append(kind, title, detail, examples);
       return container;
     }),
   );

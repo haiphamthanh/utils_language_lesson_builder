@@ -137,6 +137,22 @@ h1 {
 
 .review-item strong { display: block; }
 .review-item span { color: var(--muted); }
+.review-item small {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.review-item ol {
+  margin: 12px 0 0;
+  padding-left: 22px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+.review-item li + li { margin-top: 5px; }
 
 .paper-note {
   margin: 30px 0 0;
