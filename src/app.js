@@ -3,16 +3,33 @@ import express from 'express';
 import { config } from './config/env.js';
 import { errorHandler, notFoundHandler } from './http/error-handler.js';
 import { pool } from './db/pool.js';
+import { SampleLessonGenerator } from './integrations/sample-lesson-generator.js';
 import { LessonRepository } from './repositories/lesson-repository.js';
+import { LessonWorkflowRepository } from './repositories/lesson-workflow-repository.js';
+import { CompleteLessonService } from './services/complete-lesson-service.js';
 import { CurrentLessonService } from './services/current-lesson-service.js';
+import { LessonGenerationService } from './services/lesson-generation-service.js';
 
 export function createApp({
   database = pool,
   currentLessonService = new CurrentLessonService(
     new LessonRepository(database),
   ),
+  completeLessonService,
 } = {}) {
   const app = express();
+  const workflowRepository = new LessonWorkflowRepository(database);
+  const generationService = new LessonGenerationService(
+    workflowRepository,
+    new SampleLessonGenerator(),
+  );
+  const resolvedCompleteLessonService =
+    completeLessonService ??
+    new CompleteLessonService(
+      workflowRepository,
+      generationService,
+      currentLessonService,
+    );
 
   app.disable('x-powered-by');
   app.use(express.json({ limit: '32kb' }));
@@ -30,6 +47,18 @@ export function createApp({
     try {
       const lesson = await currentLessonService.getForUser(config.demoUserId);
       response.json({ data: lesson });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/api/lessons/:lessonId/complete', async (request, response, next) => {
+    try {
+      const result = await resolvedCompleteLessonService.completeForUser({
+        userId: config.demoUserId,
+        lessonId: request.params.lessonId,
+      });
+      response.json({ data: result });
     } catch (error) {
       next(error);
     }

@@ -25,11 +25,19 @@ npm run db:migrate
 npm run db:seed
 ```
 
+## Luồng hiện tại
+
+1. Web đọc bookmark và mở thẳng bài hiện tại.
+2. Người học đọc rồi chép bài bằng tay trên giấy.
+3. Nút **Đã chép xong** khóa vĩnh viễn bài hiện tại.
+4. Cùng transaction đó ghi ngày học và chuyển bookmark.
+5. Example generator chuẩn bị bài tiếp theo; hết vòng một thì dùng lại nội dung đã khóa cho vòng ôn.
+
 ## Ranh giới MVP hiện tại
 
 - Một user demo, chưa có authentication.
-- Nội dung mẫu được seed sẵn; chưa gọi dịch vụ AI bên ngoài.
+- Nội dung dùng example generator xác định trước; chưa gọi dịch vụ AI bên ngoài.
 - Không có editor: người học viết trên giấy.
 - Core dữ liệu gồm journey, lesson/version, bookmark và study day.
 
-Các ranh giới này giữ lát đầu tiên nhỏ và chạy được trước khi bổ sung nghiệp vụ hoàn thành bài, regenerate và thống kê.
+Các ranh giới này giữ hệ thống nhỏ trước khi bổ sung regenerate và thống kê.

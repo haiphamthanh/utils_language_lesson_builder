@@ -8,7 +8,11 @@ const elements = {
   objective: document.querySelector('#objective'),
   lessonContent: document.querySelector('#lesson-content'),
   reviewContent: document.querySelector('#review-content'),
+  lessonStatus: document.querySelector('#lesson-status'),
+  completeButton: document.querySelector('#complete-button'),
 };
+
+let currentLesson = null;
 
 function reviewItems(review) {
   return [
@@ -28,6 +32,7 @@ function reviewItems(review) {
 }
 
 function showLesson(lesson) {
+  currentLesson = lesson;
   elements.journeyTitle.textContent = `${lesson.journey.title} · ${lesson.journey.level}`;
   elements.lessonTitle.textContent = lesson.title;
   elements.lessonPosition.textContent = `Bài ${lesson.sequenceNumber}/${lesson.journey.plannedLessonCount} · Vòng ${lesson.cycleNumber}`;
@@ -49,6 +54,10 @@ function showLesson(lesson) {
 
   elements.loading.hidden = true;
   elements.lesson.hidden = false;
+  elements.completeButton.hidden = lesson.status === 'completed';
+  elements.lessonStatus.textContent = lesson.isLocked
+    ? 'Bài đã hoàn thành và được khóa.'
+    : '';
 }
 
 async function loadCurrentLesson() {
@@ -66,3 +75,34 @@ async function loadCurrentLesson() {
 }
 
 loadCurrentLesson();
+
+elements.completeButton.addEventListener('click', async () => {
+  if (!currentLesson) return;
+
+  elements.completeButton.disabled = true;
+  elements.lessonStatus.textContent = 'Đang khóa bài và chuẩn bị bài tiếp theo…';
+
+  try {
+    const response = await fetch(`/api/lessons/${currentLesson.id}/complete`, {
+      method: 'POST',
+    });
+    const payload = await response.json();
+
+    if (!response.ok) throw new Error(payload.message ?? 'Không thể hoàn thành bài.');
+
+    if (payload.data.journeyCompleted) {
+      elements.lessonStatus.textContent = 'Bạn đã hoàn thành hành trình này.';
+      elements.completeButton.hidden = true;
+      return;
+    }
+
+    showLesson(payload.data.nextLesson);
+    elements.lessonStatus.textContent = payload.data.alreadyCompleted
+      ? 'Bài này đã được ghi nhận trước đó.'
+      : 'Đã khóa bài trước. Đây là bài tiếp theo.';
+  } catch (error) {
+    elements.lessonStatus.textContent = error.message;
+  } finally {
+    elements.completeButton.disabled = false;
+  }
+});

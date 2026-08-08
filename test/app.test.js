@@ -43,3 +43,39 @@ test('GET /api/lessons/current returns the restored bookmark', async (context) =
     data: { id: 'lesson-1', title: 'My Job' },
   });
 });
+
+test('POST /api/lessons/:id/complete advances the lesson', async (context) => {
+  const completeLessonService = {
+    async completeForUser({ lessonId }) {
+      return {
+        alreadyCompleted: false,
+        journeyCompleted: false,
+        nextLesson: { id: `${lessonId}-next`, title: 'My Daily Tasks' },
+      };
+    },
+  };
+  const database = { query: async () => ({ rows: [] }) };
+  const currentLessonService = { getForUser: async () => null };
+  const app = createApp({
+    database,
+    currentLessonService,
+    completeLessonService,
+  });
+  const server = await listen(app);
+  context.after(() => server.close());
+
+  const address = server.address();
+  const response = await fetch(
+    `http://127.0.0.1:${address.port}/api/lessons/lesson-1/complete`,
+    { method: 'POST' },
+  );
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), {
+    data: {
+      alreadyCompleted: false,
+      journeyCompleted: false,
+      nextLesson: { id: 'lesson-1-next', title: 'My Daily Tasks' },
+    },
+  });
+});
