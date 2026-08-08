@@ -1,18 +1,19 @@
 :root {
   color-scheme: light;
-  --ink: #1f2421;
-  --muted: #667066;
-  --paper: #f5f2ea;
-  --surface: #fffdf8;
-  --surface-2: #fbf8f0;
-  --line: #ddd6c6;
+  --ink: #2c2823;
+  --muted: #7a7062;
+  --paper: #f2ecdd;
+  --surface: #fffdf7;
+  --surface-2: #f8f2e6;
+  --line: #e2d9c8;
+  --line-soft: rgb(155 128 95 / 18%);
   --accent: #23614d;
   --accent-strong: #194b3b;
-  --accent-soft: rgb(35 97 77 / 8%);
+  --accent-soft: rgb(35 97 77 / 9%);
   --danger: #8d2d25;
-  --radius-lg: 22px;
+  --radius-lg: 24px;
   --radius-md: 14px;
-  --shadow: 0 24px 70px rgb(65 56 38 / 9%);
+  --shadow: 0 24px 60px rgb(74 63 42 / 12%);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
@@ -25,9 +26,20 @@ body {
   min-height: 100vh;
   color: var(--ink);
   background:
-    radial-gradient(circle at top right, rgb(35 97 77 / 9%), transparent 28rem),
-    radial-gradient(circle at bottom left, rgb(203 164 92 / 8%), transparent 24rem),
-    var(--paper);
+    radial-gradient(
+      circle at 22% 12%,
+      rgb(210 193 165 / 16%) 0 0.5px,
+      transparent 0.8px
+    )
+    0 0 / 6px 8px,
+    radial-gradient(
+      circle at 68% 42%,
+      rgb(184 165 137 / 10%) 0 0.6px,
+      transparent 1px
+    )
+    2px 3px / 10px 12px,
+    radial-gradient(ellipse at 50% -6%, rgb(218 202 172 / 22%), transparent 46%),
+    linear-gradient(180deg, #f2ecdd 0%, #f7f1e4 30%, #fcfaf4 100%);
 }
 
 .shell {
@@ -74,9 +86,9 @@ body {
   grid-template-columns: repeat(4, 1fr);
   margin-bottom: 40px;
   overflow: hidden;
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-soft);
   border-radius: var(--radius-md);
-  background: rgb(255 253 248 / 72%);
+  background: rgb(255 253 247 / 72%);
   backdrop-filter: blur(6px);
 }
 
@@ -273,14 +285,56 @@ body {
 
 .completion-action { margin-top: 30px; }
 
-/* ---------- Lesson ---------- */
+/* ---------- Lesson (content card) ---------- */
 
 .lesson {
+  position: relative;
+  overflow: clip;
   padding: clamp(24px, 5vw, 52px);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow);
+  border: 1px solid var(--line-soft);
+  border-radius: 26px 18px 24px 20px;
+  background:
+    radial-gradient(
+      circle at 14% 6%,
+      rgb(216 195 162 / 10%),
+      transparent 30%
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgb(91 75 53 / 1.6%) 0 1px,
+      transparent 1px 5px
+    ),
+    var(--surface);
+  box-shadow:
+    var(--shadow),
+    inset 0 0 70px rgb(205 185 150 / 7%);
+}
+
+.lesson::before {
+  content: "";
+  position: absolute;
+  top: -22px;
+  left: -24px;
+  width: 150px;
+  height: 130px;
+  pointer-events: none;
+  opacity: 0.5;
+  background:
+    radial-gradient(ellipse at 36% 34%, rgb(165 190 149 / 55%) 0 15%, transparent 17%),
+    radial-gradient(ellipse at 66% 30%, rgb(214 169 164 / 45%) 0 13%, transparent 15%),
+    radial-gradient(ellipse at 50% 70%, rgb(188 207 177 / 42%) 0 20%, transparent 22%);
+  transform: rotate(-18deg);
+}
+
+.lesson::after {
+  content: "✦";
+  position: absolute;
+  right: 30px;
+  bottom: 24px;
+  pointer-events: none;
+  color: rgb(183 134 83 / 30%);
+  font-family: Georgia, serif;
+  font-size: 1.1rem;
 }
 
 .lesson-navigation {
@@ -332,8 +386,10 @@ body {
 
 .objective {
   margin: 26px 0;
-  padding-left: 14px;
+  padding: 12px 16px 12px 14px;
   border-left: 3px solid var(--accent);
+  border-radius: 0 12px 12px 0;
+  background: rgb(35 97 77 / 5%);
   font-size: 0.98rem;
   line-height: 1.6;
 }
@@ -349,20 +405,40 @@ body {
 
 .review {
   margin-top: 36px;
-  border-top: 1px solid var(--line);
+  overflow: hidden;
+  border: 1px solid var(--line-soft);
+  border-radius: 14px;
+  background: rgb(248 242 230 / 55%);
 }
 
 .review summary {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 20px 0 2px;
+  gap: 12px;
+  padding: 16px 18px;
   cursor: pointer;
   list-style: none;
   user-select: none;
+  border-bottom: 1px solid transparent;
+  transition: background 0.15s ease;
 }
 
+.review summary:hover { background: rgb(255 253 247 / 70%); }
+
+.review[open] summary { border-bottom-color: var(--line-soft); }
+
 .review summary::-webkit-details-marker { display: none; }
+
+.review-summary-icon {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: var(--accent);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
 
 .review-summary-title {
   color: var(--accent);
@@ -392,8 +468,8 @@ body {
 .review[open] .review-summary-chevron { transform: rotate(180deg); }
 
 .review .review-layout {
-  margin-top: 16px;
-  padding-bottom: 4px;
+  margin-top: 0;
+  padding: 16px 18px 20px;
 }
 
 .review-layout {
@@ -458,7 +534,7 @@ body {
   padding: 3px 8px;
   border-radius: 999px;
   color: var(--muted);
-  background: rgb(102 112 102 / 10%);
+  background: rgb(155 128 95 / 12%);
   font-size: 0.66rem;
   font-weight: 700;
   text-align: center;
@@ -559,8 +635,32 @@ body {
 /* ---------- Lesson actions ---------- */
 
 .paper-note {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   margin: 30px 0 0;
+  padding: 14px 18px;
+  border: 1px solid var(--line-soft);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 12px 12px 0;
+  background: linear-gradient(180deg, #fdfaf2, #f7f1e4);
+  color: var(--muted);
   font-size: 0.9rem;
+}
+
+.paper-note-icon {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: var(--accent);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.paper-note p {
+  margin: 0;
   line-height: 1.55;
 }
 
