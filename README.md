@@ -14,7 +14,7 @@ npm run db:setup
 npm start
 ```
 
-Mở <http://localhost:3000>. Seed tạo sẵn một user demo và bài đầu tiên của hành trình “Software Engineering English”. Migration và seed có thể chạy lại an toàn.
+Mở <http://localhost:3000>. Seed tạo sẵn một user demo và bài đầu tiên của hành trình “Software Engineering English”. Migration và seed có thể chạy lại an toàn. Nếu máy đã có PostgreSQL local, có thể bỏ Docker và đặt `DATABASE_URL` tới database đó.
 
 ## Lệnh chính
 
@@ -24,6 +24,16 @@ npm test          # kiểm thử tự động
 npm run db:migrate
 npm run db:seed
 ```
+
+## Settings
+
+| Biến | Mặc định | Vai trò |
+| --- | --- | --- |
+| `PORT` | `3000` | Cổng HTTP |
+| `DATABASE_URL` | PostgreSQL trong `compose.yaml` | Nguồn dữ liệu duy nhất |
+| `APP_TIME_ZONE` | `Asia/Ho_Chi_Minh` | Timezone của user demo để tính ngày học/streak |
+| `DEMO_USER_ID` | UUID cố định | Danh tính tạm trước khi có authentication |
+| `GENERATION_PROVIDER` | `sample` | Provider sinh bài; MVP mới hỗ trợ `sample` |
 
 ## Luồng hiện tại
 
@@ -42,4 +52,6 @@ npm run db:seed
 - Không có editor: người học viết trên giấy.
 - Core dữ liệu gồm journey, lesson/version, bookmark và study day.
 
-Các ranh giới này giữ hệ thống nhỏ trước khi bổ sung regenerate và thống kê.
+Các ranh giới này giữ hệ thống nhỏ trước khi bổ sung tài khoản thật, màn hình tạo journey và provider AI production.
+
+Chi tiết các invariant và hướng mở rộng nằm tại [docs/architecture.md](docs/architecture.md).

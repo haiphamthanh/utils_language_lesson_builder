@@ -1,7 +1,7 @@
 import { pool } from './pool.js';
+import { config } from '../config/env.js';
 
 const ids = {
-  user: '00000000-0000-4000-8000-000000000001',
   topic: '00000000-0000-4000-8000-000000000010',
   journey: '00000000-0000-4000-8000-000000000020',
   steps: [
@@ -21,9 +21,9 @@ export async function seed(database = pool) {
     await client.query('BEGIN');
     await client.query(
       `INSERT INTO users (id, email, display_name, timezone)
-       VALUES ($1, 'demo@example.com', 'Demo Learner', 'Asia/Ho_Chi_Minh')
+       VALUES ($1, 'demo@example.com', 'Demo Learner', $2)
        ON CONFLICT (id) DO NOTHING`,
-      [ids.user],
+      [config.demoUserId, config.timeZone],
     );
     await client.query(
       `INSERT INTO topics (id, name, slug, description, language_scope, is_system)
@@ -37,7 +37,7 @@ export async function seed(database = pool) {
          (id, user_id, topic_id, language, level, title, status, max_cycles, planned_lesson_count)
        VALUES ($1, $2, $3, 'English', 'Beginner', 'Software Engineering English', 'active', 2, 3)
        ON CONFLICT (id) DO NOTHING`,
-      [ids.journey, ids.user, ids.topic],
+      [ids.journey, config.demoUserId, ids.topic],
     );
 
     const steps = [
@@ -112,7 +112,7 @@ export async function seed(database = pool) {
          (id, user_id, journey_id, current_lesson_id, current_step_number, current_cycle)
        VALUES ($1, $2, $3, $4, 1, 1)
        ON CONFLICT (id) DO NOTHING`,
-      [ids.progress, ids.user, ids.journey, ids.lesson],
+      [ids.progress, config.demoUserId, ids.journey, ids.lesson],
     );
     await client.query('COMMIT');
     console.log('Seeded the example writing journey.');
