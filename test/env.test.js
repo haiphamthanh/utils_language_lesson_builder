@@ -6,7 +6,7 @@ import { loadConfig } from '../src/config/env.js';
 test('loadConfig provides small local defaults', () => {
   const result = loadConfig({});
 
-  assert.equal(result.port, 3000);
+  assert.equal(result.port, 9999);
   assert.equal(result.timeZone, 'Asia/Ho_Chi_Minh');
   assert.equal(result.generationProvider, 'sample');
   assert.match(result.databaseUrl, /^postgres:/);

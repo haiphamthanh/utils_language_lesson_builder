@@ -7,6 +7,14 @@ Một walking skeleton cho hành trình luyện viết ngoại ngữ: hệ thố
 Yêu cầu: Node.js 22+ và Docker.
 
 ```bash
+./start.sh
+```
+
+`start.sh` là cách nhanh nhất: tự cài dependencies khi cần, khởi động PostgreSQL qua Docker (hoặc dùng PostgreSQL local), chạy migration/seed và mở server.
+
+Hoặc chạy thủ công:
+
+```bash
 cp .env.example .env
 docker compose up -d
 npm install
@@ -14,7 +22,7 @@ npm run db:setup
 npm start
 ```
 
-Mở <http://localhost:3000>. Seed tạo sẵn một user demo và bài đầu tiên của hành trình “Software Engineering English”. Migration và seed có thể chạy lại an toàn. Nếu máy đã có PostgreSQL local, có thể bỏ Docker và đặt `DATABASE_URL` tới database đó.
+Mở <http://localhost:9999>. Seed tạo sẵn một user demo và bài đầu tiên của hành trình “Software Engineering English”. Migration và seed có thể chạy lại an toàn. Nếu máy đã có PostgreSQL local, có thể bỏ Docker và đặt `DATABASE_URL` tới database đó.
 
 ## Lệnh chính
 
@@ -29,7 +37,7 @@ npm run db:seed
 
 | Biến | Mặc định | Vai trò |
 | --- | --- | --- |
-| `PORT` | `3000` | Cổng HTTP |
+| `PORT` | `9999` | Cổng HTTP |
 | `DATABASE_URL` | PostgreSQL trong `compose.yaml` | Nguồn dữ liệu duy nhất |
 | `APP_TIME_ZONE` | `Asia/Ho_Chi_Minh` | Timezone của user demo để tính ngày học/streak |
 | `DEMO_USER_ID` | UUID cố định | Danh tính tạm trước khi có authentication |
