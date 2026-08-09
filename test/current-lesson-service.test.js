@@ -18,6 +18,7 @@ function lessonRow(overrides = {}) {
     version_number: 1,
     journey_id: 'journey-1',
     journey_title: 'Software English',
+    journey_description: 'Một hành trình viết về công việc phần mềm.',
     language: 'English',
     level: 'Beginner',
     planned_lesson_count: 3,
@@ -40,6 +41,7 @@ test('historical lesson view is marked as non-current and locked', async () => {
 
   assert.equal(lesson.isCurrent, false);
   assert.equal(lesson.isLocked, true);
+  assert.equal(lesson.journey.description, 'Một hành trình viết về công việc phần mềm.');
 });
 
 test('history exposes navigation metadata without lesson content', async () => {

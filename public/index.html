@@ -184,6 +184,31 @@
 
     <div id="book-stage" class="book-stage-overlay" hidden aria-live="polite">
       <div class="ambient-light" aria-hidden="true"></div>
+      <header class="stage-topbar">
+        <div class="stage-brand" aria-label="Writing Journey">
+          <span class="stage-brand-mark">W</span>
+          <span>
+            <strong>Writing Journey</strong>
+            <small>Thư viện hành trình</small>
+          </span>
+        </div>
+        <p id="stage-collection" class="stage-collection"><span></span> Hành trình luyện viết</p>
+        <button
+          id="stage-theme-toggle"
+          class="stage-theme-toggle"
+          type="button"
+          aria-label="Chuyển giao diện sáng/tối"
+          title="Chuyển giao diện sáng/tối"
+        >
+          <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="5" />
+            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+          </svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
+        </button>
+      </header>
       <div class="stage-hero">
         <div class="intro-copy">
           <p class="eyebrow"><span></span> Bản thảo luyện viết</p>
@@ -307,6 +332,24 @@
           </div>
         </div>
       </div>
+
+      <div class="stage-shelf" aria-hidden="true">
+        <div class="stage-shelf-books">
+          <span class="stage-shelf-book shelf-book-one"></span>
+          <span class="stage-shelf-book shelf-book-two"></span>
+          <span class="stage-shelf-gap"></span>
+          <span class="stage-shelf-book shelf-book-three"></span>
+          <span class="stage-shelf-book shelf-book-four"></span>
+          <span class="stage-shelf-book shelf-book-five"></span>
+        </div>
+        <div class="stage-shelf-edge"></div>
+      </div>
+
+      <footer class="stage-footer" aria-hidden="true">
+        <span>Kệ sách hành trình</span>
+        <i></i>
+        <span>MMXXVI</span>
+      </footer>
     </div>
 
     <script type="module" src="/app.js"></script>

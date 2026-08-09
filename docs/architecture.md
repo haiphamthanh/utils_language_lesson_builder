@@ -47,7 +47,7 @@ Vanilla HTML/CSS/JS chỉ hiển thị trạng thái và phát action. Toàn b�
 
 ## Dữ liệu core
 
-- `users`, `topics`, `journeys`, `journey_steps`: người học và outline.
+- `users`, `topics`, `journeys`, `journey_steps`: người học và outline; `journeys.description` lưu lời dẫn ngắn do AI tạo để hiển thị cùng tiêu đề.
 - `lessons`: danh tính/trạng thái logic của một lượt học.
 - `lesson_versions`: nội dung bất biến theo version; review tạm lưu JSONB.
 - `lesson_highlights`: đánh dấu + ghi chú theo lesson, định vị bằng `paragraph_index`/`start_offset`/`end_offset` (offset vào dòng của nội dung active version). Khi render, highlight chỉ hiện nếu đoạn văn bản hiện tại vẫn khớp `text` đã lưu, nên nội dung bị regenerate thì highlight cũ tự ẩn.

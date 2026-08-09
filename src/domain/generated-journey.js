@@ -1,9 +1,10 @@
 export const generatedJourneySchema = {
   type: 'object',
   additionalProperties: false,
-  required: ['title', 'steps'],
+  required: ['title', 'description', 'steps'],
   properties: {
     title: { type: 'string', minLength: 1 },
+    description: { type: 'string', minLength: 1 },
     steps: {
       type: 'array',
       minItems: 3,
@@ -34,6 +35,7 @@ export function validateGeneratedJourney(journey) {
   }
 
   requireText(journey.title, 'title');
+  requireText(journey.description, 'description');
 
   const steps = journey.steps;
   if (!Array.isArray(steps) || steps.length < 3 || steps.length > 8) {

@@ -100,8 +100,10 @@ export async function seed(database = pool) {
     }
     await client.query(
       `INSERT INTO journeys
-         (id, user_id, topic_id, language, level, title, status, max_cycles, planned_lesson_count)
-       VALUES ($1, $2, $3, 'English', 'Beginner', 'Software Engineering English', 'active', 2, 3)
+         (id, user_id, topic_id, language, level, title, description, status, max_cycles, planned_lesson_count)
+       VALUES ($1, $2, $3, 'English', 'Beginner', 'Software Engineering English',
+               'Một hành trình khám phá công việc phần mềm hằng ngày, được kể lại qua những bài viết tiếng Anh ngắn.',
+               'active', 2, 3)
        ON CONFLICT (id) DO NOTHING`,
       [ids.journey, config.demoUserId, ids.topic],
     );

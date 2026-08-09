@@ -10,6 +10,7 @@ test('generation context carries the journey, prior content, and encountered wor
     cycle_number: 1,
     journey_id: 'journey-1',
     journey_title: 'Software English',
+    journey_description: 'Một hành trình viết về công việc phần mềm.',
     language: 'English',
     level: 'Beginner',
     planned_lesson_count: 3,
@@ -38,6 +39,7 @@ test('generation context carries the journey, prior content, and encountered wor
   const context = buildGenerationContext(lesson, previous);
 
   assert.equal(context.topic.name, 'Software Engineering');
+  assert.equal(context.journey.description, 'Một hành trình viết về công việc phần mềm.');
   assert.equal(context.previousLesson.content, 'I am a developer.');
   assert.deepEqual(
     context.encounteredItems.map((item) => item.text),

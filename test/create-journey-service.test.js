@@ -6,6 +6,7 @@ import { CreateJourneyService } from '../src/services/create-journey-service.js'
 function outlineFixture() {
   return {
     title: 'Travel Writing Journey',
+    description: 'Một hành trình khám phá những chuyến đi qua từng trang viết ngắn.',
     steps: [
       { title: 'Introducing Travel', objective: 'Introduce travel.', continuation_hint: 'Go deeper.' },
       { title: 'A Place', objective: 'Describe a place.', continuation_hint: 'Tell a story.' },
@@ -35,6 +36,7 @@ test('creating a journey generates an outline, persists it, and generates the fi
       assert.equal(topic.id, 'topic-1');
       assert.equal(language, 'English');
       assert.equal(level, 'Beginner');
+      assert.match(outline.description, /hành trình/);
       assert.equal(outline.steps.length, 3);
       return { journeyId: 'journey-1', lessonId: 'lesson-1' };
     },

@@ -3,6 +3,7 @@ const elements = {
   error: document.querySelector('#error'),
   mastheadEyebrow: document.querySelector('#masthead-eyebrow'),
   themeToggle: document.querySelector('#theme-toggle'),
+  stageThemeToggle: document.querySelector('#stage-theme-toggle'),
   journeyTitle: document.querySelector('#journey-title'),
   lessonTitle: document.querySelector('#lesson-title'),
   objective: document.querySelector('#objective'),
@@ -48,6 +49,7 @@ const elements = {
   antiqueBook: document.querySelector('.book-rig .antique-book'),
   stageTitle: document.querySelector('#stage-title'),
   stageDescription: document.querySelector('#stage-description'),
+  stageCollection: document.querySelector('#stage-collection'),
   coverTitle: document.querySelector('#cover-title'),
   coverSubtitle: document.querySelector('#cover-subtitle'),
   stateLabelText: document.querySelector('#state-label-text'),
@@ -102,6 +104,10 @@ function cycleTheme() {
 }
 
 elements.themeToggle.addEventListener('click', () => {
+  cycleTheme();
+});
+
+elements.stageThemeToggle.addEventListener('click', () => {
   cycleTheme();
 });
 
@@ -1142,11 +1148,7 @@ function updateNavigation(lessonId, isCurrent) {
 
   const timelineLesson = lessonTimeline[index];
   elements.readerPageLabel.textContent = timelineLesson
-    ? `Bài ${timelineLesson.sequenceNumber ?? '—'}${
-        currentLesson?.journey?.plannedLessonCount
-          ? `/${currentLesson.journey.plannedLessonCount}`
-          : ''
-      }`
+    ? `Trang ${index * 2 + 1}–${index * 2 + 2} / ${lessonTimeline.length * 2}`
     : '';
 }
 
@@ -1226,8 +1228,14 @@ function populateBookStage(lesson) {
   elements.coverSubtitle.textContent =
     [language, level].filter(Boolean).join(' · ') || 'Writing Journey';
   elements.stageTitle.textContent = title;
+  elements.stageCollection.textContent = '';
+  const collectionRule = document.createElement('span');
+  elements.stageCollection.append(
+    collectionRule,
+    ` Hành trình · ${[language, level].filter(Boolean).join(' · ')}`,
+  );
   elements.stageDescription.textContent =
-    lesson?.objective ||
+    journey.description ||
     'Một hành trình rèn viết ngoại ngữ, được gìn giữ như một cổ thư sống động.';
 }
 

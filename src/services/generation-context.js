@@ -37,6 +37,7 @@ export function buildGenerationContext(lesson, previousLessonRows) {
     journey: {
       id: lesson.journey_id,
       title: lesson.journey_title,
+      description: lesson.journey_description,
       language: lesson.language,
       level: lesson.level,
       plannedLessonCount: lesson.planned_lesson_count,

@@ -12,6 +12,7 @@ export class JourneyService {
     return rows.map((row) => ({
       id: row.id,
       title: row.title,
+      description: row.description,
       language: row.language,
       level: row.level,
       status: row.status,
@@ -46,6 +47,7 @@ export class JourneyService {
     const summary = {
       id: journey.id,
       title: journey.title,
+      description: journey.description,
       language: journey.language,
       level: journey.level,
     };

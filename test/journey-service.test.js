@@ -11,6 +11,7 @@ test('listing journeys maps rows into book summaries', async () => {
         {
           id: 'journey-1',
           title: 'Software Engineering English',
+          description: 'Một hành trình viết về công việc phần mềm.',
           language: 'English',
           level: 'Beginner',
           status: 'active',
@@ -33,6 +34,7 @@ test('listing journeys maps rows into book summaries', async () => {
   const result = await service.listForUser('user-1');
 
   assert.equal(result[0].currentLesson.title, 'My Daily Tasks');
+  assert.equal(result[0].description, 'Một hành trình viết về công việc phần mềm.');
   assert.equal(result[0].completedLessons, 1);
   assert.equal(result[0].totalLessons, 6);
 });
@@ -45,6 +47,7 @@ test('opening a paused journey reactivates it and returns the current lesson', a
       return {
         id: journeyId,
         title: 'Travel English',
+        description: 'Một hành trình kể lại những chuyến đi.',
         language: 'English',
         level: 'Intermediate',
         status: 'paused',
@@ -74,6 +77,7 @@ test('opening a paused journey reactivates it and returns the current lesson', a
 
   assert.deepEqual(calls, ['find', 'reactivate', 'lesson']);
   assert.equal(result.journeyCompleted, false);
+  assert.equal(result.journey.description, 'Một hành trình kể lại những chuyến đi.');
   assert.equal(result.lesson.id, 'lesson-2');
 });
 
@@ -84,6 +88,7 @@ test('opening a completed journey returns the completion payload without reactiv
       return {
         id: 'journey-1',
         title: 'Finished Journey',
+        description: 'Một hành trình đã khép lại.',
         language: 'Japanese',
         level: 'Beginner',
         status: 'completed',

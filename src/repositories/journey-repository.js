@@ -23,10 +23,19 @@ export class JourneyRepository {
 
       await client.query(
         `INSERT INTO journeys
-           (id, user_id, topic_id, language, level, title, status,
+           (id, user_id, topic_id, language, level, title, description, status,
             max_cycles, planned_lesson_count)
-         VALUES ($1, $2, $3, $4, $5, $6, 'active', 2, $7)`,
-        [journeyId, userId, topic.id, language, level, outline.title, outline.steps.length],
+         VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', 2, $8)`,
+        [
+          journeyId,
+          userId,
+          topic.id,
+          language,
+          level,
+          outline.title,
+          outline.description,
+          outline.steps.length,
+        ],
       );
 
       for (const [index, step] of outline.steps.entries()) {
@@ -74,6 +83,7 @@ export class JourneyRepository {
          j.language,
          j.level,
          j.title,
+         j.description,
          j.status,
          j.max_cycles,
          j.planned_lesson_count,
@@ -104,7 +114,7 @@ export class JourneyRepository {
 
   async findByIdForUser({ userId, journeyId }) {
     const result = await this.database.query(
-      `SELECT id, title, language, level, status, max_cycles, planned_lesson_count
+      `SELECT id, title, description, language, level, status, max_cycles, planned_lesson_count
        FROM journeys
        WHERE id = $1 AND user_id = $2`,
       [journeyId, userId],
