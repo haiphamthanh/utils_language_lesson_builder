@@ -1137,7 +1137,9 @@ function updateNavigation(lessonId, isCurrent) {
 
 /* ---------- Book opening & page flipping ---------- */
 
-const BOOK_OPEN_MS = 850;
+const BOOK_COVER_HOLD_MS = 550;
+const BOOK_SWING_MS = 1000;
+const BOOK_OPEN_MS = BOOK_COVER_HOLD_MS + BOOK_SWING_MS + 60;
 const BOOK_FLIP_MS = 620;
 let lastBookTitle = '';
 let isFlipping = false;
@@ -1145,6 +1147,7 @@ let isFlipping = false;
 function resetBook() {
   elements.bookCover.hidden = true;
   elements.bookCover.classList.remove('is-open');
+  elements.book.classList.remove('is-covering');
   elements.bookFlip.replaceChildren();
 }
 
@@ -1154,12 +1157,17 @@ function openBook(title) {
   elements.bookCoverTitle.textContent = lastBookTitle;
   elements.bookCover.hidden = false;
   elements.bookCover.classList.remove('is-open');
+  elements.book.classList.add('is-covering');
   void elements.bookCover.offsetWidth;
-  requestAnimationFrame(() => {
-    elements.bookCover.classList.add('is-open');
-  });
+  window.setTimeout(() => {
+    requestAnimationFrame(() => {
+      elements.bookCover.classList.add('is-open');
+    });
+  }, BOOK_COVER_HOLD_MS);
   window.setTimeout(() => {
     elements.bookCover.hidden = true;
+    elements.bookCover.classList.remove('is-open');
+    elements.book.classList.remove('is-covering');
   }, BOOK_OPEN_MS);
 }
 
@@ -1171,15 +1179,17 @@ function closeBook(onDone) {
   void cover.offsetWidth;
   cover.style.transition = '';
   cover.hidden = false;
+  elements.book.classList.add('is-covering');
   requestAnimationFrame(() => {
     cover.classList.remove('is-open');
   });
   window.setTimeout(() => {
     cover.hidden = true;
     cover.classList.remove('is-open');
+    elements.book.classList.remove('is-covering');
     isFlipping = false;
     onDone?.();
-  }, BOOK_OPEN_MS);
+  }, BOOK_SWING_MS + 80);
 }
 
 function createFlipSheet(offset) {

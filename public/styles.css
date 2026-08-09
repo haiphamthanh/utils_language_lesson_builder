@@ -754,10 +754,17 @@ body[data-theme="dark"] .theme-toggle .icon-sun { display: none; }
   background-image: url('/img/old-book-open.webp');
   background-size: cover;
   background-position: center;
+  transition: opacity 500ms ease 120ms;
   box-shadow:
     0 0 0 3px #ece2cd,
     0 0 0 6px #c9b999,
     0 0 0 14px #2f170c;
+}
+
+/* while the cover is closed or swinging, the open pages stay hidden */
+.open-book.is-covering .book-spread {
+  opacity: 0;
+  transition: opacity 150ms ease;
 }
 
 .book-page {
@@ -895,7 +902,10 @@ body[data-theme="dark"] .theme-toggle .icon-sun { display: none; }
 
 .book-cover {
   position: absolute;
-  inset: 26px;
+  top: 26px;
+  bottom: 26px;
+  right: 26px;
+  left: calc(50% + 22px);
   z-index: 30;
   overflow: hidden;
   border-radius: 10px 18px 18px 10px;
@@ -910,8 +920,7 @@ body[data-theme="dark"] .theme-toggle .icon-sun { display: none; }
     0 26px 52px rgb(0 0 0 / 50%);
   transform-origin: left center;
   transform: rotateY(0deg);
-  transition: transform 850ms cubic-bezier(0.5, 0.1, 0.2, 1);
-  backface-visibility: hidden;
+  transition: transform 1000ms cubic-bezier(0.4, 0.05, 0.3, 1);
 }
 
 .book-cover-foreedge {
