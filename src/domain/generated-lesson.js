@@ -1,3 +1,5 @@
+export const MAX_GENERATED_LESSON_WORDS = 170;
+
 const exampleListSchema = {
   type: 'array',
   description: 'Exactly five short, natural example sentences.',
@@ -34,7 +36,11 @@ export const generatedLessonSchema = {
   required: ['title', 'content', 'summary', 'review'],
   properties: {
     title: { type: 'string', minLength: 1 },
-    content: { type: 'string', minLength: 1 },
+    content: {
+      type: 'string',
+      minLength: 1,
+      description: `The lesson passage, with no more than ${MAX_GENERATED_LESSON_WORDS} words.`,
+    },
     summary: { type: 'string', minLength: 1 },
     review: {
       type: 'object',
@@ -67,6 +73,11 @@ function requireText(value, field) {
   }
 }
 
+export function countWords(value) {
+  const segmenter = new Intl.Segmenter(undefined, { granularity: 'word' });
+  return [...segmenter.segment(value)].filter((segment) => segment.isWordLike).length;
+}
+
 function requireFiveExamples(item, field) {
   if (!Array.isArray(item.examples) || item.examples.length !== 5) {
     throw new Error(`Generated lesson field "${field}.examples" must contain exactly 5 items.`);
@@ -84,6 +95,12 @@ export function validateGeneratedLesson(lesson) {
 
   requireText(lesson.title, 'title');
   requireText(lesson.content, 'content');
+  const contentWordCount = countWords(lesson.content);
+  if (contentWordCount > MAX_GENERATED_LESSON_WORDS) {
+    throw new Error(
+      `Generated lesson field "content" must contain at most ${MAX_GENERATED_LESSON_WORDS} words; received ${contentWordCount}.`,
+    );
+  }
   requireText(lesson.summary, 'summary');
 
   const review = lesson.review;

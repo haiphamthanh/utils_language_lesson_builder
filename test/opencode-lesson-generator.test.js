@@ -60,6 +60,11 @@ test('OpenCode generator requests structured output and cleans up its session', 
     5,
   );
   assert.match(promptCall.parameters.parts[0].text, /I am a developer/);
+  assert.match(promptCall.parameters.parts[0].text, /never exceeding 170 words/);
+  assert.match(
+    promptCall.parameters.format.schema.properties.content.description,
+    /no more than 170 words/,
+  );
   assert.equal(lesson.generationMetadata.model, 'test-model');
   assert.deepEqual(
     calls.map((call) => call.type),
