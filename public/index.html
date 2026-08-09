@@ -3,7 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Một hành trình nhỏ giúp bạn luyện viết ngoại ngữ bằng tay." />
+    <meta
+      name="description"
+      content="Một hành trình nhỏ giúp bạn luyện viết ngoại ngữ bằng tay."
+    />
     <title>Writing Journey</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
@@ -28,7 +31,9 @@
         >
           <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="12" r="5" />
-            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+            <path
+              d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"
+            />
           </svg>
           <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
@@ -81,10 +86,19 @@
         <p id="home-empty" class="library-empty" hidden></p>
 
         <section class="stats" aria-label="Tiến độ học">
-          <div><strong id="completed-count">—</strong><span>Bài hoàn thành</span></div>
-          <div><strong id="study-days-count">—</strong><span>Ngày học</span></div>
-          <div><strong id="streak-count">—</strong><span>Chuỗi hiện tại</span></div>
-          <div><strong id="vocabulary-count">—</strong><span>Từ/cụm từ đã gặp</span></div>
+          <div>
+            <strong id="completed-count">—</strong><span>Bài hoàn thành</span>
+          </div>
+          <div>
+            <strong id="study-days-count">—</strong><span>Ngày học</span>
+          </div>
+          <div>
+            <strong id="streak-count">—</strong><span>Chuỗi hiện tại</span>
+          </div>
+          <div>
+            <strong id="vocabulary-count">—</strong
+            ><span>Từ/cụm từ đã gặp</span>
+          </div>
         </section>
       </section>
 
@@ -96,27 +110,47 @@
           <p class="eyebrow">Hành trình mới</p>
           <h1>Bạn muốn luyện viết gì hôm nay?</h1>
           <p class="panel-intro">
-            Chọn ngôn ngữ, chủ đề và trình độ. Hệ thống sẽ vẽ lộ trình và
-            sinh bài đầu tiên để bạn chép tay.
+            Chọn ngôn ngữ, chủ đề và trình độ. Hệ thống sẽ vẽ lộ trình và sinh
+            bài đầu tiên để bạn chép tay.
           </p>
 
           <div class="setup-field">
             <h2><span class="setup-number">1</span> Ngôn ngữ</h2>
-            <div id="language-list" class="choice-list" role="radiogroup" aria-label="Chọn ngôn ngữ"></div>
+            <div
+              id="language-list"
+              class="choice-list"
+              role="radiogroup"
+              aria-label="Chọn ngôn ngữ"
+            ></div>
           </div>
 
           <div class="setup-field">
             <h2><span class="setup-number">2</span> Chủ đề</h2>
-            <div id="topic-list" class="topic-list" role="radiogroup" aria-label="Chọn chủ đề"></div>
+            <div
+              id="topic-list"
+              class="topic-list"
+              role="radiogroup"
+              aria-label="Chọn chủ đề"
+            ></div>
           </div>
 
           <div class="setup-field">
             <h2><span class="setup-number">3</span> Trình độ</h2>
-            <div id="level-list" class="choice-list" role="radiogroup" aria-label="Chọn trình độ"></div>
+            <div
+              id="level-list"
+              class="choice-list"
+              role="radiogroup"
+              aria-label="Chọn trình độ"
+            ></div>
           </div>
 
           <div class="setup-actions">
-            <button id="create-journey-button" class="primary-button setup-submit" type="button" disabled>
+            <button
+              id="create-journey-button"
+              class="primary-button setup-submit"
+              type="button"
+              disabled
+            >
               Tạo hành trình
             </button>
             <p id="setup-status" class="status" aria-live="polite"></p>
@@ -139,10 +173,18 @@
             mới để tiếp tục rèn luyện mỗi ngày.
           </p>
           <div class="completion-actions">
-            <button id="back-home-button" class="secondary-button" type="button">
+            <button
+              id="back-home-button"
+              class="secondary-button"
+              type="button"
+            >
               Về kệ sách
             </button>
-            <button id="new-journey-button" class="primary-button" type="button">
+            <button
+              id="new-journey-button"
+              class="primary-button"
+              type="button"
+            >
               Tạo hành trình mới
             </button>
           </div>
@@ -160,16 +202,44 @@
             maxlength="200"
           />
           <div class="highlight-actions">
-            <button id="highlight-cancel-button" class="secondary-button" type="button">Huỷ</button>
-            <button id="highlight-save-button" class="primary-button" type="button">Đánh dấu</button>
+            <button
+              id="highlight-cancel-button"
+              class="secondary-button"
+              type="button"
+            >
+              Huỷ
+            </button>
+            <button
+              id="highlight-save-button"
+              class="primary-button"
+              type="button"
+            >
+              Đánh dấu
+            </button>
           </div>
         </div>
         <div id="highlight-view-view" class="highlight-view" hidden>
           <p id="highlight-view-text" class="highlight-preview"></p>
-          <p id="highlight-view-comment" class="highlight-view-comment" hidden></p>
+          <p
+            id="highlight-view-comment"
+            class="highlight-view-comment"
+            hidden
+          ></p>
           <div class="highlight-actions">
-            <button id="highlight-edit-button" class="secondary-button" type="button">Sửa ghi chú</button>
-            <button id="highlight-delete-button" class="danger-button" type="button">Xoá</button>
+            <button
+              id="highlight-edit-button"
+              class="secondary-button"
+              type="button"
+            >
+              Sửa ghi chú
+            </button>
+            <button
+              id="highlight-delete-button"
+              class="danger-button"
+              type="button"
+            >
+              Xoá
+            </button>
           </div>
         </div>
       </div>
@@ -192,7 +262,9 @@
             <small>Thư viện hành trình</small>
           </span>
         </div>
-        <p id="stage-collection" class="stage-collection"><span></span> Hành trình luyện viết</p>
+        <p id="stage-collection" class="stage-collection">
+          <span></span> Hành trình luyện viết
+        </p>
         <button
           id="stage-theme-toggle"
           class="stage-theme-toggle"
@@ -202,7 +274,9 @@
         >
           <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="12" r="5" />
-            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+            <path
+              d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"
+            />
           </svg>
           <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
@@ -223,124 +297,213 @@
 
             <div class="book-rig">
               <div class="antique-book">
-              <div class="rear-cover" aria-hidden="true"></div>
-              <div class="page-block page-block-left" aria-hidden="true"></div>
-              <div class="page-block page-block-right" aria-hidden="true"></div>
+                <div class="rear-cover" aria-hidden="true"></div>
+                <div
+                  class="page-block page-block-left"
+                  aria-hidden="true"
+                ></div>
+                <div
+                  class="page-block page-block-right"
+                  aria-hidden="true"
+                ></div>
 
-              <div class="spread">
-                <article class="paper left-paper">
-                  <div class="paper-ornament" aria-hidden="true"></div>
-                  <div class="page-content lesson-left">
-                    <header class="book-page-head">
-                      <h1 id="lesson-title"></h1>
-                      <button
-                        id="objective-toggle"
-                        class="objective-info-button"
-                        type="button"
-                        aria-label="Xem mục tiêu bài viết"
-                        aria-expanded="false"
-                        aria-controls="objective-popover"
-                      >
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                          <circle cx="12" cy="12" r="9" />
-                          <path d="M12 10.5v6M12 7.5h.01" />
-                        </svg>
-                      </button>
-                      <aside id="objective-popover" class="objective-popover" role="note" hidden>
-                        <small>Mục tiêu bài viết</small>
-                        <p id="objective"></p>
-                      </aside>
-                    </header>
-                    <div id="lesson-content" class="lesson-content"></div>
-                    <p class="highlight-hint">Bôi đen một đoạn trong bài để đánh dấu và ghi chú.</p>
-                  </div>
-                </article>
-
-                <article class="paper right-paper">
-                  <div class="paper-ornament" aria-hidden="true"></div>
-                  <div class="page-content lesson-right">
-                    <section class="review" aria-label="Từ vựng và cấu trúc của bài">
-                      <header class="review-header">
-                        <div class="review-heading">
-                          <h2 id="review-title" class="review-title">Từ vựng và cấu trúc</h2>
-                        </div>
+                <div class="spread">
+                  <article class="paper left-paper">
+                    <div class="paper-ornament" aria-hidden="true"></div>
+                    <div class="page-content lesson-left">
+                      <header class="book-page-head">
+                        <h1 id="lesson-title"></h1>
                         <button
-                          id="review-detail-close"
-                          class="review-detail-close"
+                          id="objective-toggle"
+                          class="objective-info-button"
                           type="button"
-                          aria-label="Đóng mục từ vựng đang xem"
-                          hidden
+                          aria-label="Xem mục tiêu bài viết"
+                          aria-expanded="false"
+                          aria-controls="objective-popover"
                         >
                           <svg viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M18 6 6 18M6 6l12 12" />
+                            <circle cx="12" cy="12" r="9" />
+                            <path d="M12 10.5v6M12 7.5h.01" />
                           </svg>
                         </button>
+                        <aside
+                          id="objective-popover"
+                          class="objective-popover"
+                          role="note"
+                          hidden
+                        >
+                          <small>Mục tiêu bài viết</small>
+                          <p id="objective"></p>
+                        </aside>
                       </header>
-                      <div class="review-layout">
-                        <div id="review-list" class="review-list" aria-label="Danh sách từ vựng"></div>
-                        <article id="review-detail" class="review-detail" aria-live="polite" hidden>
-                          <small id="review-detail-kind" class="review-detail-kind"></small>
-                          <p id="review-detail-meaning" class="review-detail-meaning"></p>
-                          <span class="review-detail-examples-title">Ví dụ</span>
-                          <ol id="review-detail-examples" class="review-detail-examples"></ol>
-                        </article>
-                      </div>
-                    </section>
+                      <div id="lesson-content" class="lesson-content"></div>
+                      <p class="highlight-hint">
+                        Bôi đen một đoạn trong bài để đánh dấu và ghi chú.
+                      </p>
+                    </div>
+                  </article>
+
+                  <article class="paper right-paper">
+                    <div class="paper-ornament" aria-hidden="true"></div>
+                    <div class="page-content lesson-right">
+                      <section
+                        class="review"
+                        aria-label="Từ vựng và cấu trúc của bài"
+                      >
+                        <header class="review-header">
+                          <div class="review-heading">
+                            <h2 id="review-title" class="review-title">
+                              Từ vựng và cấu trúc
+                            </h2>
+                          </div>
+                          <button
+                            id="review-detail-close"
+                            class="review-detail-close"
+                            type="button"
+                            aria-label="Đóng mục từ vựng đang xem"
+                            hidden
+                          >
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                              <path d="M18 6 6 18M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </header>
+                        <div class="review-layout">
+                          <div
+                            id="review-list"
+                            class="review-list"
+                            aria-label="Danh sách từ vựng"
+                          ></div>
+                          <article
+                            id="review-detail"
+                            class="review-detail"
+                            aria-live="polite"
+                            hidden
+                          >
+                            <small
+                              id="review-detail-kind"
+                              class="review-detail-kind"
+                            ></small>
+                            <p
+                              id="review-detail-meaning"
+                              class="review-detail-meaning"
+                            ></p>
+                            <span class="review-detail-examples-title"
+                              >Ví dụ</span
+                            >
+                            <ol
+                              id="review-detail-examples"
+                              class="review-detail-examples"
+                            ></ol>
+                          </article>
+                        </div>
+                      </section>
+                    </div>
+                  </article>
+                </div>
+
+                <div class="turn-leaf leaf-one" aria-hidden="true">
+                  <div class="leaf-face leaf-front">
+                    <span>Lật từng trang</span><b>✦</b>
                   </div>
-                </article>
-              </div>
-
-              <div class="turn-leaf leaf-one" aria-hidden="true">
-                <div class="leaf-face leaf-front"><span>Lật từng trang</span><b>✦</b></div>
-                <div class="leaf-face leaf-back"><span>Đọc chậm</span></div>
-              </div>
-              <div class="turn-leaf leaf-two" aria-hidden="true">
-                <div class="leaf-face leaf-front"><span>Chép tay</span><b>❧</b></div>
-                <div class="leaf-face leaf-back"><span>Ghi nhớ sâu</span></div>
-              </div>
-              <div class="turn-leaf leaf-three" aria-hidden="true">
-                <div class="leaf-face leaf-front"><span>Viết mỗi ngày</span><b>✧</b></div>
-                <div class="leaf-face leaf-back"><span>Kiên trì</span></div>
-              </div>
-
-              <div class="front-cover">
-                <div class="cover-face cover-front">
-                  <div class="cover-frame">
-                    <span class="cover-crown">♛</span>
-                    <p>Writing Journey</p>
-                    <h2 id="cover-title"></h2>
-                    <div class="cover-sigil"><i>習</i></div>
-                    <small id="cover-subtitle">Quyển thứ nhất</small>
+                  <div class="leaf-face leaf-back"><span>Đọc chậm</span></div>
+                </div>
+                <div class="turn-leaf leaf-two" aria-hidden="true">
+                  <div class="leaf-face leaf-front">
+                    <span>Chép tay</span><b>❧</b>
+                  </div>
+                  <div class="leaf-face leaf-back">
+                    <span>Ghi nhớ sâu</span>
                   </div>
                 </div>
-                <div class="cover-face cover-inside">
-                  <div class="inside-pattern"></div>
+                <div class="turn-leaf leaf-three" aria-hidden="true">
+                  <div class="leaf-face leaf-front">
+                    <span>Viết mỗi ngày</span><b>✧</b>
+                  </div>
+                  <div class="leaf-face leaf-back"><span>Kiên trì</span></div>
                 </div>
-              </div>
-              <div class="spine" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
 
-              <button class="page-turn-zone zone-prev" type="button" aria-label="Lật về bài trước" disabled><span>‹</span></button>
-              <button class="page-turn-zone zone-next" type="button" aria-label="Lật sang bài tiếp theo" disabled><span>›</span></button>
+                <div class="front-cover">
+                  <div class="cover-face cover-front">
+                    <div class="cover-frame">
+                      <span class="cover-crown">♛</span>
+                      <p>Writing Journey</p>
+                      <h2 id="cover-title"></h2>
+                      <div class="cover-sigil"><i>習</i></div>
+                      <small id="cover-subtitle">Quyển thứ nhất</small>
+                    </div>
+                  </div>
+                  <div class="cover-face cover-inside">
+                    <div class="inside-pattern"></div>
+                  </div>
+                </div>
+                <div class="spine" aria-hidden="true">
+                  <span></span><span></span><span></span><span></span
+                  ><span></span>
+                </div>
+
+                <button
+                  class="page-turn-zone zone-prev"
+                  type="button"
+                  aria-label="Lật về bài trước"
+                  disabled
+                >
+                  <span>‹</span>
+                </button>
+                <button
+                  class="page-turn-zone zone-next"
+                  type="button"
+                  aria-label="Lật sang bài tiếp theo"
+                  disabled
+                >
+                  <span>›</span>
+                </button>
               </div>
             </div>
           </div>
 
           <div class="interaction-copy">
-            <p class="state-label"><span id="state-pulse" class="state-dot"></span><span id="state-label-text">Đang nằm trên giá</span></p>
+            <p class="state-label">
+              <span id="state-pulse" class="state-dot"></span
+              ><span id="state-label-text">Đang nằm trên giá</span>
+            </p>
             <div class="progress-track" aria-hidden="true"><i></i></div>
 
             <nav class="reader-toolbar" aria-label="Điều hướng bài học">
-              <button id="reader-prev" type="button" aria-label="Bài trước" disabled>←</button>
+              <button
+                id="reader-prev"
+                type="button"
+                aria-label="Bài trước"
+                disabled
+              >
+                ←
+              </button>
               <span id="reader-page-label" aria-live="polite"></span>
-              <button id="reader-next" type="button" aria-label="Bài tiếp theo" disabled>→</button>
+              <button
+                id="reader-next"
+                type="button"
+                aria-label="Bài tiếp theo"
+                disabled
+              >
+                →
+              </button>
             </nav>
 
             <div class="open-actions">
-              <button id="close-book-button" class="primary-action compact-action" type="button" disabled>
-                Khép sách <span>↙</span>
+              <button
+                id="close-book-button"
+                class="primary-action compact-action"
+                type="button"
+                disabled
+              >
+                Cất sách <span>↙</span>
               </button>
-              <button id="regenerate-button" class="text-action" type="button">Tạo bài khác</button>
-              <button id="complete-button" class="text-action" type="button">Đã chép xong</button>
+              <button id="regenerate-button" class="text-action" type="button">
+                Tạo bài khác
+              </button>
+              <button id="complete-button" class="text-action" type="button">
+                Đã chép xong
+              </button>
             </div>
 
             <p id="lesson-status" class="status" aria-live="polite"></p>

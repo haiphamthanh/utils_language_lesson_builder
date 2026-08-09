@@ -1602,7 +1602,9 @@ mark.saved-note-highlight:focus-visible {
   text-transform: uppercase;
   text-align: left;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .review-group-title:hover,
@@ -2526,7 +2528,9 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   -webkit-transform-style: preserve-3d;
   transform: translate3d(-225px, 235px, 0) rotateX(0deg) rotateY(-17deg)
     rotateZ(-8deg) scale(0.43);
-  transition: transform 1s cubic-bezier(0.18, 0.75, 0.18, 1), opacity 0.4s ease;
+  transition:
+    transform 1s cubic-bezier(0.18, 0.75, 0.18, 1),
+    opacity 0.4s ease;
 }
 
 .book-stage-overlay.is-flying .book-rig {
@@ -3492,7 +3496,7 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   text-transform: uppercase;
 }
 
-/* open actions: Khép sách + Tạo bài khác + Đã chép xong */
+/* open actions: Cất sách + Tạo bài khác + Đã chép xong */
 .open-actions {
   display: none;
   align-items: center;
@@ -3814,7 +3818,10 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   color: #75502b;
   background: rgb(226 198 143 / 34%);
   cursor: pointer;
-  transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+  transition:
+    color 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
 }
 .book-stage-overlay .objective-info-button:hover,
 .book-stage-overlay .objective-info-button[aria-expanded="true"] {
@@ -3967,7 +3974,9 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   text-align: center;
   text-transform: uppercase;
   cursor: pointer;
-  transition: color 0.18s ease, background 0.18s ease;
+  transition:
+    color 0.18s ease,
+    background 0.18s ease;
 }
 .book-stage-overlay .review-group-title:hover,
 .book-stage-overlay .review-group-title:focus-visible {
