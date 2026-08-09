@@ -1321,9 +1321,7 @@ function populateBookStage(lesson) {
     collectionRule,
     ` Hành trình · ${[language, level].filter(Boolean).join(' · ')}`,
   );
-  elements.stageDescription.textContent =
-    journey.description ||
-    'Một hành trình rèn viết ngoại ngữ, được gìn giữ như một cổ thư sống động.';
+  elements.stageDescription.textContent = journey.description ?? '';
 }
 
 function playBookOpening(lesson) {
