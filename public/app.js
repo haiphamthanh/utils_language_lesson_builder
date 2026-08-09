@@ -334,8 +334,8 @@ function toggleReviewGroup(groupEl) {
   groupEl.classList.toggle('is-collapsed', !collapsed);
   const listEl = groupEl.querySelector('.review-group-items');
   const titleEl = groupEl.querySelector('.review-group-title');
-  if (listEl) listEl.hidden = collapsed;
-  if (titleEl) titleEl.setAttribute('aria-expanded', String(collapsed));
+  if (listEl) listEl.hidden = !collapsed;
+  if (titleEl) titleEl.setAttribute('aria-expanded', String(!collapsed));
 }
 
 /* ---------- Highlights ---------- */

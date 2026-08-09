@@ -3793,13 +3793,16 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
 }
 .book-stage-overlay .book-page-head h1 {
   flex: 0 1 auto;
+  max-width: 100%;
   margin: 10px 0;
-  padding-inline: 0;
+  padding-inline: 8px;
   color: #3a2717;
   font-size: clamp(20px, 2.2vw, 26px);
   font-weight: 400;
   line-height: 1.15;
   text-align: center;
+  text-shadow: 0 1px 0 rgb(241 220 179 / 70%);
+  transform: translateX(52px);
 }
 .book-stage-overlay .objective-info-button {
   flex: 0 0 auto;
@@ -3929,6 +3932,7 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   font-size: 20px;
   font-weight: 400;
   padding-left: 16px;
+  transform: translateX(52px);
 }
 .book-stage-overlay .review-detail-close {
   top: 50%;
@@ -4009,14 +4013,14 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   counter-reset: review-item;
 }
 .book-stage-overlay .review-item-button {
-  justify-content: center;
+  justify-content: flex-start;
   gap: 8px;
-  padding: 9px 8px 8px;
+  padding: 9px 10px 8px;
   border: 0;
   border-radius: 0;
   background: transparent;
   color: #3a2717;
-  text-align: center;
+  text-align: left;
   counter-increment: review-item;
   transition:
     color 0.18s ease,
