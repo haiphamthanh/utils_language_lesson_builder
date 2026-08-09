@@ -1616,12 +1616,14 @@ mark.saved-note-highlight:focus-visible {
 
 .review-group-icon {
   display: inline-grid;
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   place-items: center;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1;
-  transition: transform 0.2s ease;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .review-group:not(.is-collapsed) .review-group-icon {
@@ -3777,7 +3779,7 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: rgb(101 64 28 / 45%) transparent;
-  padding-right: 8px;
+  /* padding-right: 8px; */
 }
 
 /* left paper: lesson content */
@@ -3793,12 +3795,12 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   gap: 8px;
   /* The page artwork is dense along its upper and inner-left edges. */
   /* padding: 14px 54px 29px 78px; */
-  padding: 14px 54px 16px 78px;
+  padding: 14px 32px 20px 32px;
 }
 .book-stage-overlay .book-page-head h1 {
   flex: 0 1 auto;
   max-width: 100%;
-  margin: 10px 0px 0px 20px;
+  margin: 0;
   padding: 0;
   color: #3a2717;
   font-size: clamp(20px, 2.2vw, 26px);
@@ -3926,8 +3928,8 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
 }
 .book-stage-overlay .review-header {
   min-height: 0;
-  padding: 14px 54px 16px 78px;
   border-bottom: 0;
+  padding: 14px 32px 20px 32px;
 }
 .book-stage-overlay .review-heading {
   flex: 1 1 auto;
@@ -3936,7 +3938,7 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   justify-content: center;
 }
 .book-stage-overlay .review-title {
-  margin: 10px 10px 0 10px;
+  margin: 0 36px 0 0;
   color: #4b2e18;
   font-size: 26px;
   font-weight: 400;
@@ -3992,98 +3994,116 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   margin: 0;
   padding: 0 18px 10px;
 }
+.book-stage-overlay .review.is-detail-open .review-layout {
+  padding-inline: 8px;
+}
 .book-stage-overlay .review-list {
   max-height: none;
-  padding: 0;
-  gap: 0px;
+  padding: 8px 0 0 0;
+  gap: 12px;
   overflow: visible;
+}
+.book-stage-overlay .review-rhythm-section {
+  display: grid;
+  grid-template-columns: 108px minmax(0, 1fr);
+  gap: 20px;
+  min-width: 0;
 }
 .book-stage-overlay .review-group-title {
   display: flex;
+  align-self: start;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  justify-content: flex-start;
+  gap: 5px;
   width: 100%;
-  margin: 0;
-  padding: 8px 12px;
+  margin: 7px 0 0;
+  padding: 0 2px 9px;
   border: 0;
-  border-radius: 4px;
+  border-bottom: 1px solid rgb(128 81 38 / 58%);
+  border-radius: 0;
   background: transparent;
   color: #5f3a16;
   font: inherit;
+  font-family: Georgia, "Times New Roman", serif;
   font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.22em;
-  text-align: center;
-  text-transform: uppercase;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-align: left;
   cursor: pointer;
   transition:
     color 0.18s ease,
-    background 0.18s ease;
+    border-color 0.18s ease;
 }
 .book-stage-overlay .review-group-title:hover,
 .book-stage-overlay .review-group-title:focus-visible {
   outline: 0;
-  color: #5f3a16;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgb(255 220 143 / 22%),
-    transparent
-  );
+  color: #7b321e;
+  border-bottom-color: #9b6329;
+  background: transparent;
 }
 .book-stage-overlay .review-group-icon {
   display: inline-grid;
-  width: 14px;
-  height: 14px;
+  width: 17px;
+  height: 17px;
+  margin-left: auto;
   place-items: center;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1;
-  transition: transform 0.2s ease;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.book-stage-overlay .review-group.is-collapsed .review-group-icon {
+  transform: rotate(-90deg);
 }
 .book-stage-overlay .review-group:not(.is-collapsed) .review-group-icon {
-  transform: rotate(90deg);
+  transform: none;
 }
 .book-stage-overlay .review-group-label {
-  letter-spacing: 0.14em;
-  font-weight: 800;
+  font-weight: 500;
 }
 .book-stage-overlay .review-group-items {
-  display: block;
+  position: relative;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
   margin: 0;
-  padding: 0px 4px 0;
+  padding: 0;
   list-style: none;
-  counter-reset: review-item;
+}
+.book-stage-overlay .review-group-items::before {
+  content: "";
+  position: absolute;
+  top: 15px;
+  bottom: -22px;
+  left: 14px;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    rgb(128 81 38 / 72%),
+    rgb(128 81 38 / 18%)
+  );
+}
+.book-stage-overlay .review-group:last-child .review-group-items::before {
+  bottom: 16px;
 }
 .book-stage-overlay .review-group-items > li {
   position: relative;
-  counter-increment: review-item;
-}
-.book-stage-overlay .review-group-items > li::before {
-  content: counter(review-item, decimal-leading-zero);
-  position: absolute;
   z-index: 1;
-  top: 50%;
-  left: 2px;
-  display: grid;
-  width: 23px;
-  height: 23px;
-  place-items: center;
-  border: 1px solid rgb(123 79 38 / 38%);
-  border-radius: 50%;
-  color: rgb(101 60 26 / 84%);
-  background: rgb(230 195 126 / 18%);
-  font-family: Georgia, serif;
-  font-size: 9px;
-  font-weight: 600;
-  line-height: 1;
-  transform: translateY(-50%);
+}
+.book-stage-overlay .review-group-empty {
+  padding: 8px 6px 8px 30px;
+  color: #7a674e;
+  font-size: 11px;
+  font-style: italic;
 }
 .book-stage-overlay .review-item-button {
+  position: relative;
   justify-content: flex-start;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
-  padding: 11px 12px 11px 34px;
+  min-width: 0;
+  padding: 7px 6px 8px 0;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -4096,27 +4116,115 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
     text-shadow 0.18s ease,
     transform 0.18s ease;
 }
+.book-stage-overlay .review-item-node {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
+  margin-left: 10px;
+  place-items: center;
+  border: 1px solid #8a5829;
+  border-radius: 999px;
+  color: #f4e4c4;
+  background: #8a5829;
+  font-family: Georgia, serif;
+  font-size: 0;
+  box-shadow: 0 0 0 4px #ead5a9;
+  transition:
+    width 0.18s ease,
+    height 0.18s ease,
+    margin 0.18s ease,
+    background 0.18s ease;
+}
+.book-stage-overlay .review-item-button:hover .review-item-node,
+.book-stage-overlay .review-item-button:focus-visible .review-item-node,
+.book-stage-overlay .review-item-button.is-active .review-item-node {
+  width: 27px;
+  height: 27px;
+  margin-left: 1px;
+  background: #9f6653;
+  font-size: 9px;
+}
+.book-stage-overlay .review-item-button:hover .review-item-node::after,
+.book-stage-overlay .review-item-button:focus-visible .review-item-node::after,
+.book-stage-overlay .review-item-button.is-active .review-item-node::after {
+  content: attr(data-item-number);
+}
 .book-stage-overlay .review-item-button:hover,
 .book-stage-overlay .review-item-button:focus-visible {
   outline: 0;
   color: #7b321e;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgb(255 220 143 / 28%),
-    transparent
-  );
-  text-shadow: 0 0 11px rgb(255 230 160 / 90%);
-  transform: translateY(-1px);
+  background: transparent;
+  text-shadow: none;
+  transform: translateX(4px);
 }
 .book-stage-overlay .review-item-button.is-active {
   background: transparent;
 }
 .book-stage-overlay .review-item-text {
+  position: relative;
+  z-index: 1;
   min-width: 0;
+  padding: 1px 5px 3px;
   font-size: 14px;
   font-weight: 400;
   overflow-wrap: anywhere;
+}
+.book-stage-overlay .review-item-text::before,
+.book-stage-overlay .review-title.is-item-detail::before {
+  content: "";
+  position: absolute;
+  inset: -2px -5px;
+  z-index: -1;
+  background: rgb(181 146 88 / 38%);
+  clip-path: polygon(
+    0 21%,
+    4% 8%,
+    13% 14%,
+    21% 4%,
+    33% 11%,
+    44% 2%,
+    55% 13%,
+    68% 5%,
+    78% 14%,
+    91% 4%,
+    100% 18%,
+    97% 86%,
+    86% 96%,
+    74% 87%,
+    61% 98%,
+    48% 90%,
+    35% 97%,
+    22% 88%,
+    10% 95%,
+    1% 82%
+  );
+  opacity: 0;
+  transform: rotate(-0.5deg);
+  transition: opacity 0.18s ease;
+}
+.book-stage-overlay .review-item-button:hover .review-item-text::before,
+.book-stage-overlay .review-item-button:focus-visible .review-item-text::before,
+.book-stage-overlay .review-item-button.is-active .review-item-text::before,
+.book-stage-overlay .review-title.is-item-detail::before {
+  opacity: 0.78;
+}
+.book-stage-overlay .review-group:nth-child(3n + 2) .review-item-text::before {
+  background: rgb(159 102 83 / 38%);
+}
+.book-stage-overlay .review-group:nth-child(3n) .review-item-text::before {
+  background: rgb(118 95 108 / 42%);
+}
+.book-stage-overlay .review-title.is-item-detail {
+  position: relative;
+  z-index: 1;
+  display: inline-block;
+  width: fit-content;
+  max-width: calc(100% - 44px);
+  margin-inline: auto;
+  transform: none;
 }
 .book-stage-overlay .review-empty {
   color: #6b5638;
@@ -4125,7 +4233,7 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
 .book-stage-overlay .review-detail {
   position: static;
   min-height: 0;
-  padding: 2px 7px 0;
+  padding: 2px 0 0;
   text-align: left;
 }
 .book-stage-overlay .review-detail-kind {
@@ -4143,21 +4251,109 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   text-align: center;
 }
 .book-stage-overlay .review-detail-examples-title {
-  margin: 21px 0 9px;
+  margin: 16px 0 4px;
   color: #68441f;
-  font-size: 15px;
-  letter-spacing: 0.18em;
-  text-align: center;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-align: left;
   text-transform: uppercase;
 }
 .book-stage-overlay .review-detail-examples {
-  padding-left: 40px;
+  position: relative;
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0 2px 0 0;
+  list-style: none;
+  counter-reset: review-example;
   color: #3a2717;
-  font-size: 15px;
-  line-height: 1.55;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 14px;
+  line-height: 1.58;
 }
-.book-stage-overlay .review-detail-examples li + li {
-  margin-top: 8px;
+.book-stage-overlay .review-detail-examples::before {
+  content: "";
+  position: absolute;
+  top: 16px;
+  bottom: 16px;
+  left: 14px;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    rgb(128 81 38 / 72%),
+    rgb(128 81 38 / 18%)
+  );
+}
+.book-stage-overlay .review-detail-examples li {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 7px 2px 8px 42px;
+  counter-increment: review-example;
+  overflow-wrap: anywhere;
+}
+.book-stage-overlay .review-detail-examples li::before {
+  content: counter(review-example);
+  position: absolute;
+  top: 6px;
+  left: 1px;
+  z-index: 2;
+  display: grid;
+  width: 27px;
+  height: 27px;
+  place-items: center;
+  border: 1px solid #8a5829;
+  border-radius: 999px;
+  color: #f4e4c4;
+  background: #9f6653;
+  font-family: Georgia, serif;
+  font-size: 9px;
+  line-height: 1;
+  box-shadow: 0 0 0 4px #ead5a9;
+}
+.book-stage-overlay .review-detail-examples li::after {
+  content: "";
+  position: absolute;
+  inset: 6px 0 5px 36px;
+  z-index: -1;
+  background: rgb(181 146 88 / 22%);
+  clip-path: polygon(
+    0 21%,
+    4% 8%,
+    13% 14%,
+    21% 4%,
+    33% 11%,
+    44% 2%,
+    55% 13%,
+    68% 5%,
+    78% 14%,
+    91% 4%,
+    100% 18%,
+    97% 86%,
+    86% 96%,
+    74% 87%,
+    61% 98%,
+    48% 90%,
+    35% 97%,
+    22% 88%,
+    10% 95%,
+    1% 82%
+  );
+  opacity: 0;
+  transform: rotate(-0.25deg);
+  transition: opacity 0.18s ease;
+}
+.book-stage-overlay .review-detail-examples li:hover::after {
+  opacity: 0.78;
+}
+.book-stage-overlay .review-detail-examples li:nth-child(3n + 2)::after {
+  background: rgb(159 102 83 / 25%);
+}
+.book-stage-overlay .review-detail-examples li:nth-child(3n)::after {
+  background: rgb(118 95 108 / 28%);
 }
 
 /* status feedback in the bottom bar */
@@ -4239,6 +4435,9 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   }
   .book-stage-overlay.state-open .review-list {
     max-height: none;
+  }
+  .book-stage-overlay .review-rhythm-section {
+    grid-template-columns: minmax(92px, 112px) minmax(0, 1fr);
   }
   .book-stage-overlay.state-open .page-turn-zone {
     display: none;
