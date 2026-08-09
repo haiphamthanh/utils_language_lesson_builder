@@ -10,6 +10,7 @@ const elements = {
   objectivePopover: document.querySelector('#objective-popover'),
   lessonContent: document.querySelector('#lesson-content'),
   reviewList: document.querySelector('#review-list'),
+  reviewPanel: document.querySelector('.lesson-right .review'),
   lessonStatus: document.querySelector('#lesson-status'),
   completeButton: document.querySelector('#complete-button'),
   regenerateButton: document.querySelector('#regenerate-button'),
@@ -219,6 +220,7 @@ function reviewGroups(review) {
 
 function openReviewDetail(item) {
   if (!item) return;
+  elements.reviewPanel.classList.add('is-detail-open');
   elements.reviewTitle.textContent = item.text;
   elements.reviewDetailKind.textContent = item.kind;
   elements.reviewDetailMeaning.textContent = item.meaning;
@@ -236,6 +238,7 @@ function openReviewDetail(item) {
 
 function closeReviewDetail() {
   selectedReviewIndex = -1;
+  elements.reviewPanel.classList.remove('is-detail-open');
   elements.reviewTitle.textContent = 'Từ vựng và cấu trúc';
   elements.reviewList.hidden = false;
   elements.reviewDetail.hidden = true;
