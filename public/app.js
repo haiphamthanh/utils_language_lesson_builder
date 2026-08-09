@@ -3,7 +3,6 @@ const elements = {
   error: document.querySelector('#error'),
   mastheadEyebrow: document.querySelector('#masthead-eyebrow'),
   themeToggle: document.querySelector('#theme-toggle'),
-  lesson: document.querySelector('#lesson'),
   journeyTitle: document.querySelector('#journey-title'),
   lessonTitle: document.querySelector('#lesson-title'),
   lessonPosition: document.querySelector('#lesson-position'),
@@ -47,19 +46,12 @@ const elements = {
   pauseReadingButton: document.querySelector('#pause-reading-button'),
   busyOverlay: document.querySelector('#busy-overlay'),
   busyMessage: document.querySelector('#busy-message'),
-  book: document.querySelector('#book'),
-  bookCover: document.querySelector('#book-cover'),
-  bookCoverTitle: document.querySelector('#book-cover-title'),
   bookFlip: document.querySelector('#book-flip'),
   bookStage: document.querySelector('#book-stage'),
   stageTitle: document.querySelector('#stage-title'),
   stageDescription: document.querySelector('#stage-description'),
   coverTitle: document.querySelector('#cover-title'),
   coverSubtitle: document.querySelector('#cover-subtitle'),
-  spreadTitle: document.querySelector('#spread-title'),
-  spreadIntro: document.querySelector('#spread-intro'),
-  spreadChapter: document.querySelector('#spread-chapter'),
-  spreadText: document.querySelector('#spread-text'),
   stateLabelText: document.querySelector('#state-label-text'),
   statePulse: document.querySelector('#state-pulse'),
   reviewPopover: document.querySelector('#review-popover'),
@@ -702,7 +694,6 @@ function showLesson(lesson) {
   elements.home.hidden = true;
   elements.journeySetup.hidden = true;
   elements.completion.hidden = true;
-  elements.lesson.hidden = false;
 
   elements.completeButton.hidden =
     !lesson.isCurrent || lesson.status === 'completed';
@@ -716,7 +707,6 @@ function showLesson(lesson) {
     : '';
   updateNavigation(lesson.id, lesson.isCurrent);
   loadHighlights(lesson.id);
-  resetLessonCover();
 }
 
 function showJourneyCompleted(journey) {
@@ -731,7 +721,6 @@ function showJourneyCompleted(journey) {
   elements.loading.hidden = true;
   elements.error.hidden = true;
   elements.home.hidden = true;
-  elements.lesson.hidden = true;
   elements.journeySetup.hidden = true;
   elements.completion.hidden = false;
 }
@@ -747,7 +736,6 @@ function showJourneySetup() {
   elements.loading.hidden = true;
   elements.error.hidden = true;
   elements.home.hidden = true;
-  elements.lesson.hidden = true;
   elements.completion.hidden = true;
   elements.journeySetup.hidden = false;
   renderSetup();
@@ -934,7 +922,6 @@ function showHome() {
   elements.mastheadEyebrow.textContent = 'Kệ sách hành trình';
   elements.loading.hidden = true;
   elements.error.hidden = true;
-  elements.lesson.hidden = true;
   elements.journeySetup.hidden = true;
   elements.completion.hidden = true;
   elements.home.hidden = false;
@@ -966,8 +953,8 @@ async function openJourney(journeyId) {
     } else {
       bookmarkedLesson = payload.data.lesson;
       showLesson(payload.data.lesson);
-      await loadHistory(payload.data.lesson);
       playBookOpening(payload.data.lesson);
+      await loadHistory(payload.data.lesson);
     }
     await loadLibrary();
     loadStats();
@@ -1137,8 +1124,8 @@ async function loadHistory(activeLesson = bookmarkedLesson) {
 
 function updateNavigation(lessonId, isCurrent) {
   const index = lessonTimeline.findIndex((lesson) => lesson.id === lessonId);
-  const leftPage = elements.book.querySelector('.book-page-left');
-  const rightPage = elements.book.querySelector('.book-page-right');
+  const leftPage = elements.bookStage.querySelector('.left-paper');
+  const rightPage = elements.bookStage.querySelector('.right-paper');
   leftPage.classList.toggle('can-flip', index > 0);
   rightPage.classList.toggle(
     'can-flip',
@@ -1188,15 +1175,8 @@ function clearBookStageTimers() {
   bookStageTimers = [];
 }
 
-function resetLessonCover() {
-  elements.bookCover.hidden = true;
-  elements.bookCover.classList.remove('is-open');
-  elements.book.classList.remove('is-covering');
-}
-
 function resetBook() {
   clearBookStageTimers();
-  resetLessonCover();
   elements.bookFlip.replaceChildren();
   elements.bookStage.classList.remove(...BOOK_STAGE_STATES);
   elements.bookStage.classList.remove('is-dismissed');
@@ -1209,7 +1189,6 @@ function populateBookStage(lesson) {
   const title = journey.title ?? '';
   const language = journey.language ?? '';
   const level = journey.level ?? '';
-  const planned = journey.plannedLessonCount ?? null;
 
   elements.coverTitle.textContent = title;
   elements.coverSubtitle.textContent =
@@ -1218,44 +1197,24 @@ function populateBookStage(lesson) {
   elements.stageDescription.textContent =
     lesson?.objective ||
     'Một hành trình rèn viết ngoại ngữ, được gìn giữ như một cổ thư sống động.';
-  elements.spreadTitle.textContent = lesson?.title ?? 'Bài học hôm nay';
-  elements.spreadIntro.textContent = lesson?.objective ?? '';
-  elements.spreadChapter.textContent = lesson?.sequenceNumber
-    ? `Bài ${lesson.sequenceNumber}${planned ? `/${planned}` : ''} · Vòng ${lesson.cycleNumber ?? 1}`
-    : 'Chương thứ nhất';
-  elements.spreadText.textContent = lesson?.summary ?? '';
 }
 
 function playBookOpening(lesson) {
   populateBookStage(lesson);
-  resetBook();
+  clearBookStageTimers();
+  elements.bookStage.classList.remove('is-dismissed');
   elements.bookStage.hidden = false;
   void elements.bookStage.offsetWidth;
 
-  return new Promise((resolve) => {
-    const schedule = (state, delay) => {
-      bookStageTimers.push(window.setTimeout(() => setBookStageState(state), delay));
-    };
+  const schedule = (state, delay) => {
+    bookStageTimers.push(window.setTimeout(() => setBookStageState(state), delay));
+  };
 
-    setBookStageState('lifting');
-    schedule('presenting', 850);
-    schedule('opening', 1550);
-    schedule('turning', 2850);
-    schedule('open', 5150);
-    bookStageTimers.push(
-      window.setTimeout(() => {
-        elements.bookStage.classList.add('is-dismissed');
-      }, 5850),
-    );
-    bookStageTimers.push(
-      window.setTimeout(() => {
-        elements.bookStage.hidden = true;
-        elements.bookStage.classList.remove('is-dismissed');
-        bookStageState = 'idle';
-        resolve();
-      }, 5850 + BOOK_STAGE_DISMISS_MS),
-    );
-  });
+  setBookStageState('lifting');
+  schedule('presenting', 850);
+  schedule('opening', 1550);
+  schedule('turning', 2850);
+  schedule('open', 5150);
 }
 
 function closeBook(onDone) {
@@ -1288,8 +1247,8 @@ function createFlipSheet(offset) {
   const front = document.createElement('div');
   front.className = 'book-flip-front';
   const source = offset > 0
-    ? elements.book.querySelector('.book-page-right')
-    : elements.book.querySelector('.book-page-left');
+    ? elements.bookStage.querySelector('.right-paper')
+    : elements.bookStage.querySelector('.left-paper');
   front.append(source?.cloneNode(true) ?? document.createElement('span'));
   sheet.append(front);
   elements.bookFlip.append(sheet);
@@ -1408,12 +1367,12 @@ function handlePageClick(event, offset) {
   flipTimelineLesson(offset);
 }
 
-elements.book
-  .querySelector('.book-page-right')
+elements.bookStage
+  .querySelector('.right-paper')
   .addEventListener('click', (event) => handlePageClick(event, 1));
 
-elements.book
-  .querySelector('.book-page-left')
+elements.bookStage
+  .querySelector('.left-paper')
   .addEventListener('click', (event) => handlePageClick(event, -1));
 
 elements.newJourneyButton.addEventListener('click', () => {
