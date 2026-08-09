@@ -138,26 +138,6 @@
             Tất cả bài học và vòng ôn đã được khóa lại. Hãy tạo một hành trình
             mới để tiếp tục rèn luyện mỗi ngày.
           </p>
-          <button id="new-journey-button" class="primary-button completion-action" type="button">
-            Tạo bài mới
-          </button>
-        </div>
-      </section>
-
-      <section id="completion" class="panel" hidden>
-        <div class="panel-inner completion-inner">
-          <div class="completion-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path d="M20 6 9 17l-5-5" />
-            </svg>
-          </div>
-          <p class="eyebrow">Đã hoàn thành</p>
-          <h1>Bạn đã viết xong hành trình này.</h1>
-          <p id="completion-journey-title" class="completion-journey-title"></p>
-          <p class="panel-intro">
-            Tất cả bài học và vòng ôn đã được khóa lại. Hãy tạo một hành trình
-            mới để tiếp tục rèn luyện mỗi ngày.
-          </p>
           <div class="completion-actions">
             <button id="back-home-button" class="secondary-button" type="button">
               Về kệ sách
@@ -195,26 +175,6 @@
       </div>
     </main>
 
-    <div id="review-popover" class="review-popover" hidden>
-      <div class="review-popover-card">
-        <button
-          id="review-popover-close"
-          class="review-popover-close"
-          type="button"
-          aria-label="Đóng ghi chú"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M18 6 6 18M6 6l12 12" />
-          </svg>
-        </button>
-        <small id="review-popover-kind" class="review-detail-kind"></small>
-        <h3 id="review-popover-word" class="review-detail-word"></h3>
-        <p id="review-popover-meaning" class="review-detail-meaning"></p>
-        <span class="review-detail-examples-title">Ví dụ</span>
-        <ol id="review-popover-examples" class="review-detail-examples"></ol>
-      </div>
-    </div>
-
     <div id="busy-overlay" class="busy-overlay" hidden aria-live="polite">
       <div class="busy-card">
         <div class="busy-spinner" aria-hidden="true"></div>
@@ -231,12 +191,13 @@
           <p id="stage-description" class="description"></p>
         </div>
 
-        <div class="book-stage" aria-label="Quyển sách hành trình đang mở">
-          <div class="stage-glow" aria-hidden="true"></div>
-          <div class="book-shadow" aria-hidden="true"></div>
+        <div class="reader-column">
+          <div class="book-stage" aria-label="Quyển sách hành trình đang mở">
+            <div class="stage-glow" aria-hidden="true"></div>
+            <div class="book-shadow" aria-hidden="true"></div>
 
-          <div class="book-rig">
-            <div class="antique-book">
+            <div class="book-rig">
+              <div class="antique-book">
               <div class="rear-cover" aria-hidden="true"></div>
               <div class="page-block page-block-left" aria-hidden="true"></div>
               <div class="page-block page-block-right" aria-hidden="true"></div>
@@ -248,7 +209,6 @@
                     <header class="book-page-head">
                       <p id="journey-title" class="eyebrow"></p>
                       <h1 id="lesson-title"></h1>
-                      <p id="lesson-position" class="position"></p>
                     </header>
                     <p id="objective" class="objective"></p>
                     <div id="lesson-content" class="lesson-content"></div>
@@ -259,30 +219,33 @@
                 <article class="paper right-paper">
                   <div class="paper-ornament" aria-hidden="true"></div>
                   <div class="page-content lesson-right">
-                    <details class="review" aria-label="Từ vựng và cấu trúc của bài">
-                      <summary>
-                        <svg class="review-summary-icon" viewBox="0 0 24 24" aria-hidden="true">
-                          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                        </svg>
-                        <span class="review-summary-title">Từ vựng và cấu trúc</span>
-                        <span class="review-summary-hint">Bấm vào một từ để xem nghĩa và ví dụ</span>
-                        <svg class="review-summary-chevron" viewBox="0 0 24 24" aria-hidden="true">
-                          <path d="m6 9 6 6 6-6" />
-                        </svg>
-                      </summary>
+                    <section class="review" aria-label="Từ vựng và cấu trúc của bài">
+                      <header class="review-header">
+                        <div class="review-heading">
+                          <h2 id="review-title" class="review-title">Từ vựng và cấu trúc</h2>
+                        </div>
+                        <button
+                          id="review-detail-close"
+                          class="review-detail-close"
+                          type="button"
+                          aria-label="Đóng mục từ vựng đang xem"
+                          hidden
+                        >
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M18 6 6 18M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </header>
                       <div class="review-layout">
-                        <div id="review-list" class="review-list" role="tablist" aria-label="Danh sách từ vựng"></div>
+                        <div id="review-list" class="review-list" aria-label="Danh sách từ vựng"></div>
+                        <article id="review-detail" class="review-detail" aria-live="polite" hidden>
+                          <small id="review-detail-kind" class="review-detail-kind"></small>
+                          <p id="review-detail-meaning" class="review-detail-meaning"></p>
+                          <span class="review-detail-examples-title">Ví dụ</span>
+                          <ol id="review-detail-examples" class="review-detail-examples"></ol>
+                        </article>
                       </div>
-                    </details>
-
-                    <div class="paper-note">
-                      <svg class="paper-note-icon" viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M12 20h9" />
-                        <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
-                      </svg>
-                      <p>Đọc chậm, chép bài vào vở, rồi quay lại đây khi bạn đã hoàn thành.</p>
-                    </div>
+                    </section>
                   </div>
                 </article>
               </div>
@@ -318,6 +281,7 @@
 
               <button class="page-turn-zone zone-prev" type="button" aria-label="Lật về bài trước" disabled><span>‹</span></button>
               <button class="page-turn-zone zone-next" type="button" aria-label="Lật sang bài tiếp theo" disabled><span>›</span></button>
+              </div>
             </div>
           </div>
 

@@ -5,7 +5,6 @@ const elements = {
   themeToggle: document.querySelector('#theme-toggle'),
   journeyTitle: document.querySelector('#journey-title'),
   lessonTitle: document.querySelector('#lesson-title'),
-  lessonPosition: document.querySelector('#lesson-position'),
   objective: document.querySelector('#objective'),
   lessonContent: document.querySelector('#lesson-content'),
   reviewList: document.querySelector('#review-list'),
@@ -57,12 +56,12 @@ const elements = {
   readerPrev: document.querySelector('#reader-prev'),
   readerNext: document.querySelector('#reader-next'),
   readerPageLabel: document.querySelector('#reader-page-label'),
-  reviewPopover: document.querySelector('#review-popover'),
-  reviewPopoverKind: document.querySelector('#review-popover-kind'),
-  reviewPopoverWord: document.querySelector('#review-popover-word'),
-  reviewPopoverMeaning: document.querySelector('#review-popover-meaning'),
-  reviewPopoverExamples: document.querySelector('#review-popover-examples'),
-  reviewPopoverClose: document.querySelector('#review-popover-close'),
+  reviewTitle: document.querySelector('#review-title'),
+  reviewDetail: document.querySelector('#review-detail'),
+  reviewDetailKind: document.querySelector('#review-detail-kind'),
+  reviewDetailMeaning: document.querySelector('#review-detail-meaning'),
+  reviewDetailExamples: document.querySelector('#review-detail-examples'),
+  reviewDetailClose: document.querySelector('#review-detail-close'),
 };
 
 const LANGUAGES = ['English', 'Japanese', 'Chinese'];
@@ -120,7 +119,7 @@ let selectedTopicId = null;
 let selectedLanguage = null;
 let selectedLevel = null;
 let reviewItems = [];
-let selectedReviewIndex = 0;
+let selectedReviewIndex = -1;
 let lessonHighlights = [];
 let pendingHighlight = null;
 let editingHighlightId = null;
@@ -211,33 +210,43 @@ function reviewGroups(review) {
   ].filter((group) => group.items.length > 0);
 }
 
-function openReviewPopover(item) {
+function openReviewDetail(item) {
   if (!item) return;
-  elements.reviewPopoverKind.textContent = item.kind;
-  elements.reviewPopoverWord.textContent = item.text;
-  elements.reviewPopoverMeaning.textContent = item.meaning;
-  const examples = elements.reviewPopoverExamples;
+  elements.reviewTitle.textContent = item.text;
+  elements.reviewDetailKind.textContent = item.kind;
+  elements.reviewDetailMeaning.textContent = item.meaning;
+  const examples = elements.reviewDetailExamples;
   examples.replaceChildren();
   for (const example of item.examples ?? []) {
     const listItem = document.createElement('li');
     listItem.textContent = example;
     examples.append(listItem);
   }
-  elements.reviewPopover.hidden = false;
+  elements.reviewList.hidden = true;
+  elements.reviewDetail.hidden = false;
+  elements.reviewDetailClose.hidden = false;
 }
 
-function closeReviewPopover() {
-  elements.reviewPopover.hidden = true;
+function closeReviewDetail() {
+  selectedReviewIndex = -1;
+  elements.reviewTitle.textContent = 'Từ vựng và cấu trúc';
+  elements.reviewList.hidden = false;
+  elements.reviewDetail.hidden = true;
+  elements.reviewDetailClose.hidden = true;
+  elements.reviewList.querySelectorAll('.review-item-button').forEach((button) => {
+    button.classList.remove('is-active');
+    button.setAttribute('aria-pressed', 'false');
+  });
 }
 
-function selectReviewItem(index, { open = false } = {}) {
+function selectReviewItem(index) {
   selectedReviewIndex = index;
   elements.reviewList.querySelectorAll('.review-item-button').forEach((button, i) => {
     const selected = i === index;
     button.classList.toggle('is-active', selected);
-    button.setAttribute('aria-selected', selected ? 'true' : 'false');
+    button.setAttribute('aria-pressed', selected ? 'true' : 'false');
   });
-  if (open) openReviewPopover(reviewItems[index]);
+  openReviewDetail(reviewItems[index]);
 }
 
 function renderReview(lesson) {
@@ -245,10 +254,11 @@ function renderReview(lesson) {
   reviewItems = groups.flatMap((group) =>
     group.items.map((item) => ({ ...item, kind: group.kind })),
   );
-  selectedReviewIndex = 0;
+  selectedReviewIndex = -1;
 
   const list = elements.reviewList;
   list.replaceChildren();
+  closeReviewDetail();
 
   if (reviewItems.length === 0) {
     const empty = document.createElement('p');
@@ -277,19 +287,15 @@ function renderReview(lesson) {
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'review-item-button';
-      button.setAttribute('role', 'tab');
-      button.setAttribute('aria-selected', 'false');
-
-      const kindLabel = document.createElement('span');
-      kindLabel.className = 'review-item-kind';
-      kindLabel.textContent = group.kind;
+      button.setAttribute('aria-pressed', 'false');
+      button.setAttribute('aria-label', `${item.text} — ${item.meaning}`);
 
       const text = document.createElement('span');
       text.className = 'review-item-text';
       text.textContent = item.text;
 
-      button.append(kindLabel, text);
-      button.addEventListener('click', () => selectReviewItem(index, { open: true }));
+      button.append(text);
+      button.addEventListener('click', () => selectReviewItem(index));
       listItem.append(button);
       listEl.append(listItem);
       flatIndex += 1;
@@ -298,7 +304,6 @@ function renderReview(lesson) {
     list.append(groupEl);
   }
 
-  selectReviewItem(0);
 }
 
 /* ---------- Highlights ---------- */
@@ -682,12 +687,11 @@ function showLesson(lesson) {
   editingHighlightId = null;
   popoverActiveHighlight = null;
   elements.highlightPopover.hidden = true;
-  closeReviewPopover();
+  closeReviewDetail();
   activeJourneyId = lesson.journey?.id ?? null;
   elements.mastheadEyebrow.textContent = 'Hành trình chi tiết';
-  elements.journeyTitle.textContent = `${lesson.journey.title} · ${lesson.journey.level}`;
+  elements.journeyTitle.textContent = lesson.journey.level;
   elements.lessonTitle.textContent = lesson.title;
-  elements.lessonPosition.textContent = `Bài ${lesson.sequenceNumber}/${lesson.journey.plannedLessonCount} · Vòng ${lesson.cycleNumber}`;
   elements.objective.textContent = lesson.objective;
   renderLessonContent(lesson.content);
   renderReview(lesson);
@@ -717,7 +721,7 @@ function showJourneyCompleted(journey) {
   bookmarkedLesson = null;
   activeJourneyId = journey?.id ?? null;
   hideHighlightPopover();
-  closeReviewPopover();
+  closeReviewDetail();
   resetBook();
   elements.mastheadEyebrow.textContent = 'Hành trình hoàn thành';
   elements.completionJourneyTitle.textContent = journey?.title ?? '';
@@ -733,7 +737,7 @@ function showJourneySetup() {
   bookmarkedLesson = null;
   activeJourneyId = null;
   hideHighlightPopover();
-  closeReviewPopover();
+  closeReviewDetail();
   resetBook();
   elements.mastheadEyebrow.textContent = 'Hành trình mới';
   elements.loading.hidden = true;
@@ -877,10 +881,7 @@ function buildBookCard(journey, index = 0) {
 
   const position = document.createElement('span');
   position.className = 'book-position';
-  const current = journey.currentLesson;
-  position.textContent = current
-    ? `Bài ${current.sequenceNumber}/${journey.plannedLessonCount} · Vòng ${current.cycleNumber}`
-    : `${journey.completedLessons}/${journey.totalLessons} bài`;
+  position.textContent = `${journey.completedLessons}/${journey.totalLessons} bài`;
 
   footer.append(meta, position);
   button.append(spine, dot, title, progress, footer);
@@ -919,7 +920,7 @@ function showHome() {
   currentLesson = null;
   bookmarkedLesson = null;
   hideHighlightPopover();
-  closeReviewPopover();
+  closeReviewDetail();
   resetBook();
   renderHome();
   elements.mastheadEyebrow.textContent = 'Kệ sách hành trình';
@@ -937,7 +938,7 @@ function showHomeOrSetup() {
 
 async function openJourney(journeyId) {
   hideHighlightPopover();
-  closeReviewPopover();
+  closeReviewDetail();
   elements.error.hidden = true;
   showBusy('Đang mở hành trình…');
 
@@ -1202,7 +1203,9 @@ function resetBook() {
 
 function updateBookScale() {
   const bookStageContainer = elements.bookStage.querySelector('.book-stage');
-  const availableHeight = window.innerHeight - 190;
+  const availableHeight = bookStageContainer?.clientHeight
+    ? bookStageContainer.clientHeight - 30
+    : window.innerHeight - 300;
   const availableWidth = bookStageContainer?.clientWidth
     ? bookStageContainer.clientWidth - 40
     : window.innerWidth - 400;
@@ -1269,53 +1272,25 @@ function closeBook(onDone) {
   );
 }
 
-const PAGE_SEGMENTS = 14;
-
-function buildPageSegment(container, index) {
-  const progress = index / (PAGE_SEGMENTS - 1);
-  const curl = -(0.65 + progress * 3.5);
-  const sag = Math.sin(progress * Math.PI) * 1.15;
-  const style = container.style;
-  style.setProperty('--x', `${-(index * 450) / PAGE_SEGMENTS}px`);
-  style.setProperty('--curl', `${curl}deg`);
-  style.setProperty('--curl-deep', `${curl * 1.12}deg`);
-  style.setProperty('--curl-positive', `${-curl}deg`);
-  style.setProperty('--curl-positive-deep', `${-curl * 1.12}deg`);
-  style.setProperty('--curl-reverse', `${curl * -0.42}deg`);
-  style.setProperty('--curl-settle', `${curl * 0.08}deg`);
-  style.setProperty('--sag', `${sag}deg`);
-  style.setProperty('--sag-half', `${sag * 0.65}deg`);
-  style.setProperty('--sag-reverse', `${sag * -0.35}deg`);
-  style.setProperty('--edge-delay', `${(PAGE_SEGMENTS - 1 - index) * 1.2}ms`);
-
-  const front = document.createElement('div');
-  front.className = 'segment-surface segment-front';
-  const back = document.createElement('div');
-  back.className = 'segment-surface segment-back';
-  container.append(front, back);
-
-  if (index < PAGE_SEGMENTS - 1) {
-    const child = document.createElement('div');
-    child.className = 'leaf-segment';
-    container.append(child);
-    buildPageSegment(child, index + 1);
-  }
-}
-
 function createTurningLeaf(direction) {
   const leaf = document.createElement('div');
   leaf.className = `turn-leaf manual-turn-leaf turn-${direction}`;
 
-  const root = document.createElement('div');
-  root.className = 'leaf-segment';
-  buildPageSegment(root, 0);
+  const sheet = document.createElement('div');
+  sheet.className = 'turning-sheet';
+
+  const front = document.createElement('div');
+  front.className = 'turning-sheet-face turning-sheet-front';
+  const back = document.createElement('div');
+  back.className = 'turning-sheet-face turning-sheet-back';
+  sheet.append(front, back);
 
   const glint = document.createElement('div');
   glint.className = 'page-glint';
   const shadow = document.createElement('div');
   shadow.className = 'moving-page-shadow';
 
-  leaf.append(root, glint, shadow);
+  leaf.append(sheet, glint, shadow);
   elements.antiqueBook.append(leaf);
   return leaf;
 }
@@ -1356,7 +1331,7 @@ async function flipTimelineLesson(offset) {
 
   window.setTimeout(() => {
     showLesson(lesson);
-  }, 600);
+  }, 560);
 
   window.setTimeout(() => {
     elements.antiqueBook
@@ -1365,7 +1340,7 @@ async function flipTimelineLesson(offset) {
     updateNavigation(lesson.id, lesson.isCurrent);
     elements.closeBookButton.disabled = false;
     isFlipping = false;
-  }, 1400);
+  }, 1220);
 }
 
 async function loadStats() {
@@ -1613,15 +1588,11 @@ document.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && !elements.highlightPopover.hidden) {
     hideHighlightPopover();
   }
-  if (event.key === 'Escape' && !elements.reviewPopover.hidden) {
-    closeReviewPopover();
+  if (event.key === 'Escape' && !elements.reviewDetail.hidden) {
+    closeReviewDetail();
   }
 });
 
-elements.reviewPopoverClose.addEventListener('click', () => {
-  closeReviewPopover();
-});
-
-elements.reviewPopover.addEventListener('click', (event) => {
-  if (event.target === elements.reviewPopover) closeReviewPopover();
+elements.reviewDetailClose.addEventListener('click', () => {
+  closeReviewDetail();
 });
