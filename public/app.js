@@ -43,17 +43,20 @@ const elements = {
   homeShelf: document.querySelector('#home-shelf'),
   homeEmpty: document.querySelector('#home-empty'),
   backHomeButton: document.querySelector('#back-home-button'),
-  pauseReadingButton: document.querySelector('#pause-reading-button'),
   busyOverlay: document.querySelector('#busy-overlay'),
   busyMessage: document.querySelector('#busy-message'),
-  bookFlip: document.querySelector('#book-flip'),
   bookStage: document.querySelector('#book-stage'),
+  antiqueBook: document.querySelector('.book-rig .antique-book'),
   stageTitle: document.querySelector('#stage-title'),
   stageDescription: document.querySelector('#stage-description'),
   coverTitle: document.querySelector('#cover-title'),
   coverSubtitle: document.querySelector('#cover-subtitle'),
   stateLabelText: document.querySelector('#state-label-text'),
   statePulse: document.querySelector('#state-pulse'),
+  closeBookButton: document.querySelector('#close-book-button'),
+  readerPrev: document.querySelector('#reader-prev'),
+  readerNext: document.querySelector('#reader-next'),
+  readerPageLabel: document.querySelector('#reader-page-label'),
   reviewPopover: document.querySelector('#review-popover'),
   reviewPopoverKind: document.querySelector('#review-popover-kind'),
   reviewPopoverWord: document.querySelector('#review-popover-word'),
@@ -1126,16 +1129,28 @@ function updateNavigation(lessonId, isCurrent) {
   const index = lessonTimeline.findIndex((lesson) => lesson.id === lessonId);
   const leftPage = elements.bookStage.querySelector('.left-paper');
   const rightPage = elements.bookStage.querySelector('.right-paper');
-  leftPage.classList.toggle('can-flip', index > 0);
-  rightPage.classList.toggle(
-    'can-flip',
-    index >= 0 && index < lessonTimeline.length - 1,
-  );
+  const canPrev = index > 0;
+  const canNext = index >= 0 && index < lessonTimeline.length - 1;
+
+  leftPage.classList.toggle('can-flip', canPrev);
+  rightPage.classList.toggle('can-flip', canNext);
+  elements.bookStage.querySelector('.zone-prev').disabled = !canPrev;
+  elements.bookStage.querySelector('.zone-next').disabled = !canNext;
+  elements.readerPrev.disabled = !canPrev;
+  elements.readerNext.disabled = !canNext;
+
+  const timelineLesson = lessonTimeline[index];
+  elements.readerPageLabel.textContent = timelineLesson
+    ? `Bài ${timelineLesson.sequenceNumber ?? '—'}${
+        currentLesson?.journey?.plannedLessonCount
+          ? `/${currentLesson.journey.plannedLessonCount}`
+          : ''
+      }`
+    : '';
 }
 
 /* ---------- Antique book-stage opening & page flipping ---------- */
 
-const BOOK_FLIP_MS = 620;
 const BOOK_CLOSE_MS = 2100;
 const BOOK_STAGE_DISMISS_MS = 600;
 let bookStageState = 'idle';
@@ -1168,6 +1183,7 @@ function setBookStageState(state) {
   elements.bookStage.classList.add(`state-${state}`);
   elements.stateLabelText.textContent = BOOK_PHASES[state] ?? '';
   elements.statePulse.classList.toggle('pulse', !['idle', 'open'].includes(state));
+  elements.closeBookButton.disabled = state !== 'open';
 }
 
 function clearBookStageTimers() {
@@ -1177,11 +1193,24 @@ function clearBookStageTimers() {
 
 function resetBook() {
   clearBookStageTimers();
-  elements.bookFlip.replaceChildren();
+  elements.antiqueBook.querySelectorAll('.turn-leaf').forEach((leaf) => leaf.remove());
   elements.bookStage.classList.remove(...BOOK_STAGE_STATES);
   elements.bookStage.classList.remove('is-dismissed');
   elements.bookStage.hidden = true;
   bookStageState = 'idle';
+}
+
+function updateBookScale() {
+  const bookStageContainer = elements.bookStage.querySelector('.book-stage');
+  const availableHeight = window.innerHeight - 190;
+  const availableWidth = bookStageContainer?.clientWidth
+    ? bookStageContainer.clientWidth - 40
+    : window.innerWidth - 400;
+  const scale = Math.max(
+    0.6,
+    Math.min(1.4, availableHeight / 613, availableWidth / 968),
+  );
+  elements.bookStage.style.setProperty('--book-scale', scale.toFixed(3));
 }
 
 function populateBookStage(lesson) {
@@ -1205,6 +1234,7 @@ function playBookOpening(lesson) {
   elements.bookStage.classList.remove('is-dismissed');
   elements.bookStage.hidden = false;
   void elements.bookStage.offsetWidth;
+  updateBookScale();
 
   const schedule = (state, delay) => {
     bookStageTimers.push(window.setTimeout(() => setBookStageState(state), delay));
@@ -1239,20 +1269,55 @@ function closeBook(onDone) {
   );
 }
 
-function createFlipSheet(offset) {
-  const sheet = document.createElement('div');
-  sheet.className = 'book-flip-sheet';
-  sheet.classList.add(offset > 0 ? 'is-next' : 'is-prev');
+const PAGE_SEGMENTS = 14;
+
+function buildPageSegment(container, index) {
+  const progress = index / (PAGE_SEGMENTS - 1);
+  const curl = -(0.65 + progress * 3.5);
+  const sag = Math.sin(progress * Math.PI) * 1.15;
+  const style = container.style;
+  style.setProperty('--x', `${-(index * 450) / PAGE_SEGMENTS}px`);
+  style.setProperty('--curl', `${curl}deg`);
+  style.setProperty('--curl-deep', `${curl * 1.12}deg`);
+  style.setProperty('--curl-positive', `${-curl}deg`);
+  style.setProperty('--curl-positive-deep', `${-curl * 1.12}deg`);
+  style.setProperty('--curl-reverse', `${curl * -0.42}deg`);
+  style.setProperty('--curl-settle', `${curl * 0.08}deg`);
+  style.setProperty('--sag', `${sag}deg`);
+  style.setProperty('--sag-half', `${sag * 0.65}deg`);
+  style.setProperty('--sag-reverse', `${sag * -0.35}deg`);
+  style.setProperty('--edge-delay', `${(PAGE_SEGMENTS - 1 - index) * 1.2}ms`);
 
   const front = document.createElement('div');
-  front.className = 'book-flip-front';
-  const source = offset > 0
-    ? elements.bookStage.querySelector('.right-paper')
-    : elements.bookStage.querySelector('.left-paper');
-  front.append(source?.cloneNode(true) ?? document.createElement('span'));
-  sheet.append(front);
-  elements.bookFlip.append(sheet);
-  return sheet;
+  front.className = 'segment-surface segment-front';
+  const back = document.createElement('div');
+  back.className = 'segment-surface segment-back';
+  container.append(front, back);
+
+  if (index < PAGE_SEGMENTS - 1) {
+    const child = document.createElement('div');
+    child.className = 'leaf-segment';
+    container.append(child);
+    buildPageSegment(child, index + 1);
+  }
+}
+
+function createTurningLeaf(direction) {
+  const leaf = document.createElement('div');
+  leaf.className = `turn-leaf manual-turn-leaf turn-${direction}`;
+
+  const root = document.createElement('div');
+  root.className = 'leaf-segment';
+  buildPageSegment(root, 0);
+
+  const glint = document.createElement('div');
+  glint.className = 'page-glint';
+  const shadow = document.createElement('div');
+  shadow.className = 'moving-page-shadow';
+
+  leaf.append(root, glint, shadow);
+  elements.antiqueBook.append(leaf);
+  return leaf;
 }
 
 async function flipTimelineLesson(offset) {
@@ -1265,6 +1330,9 @@ async function flipTimelineLesson(offset) {
   if (!target) return;
 
   isFlipping = true;
+  elements.readerPrev.disabled = true;
+  elements.readerNext.disabled = true;
+  elements.closeBookButton.disabled = true;
   hideHighlightPopover();
 
   let lesson;
@@ -1284,20 +1352,20 @@ async function flipTimelineLesson(offset) {
     return;
   }
 
-  const sheet = createFlipSheet(offset);
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => sheet.classList.add('is-flipping'));
-  });
+  createTurningLeaf(offset > 0 ? 'next' : 'prev');
 
   window.setTimeout(() => {
     showLesson(lesson);
-  }, BOOK_FLIP_MS / 2);
+  }, 600);
 
   window.setTimeout(() => {
-    sheet.remove();
+    elements.antiqueBook
+      .querySelectorAll('.turn-leaf.manual-turn-leaf')
+      .forEach((leaf) => leaf.remove());
     updateNavigation(lesson.id, lesson.isCurrent);
+    elements.closeBookButton.disabled = false;
     isFlipping = false;
-  }, BOOK_FLIP_MS + 80);
+  }, 1400);
 }
 
 async function loadStats() {
@@ -1349,9 +1417,21 @@ elements.backHomeButton.addEventListener('click', () => {
   goHome();
 });
 
-elements.pauseReadingButton.addEventListener('click', () => {
+elements.closeBookButton.addEventListener('click', () => {
+  if (isFlipping) return;
   closeBook(() => goHome());
 });
+
+window.addEventListener('resize', updateBookScale);
+
+elements.bookStage
+  .querySelector('.zone-prev')
+  .addEventListener('click', () => flipTimelineLesson(-1));
+elements.bookStage
+  .querySelector('.zone-next')
+  .addEventListener('click', () => flipTimelineLesson(1));
+elements.readerPrev.addEventListener('click', () => flipTimelineLesson(-1));
+elements.readerNext.addEventListener('click', () => flipTimelineLesson(1));
 
 function handlePageClick(event, offset) {
   if (!elements.highlightPopover.hidden) return;

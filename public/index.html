@@ -283,18 +283,6 @@
                       </svg>
                       <p>Đọc chậm, chép bài vào vở, rồi quay lại đây khi bạn đã hoàn thành.</p>
                     </div>
-
-                    <div class="lesson-actions">
-                      <p id="lesson-status" class="status" aria-live="polite"></p>
-                      <div class="button-group">
-                        <button id="regenerate-button" class="secondary-button" type="button">
-                          Tạo bài khác
-                        </button>
-                        <button id="complete-button" class="primary-button" type="button">
-                          Đã chép xong
-                        </button>
-                      </div>
-                    </div>
                   </div>
                 </article>
               </div>
@@ -327,24 +315,31 @@
                 </div>
               </div>
               <div class="spine" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
-            </div>
 
-            <div id="book-flip" class="book-flip" aria-hidden="true"></div>
+              <button class="page-turn-zone zone-prev" type="button" aria-label="Lật về bài trước" disabled><span>‹</span></button>
+              <button class="page-turn-zone zone-next" type="button" aria-label="Lật sang bài tiếp theo" disabled><span>›</span></button>
+            </div>
           </div>
 
           <div class="interaction-copy">
             <p class="state-label"><span id="state-pulse" class="state-dot"></span><span id="state-label-text">Đang nằm trên giá</span></p>
             <div class="progress-track" aria-hidden="true"><i></i></div>
-          </div>
 
-          <div class="lesson-controls">
-            <button id="pause-reading-button" class="pause-button" type="button">
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M11 5 6 9H2v6h4l5 4V5z" />
-                <path d="M15.5 8.5a5 5 0 0 1 0 7" />
-              </svg>
-              Tạm dừng đọc
-            </button>
+            <nav class="reader-toolbar" aria-label="Điều hướng bài học">
+              <button id="reader-prev" type="button" aria-label="Bài trước" disabled>←</button>
+              <span id="reader-page-label" aria-live="polite"></span>
+              <button id="reader-next" type="button" aria-label="Bài tiếp theo" disabled>→</button>
+            </nav>
+
+            <div class="open-actions">
+              <button id="close-book-button" class="primary-action compact-action" type="button" disabled>
+                Khép sách <span>↙</span>
+              </button>
+              <button id="regenerate-button" class="text-action" type="button">Tạo bài khác</button>
+              <button id="complete-button" class="text-action" type="button">Đã chép xong</button>
+            </div>
+
+            <p id="lesson-status" class="status" aria-live="polite"></p>
           </div>
         </div>
       </div>
