@@ -238,7 +238,7 @@ function openReviewDetail(item) {
 
 function closeReviewDetail() {
   selectedReviewIndex = -1;
-  elements.reviewTitle.textContent = 'Từ vựng và cấu trúc';
+  elements.reviewTitle.textContent = 'Từ vựng và\nCấu trúc';
   elements.reviewList.hidden = false;
   elements.reviewDetail.hidden = true;
   elements.reviewDetailClose.hidden = true;
@@ -299,7 +299,7 @@ function renderReview(lesson) {
     groupTitle.append(groupIcon, groupLabel);
     groupEl.append(groupTitle);
 
-    const listEl = document.createElement('ul');
+    const listEl = document.createElement('ol');
     listEl.className = 'review-group-items';
     listEl.hidden = true;
     for (const item of group.items) {
