@@ -10,7 +10,6 @@ const elements = {
   objectivePopover: document.querySelector('#objective-popover'),
   lessonContent: document.querySelector('#lesson-content'),
   reviewList: document.querySelector('#review-list'),
-  reviewPanel: document.querySelector('.lesson-right .review'),
   lessonStatus: document.querySelector('#lesson-status'),
   completeButton: document.querySelector('#complete-button'),
   regenerateButton: document.querySelector('#regenerate-button'),
@@ -222,7 +221,6 @@ function reviewGroups(review) {
 
 function openReviewDetail(item) {
   if (!item) return;
-  elements.reviewPanel.classList.add('is-detail-open');
   elements.reviewTitle.textContent = item.text;
   elements.reviewDetailKind.textContent = item.kind;
   elements.reviewDetailMeaning.textContent = item.meaning;
@@ -240,7 +238,6 @@ function openReviewDetail(item) {
 
 function closeReviewDetail() {
   selectedReviewIndex = -1;
-  elements.reviewPanel.classList.remove('is-detail-open');
   elements.reviewTitle.textContent = 'Từ vựng và cấu trúc';
   elements.reviewList.hidden = false;
   elements.reviewDetail.hidden = true;
@@ -285,19 +282,10 @@ function renderReview(lesson) {
     const groupEl = document.createElement('div');
     groupEl.className = 'review-group';
 
-    const groupHeading = document.createElement('div');
-    groupHeading.className = 'review-group-heading';
-
     const groupTitle = document.createElement('h3');
     groupTitle.className = 'review-group-title';
     groupTitle.textContent = group.kind;
-
-    const groupCount = document.createElement('span');
-    groupCount.className = 'review-group-count';
-    groupCount.textContent = String(group.items.length).padStart(2, '0');
-    groupCount.setAttribute('aria-hidden', 'true');
-    groupHeading.append(groupTitle, groupCount);
-    groupEl.append(groupHeading);
+    groupEl.append(groupTitle);
 
     const listEl = document.createElement('ul');
     listEl.className = 'review-group-items';
@@ -311,21 +299,11 @@ function renderReview(lesson) {
       button.setAttribute('aria-pressed', 'false');
       button.setAttribute('aria-label', `${item.text} — ${item.meaning}`);
 
-      const marker = document.createElement('span');
-      marker.className = 'review-item-marker';
-      marker.textContent = String(index + 1).padStart(2, '0');
-      marker.setAttribute('aria-hidden', 'true');
-
       const text = document.createElement('span');
       text.className = 'review-item-text';
       text.textContent = item.text;
 
-      const arrow = document.createElement('span');
-      arrow.className = 'review-item-arrow';
-      arrow.textContent = '→';
-      arrow.setAttribute('aria-hidden', 'true');
-
-      button.append(marker, text, arrow);
+      button.append(text);
       button.addEventListener('click', () => selectReviewItem(index));
       listItem.append(button);
       listEl.append(listItem);
