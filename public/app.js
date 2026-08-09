@@ -895,7 +895,7 @@ function buildBookCard(journey, index = 0) {
 
   footer.append(meta, position);
   button.append(spine, dot, title, progress, footer);
-  button.addEventListener('click', () => openJourney(journey.id));
+  button.addEventListener('click', () => openJourney(journey.id, button));
   return button;
 }
 
@@ -946,11 +946,15 @@ function showHomeOrSetup() {
   else showHome();
 }
 
-async function openJourney(journeyId) {
+async function openJourney(journeyId, originEl) {
   hideHighlightPopover();
   closeReviewDetail();
   elements.error.hidden = true;
   showBusy('Đang mở hành trình…');
+
+  bookFlyOriginRect = originEl ? originEl.getBoundingClientRect() : null;
+  const journey = journeys.find((item) => item.id === journeyId);
+  bookFlyTitle = journey?.title ?? '';
 
   try {
     const response = await fetch(`/api/journeys/${journeyId}/open`, {
@@ -962,9 +966,11 @@ async function openJourney(journeyId) {
     activeJourneyId = journeyId;
 
     if (payload.data.journeyCompleted) {
+      hideBusy();
       showJourneyCompleted(payload.data.journey);
       await loadHistory(null);
     } else {
+      hideBusy();
       bookmarkedLesson = payload.data.lesson;
       showLesson(payload.data.lesson);
       playBookOpening(payload.data.lesson);
@@ -1228,6 +1234,9 @@ const BOOK_STAGE_DISMISS_MS = 600;
 let bookStageState = 'idle';
 let bookStageTimers = [];
 let isFlipping = false;
+let bookFlyOriginRect = null;
+let bookFlyTitle = '';
+let currentFlyer = null;
 
 const BOOK_PHASES = {
   idle: 'Đang nằm trên giá',
@@ -1263,11 +1272,20 @@ function clearBookStageTimers() {
   bookStageTimers = [];
 }
 
+function clearBookFlyer() {
+  if (currentFlyer) {
+    currentFlyer.remove();
+    currentFlyer = null;
+  }
+}
+
 function resetBook() {
   clearBookStageTimers();
+  clearBookFlyer();
   elements.antiqueBook.querySelectorAll('.turn-leaf').forEach((leaf) => leaf.remove());
   elements.bookStage.classList.remove(...BOOK_STAGE_STATES);
   elements.bookStage.classList.remove('is-dismissed');
+  elements.bookStage.classList.remove('is-flying');
   elements.bookStage.hidden = true;
   bookStageState = 'idle';
 }
@@ -1311,7 +1329,11 @@ function populateBookStage(lesson) {
 function playBookOpening(lesson) {
   populateBookStage(lesson);
   clearBookStageTimers();
+  clearBookFlyer();
   elements.bookStage.classList.remove('is-dismissed');
+  elements.bookStage.classList.remove('is-flying');
+  const willFly = Boolean(bookFlyOriginRect);
+  if (willFly) elements.bookStage.classList.add('is-flying');
   elements.bookStage.hidden = false;
   void elements.bookStage.offsetWidth;
   updateBookScale();
@@ -1320,6 +1342,21 @@ function playBookOpening(lesson) {
     bookStageTimers.push(window.setTimeout(() => setBookStageState(state), delay));
   };
 
+  if (willFly) {
+    const target = getPresentingCoverRect();
+    setBookStageState('presenting');
+    launchBookFlyer(bookFlyOriginRect, target, 1100);
+    bookStageTimers.push(
+      window.setTimeout(() => {
+        elements.bookStage.classList.remove('is-flying');
+      }, 1100),
+    );
+    schedule('opening', 1850);
+    schedule('turning', 3150);
+    schedule('open', 5450);
+    return;
+  }
+
   setBookStageState('lifting');
   schedule('presenting', 850);
   schedule('opening', 1550);
@@ -1327,26 +1364,122 @@ function playBookOpening(lesson) {
   schedule('open', 5150);
 }
 
-function closeBook(onDone) {
+function getPresentingCoverRect() {
+  const container = elements.bookStage.querySelector('.book-stage');
+  if (!container) return null;
+  const r = container.getBoundingClientRect();
+  const w = 450 * 0.76;
+  const h = 590 * 0.76;
+  return {
+    left: r.left + r.width / 2 - w / 2,
+    top: r.top + r.height / 2 - h / 2,
+    width: w,
+    height: h,
+  };
+}
+
+function getClosedCoverRect() {
+  const cover = elements.bookStage.querySelector('.front-cover');
+  if (!cover) return null;
+  const r = cover.getBoundingClientRect();
+  return { left: r.left, top: r.top, width: r.width, height: r.height };
+}
+
+function launchBookFlyer(fromRect, toRect, duration) {
+  clearBookFlyer();
+
+  const flyer = document.createElement('div');
+  flyer.className = 'book-flyer';
+  const title = document.createElement('span');
+  title.className = 'book-flyer-title';
+  title.textContent = bookFlyTitle || 'Writing Journey';
+  flyer.append(title);
+  flyer.style.left = `${fromRect.left}px`;
+  flyer.style.top = `${fromRect.top}px`;
+  flyer.style.width = `${fromRect.width}px`;
+  flyer.style.height = `${fromRect.height}px`;
+  document.body.append(flyer);
+  currentFlyer = flyer;
+
+  const fromCx = fromRect.left + fromRect.width / 2;
+  const fromCy = fromRect.top + fromRect.height / 2;
+  const toCx = toRect.left + toRect.width / 2;
+  const toCy = toRect.top + toRect.height / 2;
+  const dx = toCx - fromCx;
+  const dy = toCy - fromCy;
+  const sx = toRect.width / fromRect.width;
+  const sy = toRect.height / fromRect.height;
+
+  const animation = flyer.animate(
+    [
+      { transform: 'translate(0, 0) scale(1)', opacity: 1 },
+      {
+        transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`,
+        opacity: 1,
+        offset: 0.86,
+      },
+      {
+        transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`,
+        opacity: 0,
+      },
+    ],
+    { duration, easing: 'cubic-bezier(0.25, 0.6, 0.2, 1)', fill: 'forwards' },
+  );
+
+  animation.finished.then(() => clearBookFlyer()).catch(() => clearBookFlyer());
+  return animation.finished.catch(() => undefined);
+}
+
+function closeBookAndReturn() {
+  if (isFlipping) return;
+
   clearBookStageTimers();
   elements.bookStage.classList.remove('is-dismissed');
   elements.bookStage.hidden = false;
   setBookStageState('closing');
 
   bookStageTimers.push(
-    window.setTimeout(() => {
-      setBookStageState('idle');
+    window.setTimeout(async () => {
+      await loadLibrary();
+      showHomeBackdrop();
+
+      const finish = () => {
+        elements.bookStage.hidden = true;
+        elements.bookStage.classList.remove('is-dismissed');
+        elements.bookStage.classList.remove('is-flying');
+        bookStageState = 'idle';
+        loadStats();
+      };
+
+      if (bookFlyOriginRect) {
+        const fromRect = getClosedCoverRect();
+        if (fromRect) {
+          elements.bookStage.classList.add('is-flying');
+          elements.bookStage.classList.add('is-dismissed');
+          await launchBookFlyer(fromRect, bookFlyOriginRect, 850);
+          finish();
+          return;
+        }
+      }
+
       elements.bookStage.classList.add('is-dismissed');
+      bookStageTimers.push(window.setTimeout(finish, BOOK_STAGE_DISMISS_MS + 80));
     }, BOOK_CLOSE_MS),
   );
-  bookStageTimers.push(
-    window.setTimeout(() => {
-      elements.bookStage.hidden = true;
-      elements.bookStage.classList.remove('is-dismissed');
-      bookStageState = 'idle';
-      onDone?.();
-    }, BOOK_CLOSE_MS + BOOK_STAGE_DISMISS_MS + 80),
-  );
+}
+
+function showHomeBackdrop() {
+  currentLesson = null;
+  bookmarkedLesson = null;
+  hideHighlightPopover();
+  closeReviewDetail();
+  renderHome();
+  elements.mastheadEyebrow.textContent = 'Kệ sách hành trình';
+  elements.loading.hidden = true;
+  elements.error.hidden = true;
+  elements.journeySetup.hidden = true;
+  elements.completion.hidden = true;
+  elements.home.hidden = false;
 }
 
 function createTurningLeaf(direction) {
@@ -1459,8 +1592,7 @@ elements.backHomeButton.addEventListener('click', () => {
 });
 
 elements.closeBookButton.addEventListener('click', () => {
-  if (isFlipping) return;
-  closeBook(() => goHome());
+  closeBookAndReturn();
 });
 
 window.addEventListener('resize', updateBookScale);

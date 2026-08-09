@@ -642,6 +642,56 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
   background: rgb(255 255 255 / 92%);
 }
 
+/* ---------- Flying book (home shelf <-> book stage) ---------- */
+
+.book-flyer {
+  position: fixed;
+  z-index: 150;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px 15px 15px 7px;
+  pointer-events: none;
+  transform-origin: center;
+  color: #e0bd78;
+  font-family: Georgia, serif;
+  background: #704015 url("/img/leather-cover.webp") center/cover;
+  box-shadow:
+    inset 0 0 60px #140b05,
+    inset 0 0 0 6px rgb(32 18 7 / 72%),
+    0 30px 60px rgb(0 0 0 / 55%);
+  will-change: transform, opacity;
+}
+
+.book-flyer::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  z-index: 1;
+  border: 1px solid rgb(163 111 44 / 80%);
+  outline: 1px solid rgb(221 166 73 / 30%);
+  outline-offset: -4px;
+  box-shadow: inset 0 0 30px rgb(0 0 0 / 45%);
+}
+
+.book-flyer-title {
+  position: relative;
+  z-index: 2;
+  display: block;
+  width: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  text-align: center;
+  font-size: clamp(9px, 2.4vw, 20px);
+  font-weight: 400;
+  line-height: 1.12;
+  letter-spacing: 0.02em;
+  overflow-wrap: break-word;
+}
+
 /* ---------- Panels (setup + completion) ---------- */
 
 .panel {
@@ -2443,7 +2493,12 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   -webkit-transform-style: preserve-3d;
   transform: translate3d(-225px, 235px, 0) rotateX(0deg) rotateY(-17deg)
     rotateZ(-8deg) scale(0.43);
-  transition: transform 1s cubic-bezier(0.18, 0.75, 0.18, 1);
+  transition: transform 1s cubic-bezier(0.18, 0.75, 0.18, 1), opacity 0.4s ease;
+}
+
+.book-stage-overlay.is-flying .book-rig {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .book-rig .antique-book {
