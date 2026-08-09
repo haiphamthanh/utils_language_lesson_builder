@@ -232,10 +232,25 @@
                   <div class="paper-ornament" aria-hidden="true"></div>
                   <div class="page-content lesson-left">
                     <header class="book-page-head">
-                      <p id="journey-title" class="eyebrow"></p>
                       <h1 id="lesson-title"></h1>
+                      <button
+                        id="objective-toggle"
+                        class="objective-info-button"
+                        type="button"
+                        aria-label="Xem mục tiêu bài viết"
+                        aria-expanded="false"
+                        aria-controls="objective-popover"
+                      >
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <circle cx="12" cy="12" r="9" />
+                          <path d="M12 10.5v6M12 7.5h.01" />
+                        </svg>
+                      </button>
+                      <aside id="objective-popover" class="objective-popover" role="note" hidden>
+                        <small>Mục tiêu bài viết</small>
+                        <p id="objective"></p>
+                      </aside>
                     </header>
-                    <p id="objective" class="objective"></p>
                     <div id="lesson-content" class="lesson-content"></div>
                     <p class="highlight-hint">Bôi đen một đoạn trong bài để đánh dấu và ghi chú.</p>
                   </div>

@@ -4,9 +4,10 @@ const elements = {
   mastheadEyebrow: document.querySelector('#masthead-eyebrow'),
   themeToggle: document.querySelector('#theme-toggle'),
   stageThemeToggle: document.querySelector('#stage-theme-toggle'),
-  journeyTitle: document.querySelector('#journey-title'),
   lessonTitle: document.querySelector('#lesson-title'),
   objective: document.querySelector('#objective'),
+  objectiveToggle: document.querySelector('#objective-toggle'),
+  objectivePopover: document.querySelector('#objective-popover'),
   lessonContent: document.querySelector('#lesson-content'),
   reviewList: document.querySelector('#review-list'),
   lessonStatus: document.querySelector('#lesson-status'),
@@ -693,10 +694,10 @@ function showLesson(lesson) {
   editingHighlightId = null;
   popoverActiveHighlight = null;
   elements.highlightPopover.hidden = true;
+  closeObjectivePopover();
   closeReviewDetail();
   activeJourneyId = lesson.journey?.id ?? null;
   elements.mastheadEyebrow.textContent = 'Hành trình chi tiết';
-  elements.journeyTitle.textContent = lesson.journey.level;
   elements.lessonTitle.textContent = lesson.title;
   elements.objective.textContent = lesson.objective;
   renderLessonContent(lesson.content);
@@ -1586,6 +1587,13 @@ elements.highlightDeleteButton.addEventListener('click', () => {
 });
 
 document.addEventListener('click', (event) => {
+  if (
+    !elements.objectivePopover.hidden &&
+    !elements.objectivePopover.contains(event.target) &&
+    !elements.objectiveToggle.contains(event.target)
+  ) {
+    closeObjectivePopover();
+  }
   if (elements.highlightPopover.hidden) return;
   if (elements.highlightPopover.contains(event.target)) return;
   if (event.target.closest?.('.saved-note-highlight')) return;
@@ -1593,6 +1601,10 @@ document.addEventListener('click', (event) => {
 });
 
 document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && !elements.objectivePopover.hidden) {
+    closeObjectivePopover();
+    elements.objectiveToggle.focus();
+  }
   if (event.key === 'Escape' && !elements.highlightPopover.hidden) {
     hideHighlightPopover();
   }
@@ -1603,4 +1615,18 @@ document.addEventListener('keydown', (event) => {
 
 elements.reviewDetailClose.addEventListener('click', () => {
   closeReviewDetail();
+});
+
+function closeObjectivePopover() {
+  elements.objectivePopover.hidden = true;
+  elements.objectiveToggle.setAttribute('aria-expanded', 'false');
+}
+
+elements.objectiveToggle.addEventListener('click', () => {
+  const shouldOpen = elements.objectivePopover.hidden;
+  closeObjectivePopover();
+  if (shouldOpen) {
+    elements.objectivePopover.hidden = false;
+    elements.objectiveToggle.setAttribute('aria-expanded', 'true');
+  }
 });

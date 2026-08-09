@@ -3679,40 +3679,86 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   color: #3a2717;
 }
 .book-stage-overlay .book-page-head {
-  display: flex;
-  flex-direction: column;
+  position: relative;
   min-width: 0;
 }
-.book-stage-overlay .book-page-head .eyebrow {
-  order: 2;
-  display: block;
-  min-height: 13px;
-  margin: 10px 0 4px 28px;
-  overflow: hidden;
-  color: #704a25;
-  font-size: 9px;
-  letter-spacing: 0.18em;
-  text-align: left;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 .book-stage-overlay .book-page-head h1 {
-  order: 1;
-  margin: 56px 28px 0;
-  padding-inline: 4px;
+  margin: 50px 42px 24px;
+  padding-inline: 18px;
   color: #3a2717;
   font-size: clamp(25px, 2.8vw, 36px);
   font-weight: 400;
   line-height: 1.08;
   text-align: center;
 }
-.book-stage-overlay .objective {
-  margin: 0px 0 0 80px;
-  padding: 10px 12px;
-  border-left: 3px solid #a36f2c;
-  border-radius: 0 10px 10px 0;
-  background: rgb(122 84 40 / 13%);
-  color: #4c321b;
+.book-stage-overlay .objective-info-button {
+  position: absolute;
+  top: 45px;
+  right: 18px;
+  z-index: 7;
+  display: grid;
+  width: 21px;
+  height: 21px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid rgb(111 70 31 / 38%);
+  border-radius: 50%;
+  color: #75502b;
+  background: rgb(226 198 143 / 34%);
+  cursor: pointer;
+  transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+.book-stage-overlay .objective-info-button:hover,
+.book-stage-overlay .objective-info-button[aria-expanded="true"] {
+  border-color: #8d5427;
+  color: #5f3017;
+  background: rgb(239 208 145 / 62%);
+}
+.book-stage-overlay .objective-info-button svg {
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.7;
+}
+.book-stage-overlay .objective-popover {
+  position: absolute;
+  z-index: 6;
+  top: 74px;
+  right: 14px;
+  width: min(270px, calc(100% - 28px));
+  padding: 14px 16px 15px;
+  border: 1px solid rgb(101 58 24 / 35%);
+  border-radius: 3px 3px 10px 10px;
+  color: #452b18;
+  background:
+    linear-gradient(rgb(236 211 160 / 96%), rgb(211 175 112 / 96%)),
+    url("/img/illuminated-page.webp") center/cover;
+  box-shadow: 0 14px 28px rgb(56 31 11 / 28%);
+  text-align: left;
+}
+.book-stage-overlay .objective-popover::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  right: 14px;
+  width: 10px;
+  height: 10px;
+  border-top: 1px solid rgb(101 58 24 / 35%);
+  border-left: 1px solid rgb(101 58 24 / 35%);
+  background: #ecd29d;
+  transform: rotate(45deg);
+}
+.book-stage-overlay .objective-popover small {
+  color: #7a4f26;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.book-stage-overlay .objective-popover p {
+  margin: 7px 0 0;
   font-size: 12px;
   line-height: 1.55;
 }
@@ -3736,7 +3782,6 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   text-align: right;
 }
 .book-stage-overlay .lesson-content p,
-.book-stage-overlay .objective,
 .book-stage-overlay .book-page-head h1,
 .book-stage-overlay .review-title,
 .book-stage-overlay .review-detail-meaning,
