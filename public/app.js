@@ -51,6 +51,17 @@ const elements = {
   bookCover: document.querySelector('#book-cover'),
   bookCoverTitle: document.querySelector('#book-cover-title'),
   bookFlip: document.querySelector('#book-flip'),
+  bookStage: document.querySelector('#book-stage'),
+  stageTitle: document.querySelector('#stage-title'),
+  stageDescription: document.querySelector('#stage-description'),
+  coverTitle: document.querySelector('#cover-title'),
+  coverSubtitle: document.querySelector('#cover-subtitle'),
+  spreadTitle: document.querySelector('#spread-title'),
+  spreadIntro: document.querySelector('#spread-intro'),
+  spreadChapter: document.querySelector('#spread-chapter'),
+  spreadText: document.querySelector('#spread-text'),
+  stateLabelText: document.querySelector('#state-label-text'),
+  statePulse: document.querySelector('#state-pulse'),
   reviewPopover: document.querySelector('#review-popover'),
   reviewPopoverKind: document.querySelector('#review-popover-kind'),
   reviewPopoverWord: document.querySelector('#review-popover-word'),
@@ -669,7 +680,7 @@ async function deleteHighlight() {
   }
 }
 
-function showLesson(lesson, { animateBook = false } = {}) {
+function showLesson(lesson) {
   currentLesson = lesson;
   lessonHighlights = [];
   pendingHighlight = null;
@@ -705,8 +716,7 @@ function showLesson(lesson, { animateBook = false } = {}) {
     : '';
   updateNavigation(lesson.id, lesson.isCurrent);
   loadHighlights(lesson.id);
-
-  if (animateBook) openBook(lesson.journey?.title);
+  resetLessonCover();
 }
 
 function showJourneyCompleted(journey) {
@@ -955,8 +965,9 @@ async function openJourney(journeyId) {
       await loadHistory(null);
     } else {
       bookmarkedLesson = payload.data.lesson;
-      showLesson(payload.data.lesson, { animateBook: true });
+      showLesson(payload.data.lesson);
       await loadHistory(payload.data.lesson);
+      playBookOpening(payload.data.lesson);
     }
     await loadLibrary();
     loadStats();
@@ -1135,61 +1146,138 @@ function updateNavigation(lessonId, isCurrent) {
   );
 }
 
-/* ---------- Book opening & page flipping ---------- */
+/* ---------- Antique book-stage opening & page flipping ---------- */
 
-const BOOK_COVER_HOLD_MS = 550;
-const BOOK_SWING_MS = 1000;
-const BOOK_OPEN_MS = BOOK_COVER_HOLD_MS + BOOK_SWING_MS + 60;
 const BOOK_FLIP_MS = 620;
-let lastBookTitle = '';
+const BOOK_CLOSE_MS = 2100;
+const BOOK_STAGE_DISMISS_MS = 600;
+let bookStageState = 'idle';
+let bookStageTimers = [];
 let isFlipping = false;
 
-function resetBook() {
+const BOOK_PHASES = {
+  idle: 'Đang nằm trên giá',
+  lifting: 'Rời khỏi giá sách',
+  presenting: 'Xoay về phía người đọc',
+  opening: 'Mở bìa theo trục gáy',
+  turning: 'Lật qua những trang đầu',
+  open: 'Sẵn sàng để đọc',
+  closing: 'Khép sách',
+};
+
+const BOOK_STAGE_STATES = [
+  'state-idle',
+  'state-lifting',
+  'state-presenting',
+  'state-opening',
+  'state-turning',
+  'state-open',
+  'state-closing',
+];
+
+function setBookStageState(state) {
+  bookStageState = state;
+  elements.bookStage.classList.remove(...BOOK_STAGE_STATES);
+  elements.bookStage.classList.add(`state-${state}`);
+  elements.stateLabelText.textContent = BOOK_PHASES[state] ?? '';
+  elements.statePulse.classList.toggle('pulse', !['idle', 'open'].includes(state));
+}
+
+function clearBookStageTimers() {
+  bookStageTimers.forEach(window.clearTimeout);
+  bookStageTimers = [];
+}
+
+function resetLessonCover() {
   elements.bookCover.hidden = true;
   elements.bookCover.classList.remove('is-open');
   elements.book.classList.remove('is-covering');
-  elements.bookFlip.replaceChildren();
 }
 
-function openBook(title) {
-  lastBookTitle = title ?? '';
+function resetBook() {
+  clearBookStageTimers();
+  resetLessonCover();
+  elements.bookFlip.replaceChildren();
+  elements.bookStage.classList.remove(...BOOK_STAGE_STATES);
+  elements.bookStage.classList.remove('is-dismissed');
+  elements.bookStage.hidden = true;
+  bookStageState = 'idle';
+}
+
+function populateBookStage(lesson) {
+  const journey = lesson?.journey ?? {};
+  const title = journey.title ?? '';
+  const language = journey.language ?? '';
+  const level = journey.level ?? '';
+  const planned = journey.plannedLessonCount ?? null;
+
+  elements.coverTitle.textContent = title;
+  elements.coverSubtitle.textContent =
+    [language, level].filter(Boolean).join(' · ') || 'Writing Journey';
+  elements.stageTitle.textContent = title;
+  elements.stageDescription.textContent =
+    lesson?.objective ||
+    'Một hành trình rèn viết ngoại ngữ, được gìn giữ như một cổ thư sống động.';
+  elements.spreadTitle.textContent = lesson?.title ?? 'Bài học hôm nay';
+  elements.spreadIntro.textContent = lesson?.objective ?? '';
+  elements.spreadChapter.textContent = lesson?.sequenceNumber
+    ? `Bài ${lesson.sequenceNumber}${planned ? `/${planned}` : ''} · Vòng ${lesson.cycleNumber ?? 1}`
+    : 'Chương thứ nhất';
+  elements.spreadText.textContent = lesson?.summary ?? '';
+}
+
+function playBookOpening(lesson) {
+  populateBookStage(lesson);
   resetBook();
-  elements.bookCoverTitle.textContent = lastBookTitle;
-  elements.bookCover.hidden = false;
-  elements.bookCover.classList.remove('is-open');
-  elements.book.classList.add('is-covering');
-  void elements.bookCover.offsetWidth;
-  window.setTimeout(() => {
-    requestAnimationFrame(() => {
-      elements.bookCover.classList.add('is-open');
-    });
-  }, BOOK_COVER_HOLD_MS);
-  window.setTimeout(() => {
-    elements.bookCover.hidden = true;
-    elements.bookCover.classList.remove('is-open');
-    elements.book.classList.remove('is-covering');
-  }, BOOK_OPEN_MS);
+  elements.bookStage.hidden = false;
+  void elements.bookStage.offsetWidth;
+
+  return new Promise((resolve) => {
+    const schedule = (state, delay) => {
+      bookStageTimers.push(window.setTimeout(() => setBookStageState(state), delay));
+    };
+
+    setBookStageState('lifting');
+    schedule('presenting', 850);
+    schedule('opening', 1550);
+    schedule('turning', 2850);
+    schedule('open', 5150);
+    bookStageTimers.push(
+      window.setTimeout(() => {
+        elements.bookStage.classList.add('is-dismissed');
+      }, 5850),
+    );
+    bookStageTimers.push(
+      window.setTimeout(() => {
+        elements.bookStage.hidden = true;
+        elements.bookStage.classList.remove('is-dismissed');
+        bookStageState = 'idle';
+        resolve();
+      }, 5850 + BOOK_STAGE_DISMISS_MS),
+    );
+  });
 }
 
 function closeBook(onDone) {
-  const cover = elements.bookCover;
-  isFlipping = true;
-  cover.style.transition = 'none';
-  cover.classList.add('is-open');
-  void cover.offsetWidth;
-  cover.style.transition = '';
-  cover.hidden = false;
-  elements.book.classList.add('is-covering');
-  requestAnimationFrame(() => {
-    cover.classList.remove('is-open');
-  });
-  window.setTimeout(() => {
-    cover.hidden = true;
-    cover.classList.remove('is-open');
-    elements.book.classList.remove('is-covering');
-    isFlipping = false;
-    onDone?.();
-  }, BOOK_SWING_MS + 80);
+  clearBookStageTimers();
+  elements.bookStage.classList.remove('is-dismissed');
+  elements.bookStage.hidden = false;
+  setBookStageState('closing');
+
+  bookStageTimers.push(
+    window.setTimeout(() => {
+      setBookStageState('idle');
+      elements.bookStage.classList.add('is-dismissed');
+    }, BOOK_CLOSE_MS),
+  );
+  bookStageTimers.push(
+    window.setTimeout(() => {
+      elements.bookStage.hidden = true;
+      elements.bookStage.classList.remove('is-dismissed');
+      bookStageState = 'idle';
+      onDone?.();
+    }, BOOK_CLOSE_MS + BOOK_STAGE_DISMISS_MS + 80),
+  );
 }
 
 function createFlipSheet(offset) {

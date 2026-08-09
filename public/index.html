@@ -10,9 +10,14 @@
   <body>
     <main class="shell">
       <header class="masthead">
-        <div>
-          <a class="brand" href="/">Writing Journey</a>
-          <p id="masthead-eyebrow" class="eyebrow">Kệ sách hành trình</p>
+        <div class="masthead-brand">
+          <a class="brand" href="/">
+            <span class="brand-mark">W</span>
+            <span>
+              <strong>Writing Journey</strong>
+              <small id="masthead-eyebrow">Thư viện hành trình</small>
+            </span>
+          </a>
         </div>
         <button
           id="theme-toggle"
@@ -303,6 +308,87 @@
       <div class="busy-card">
         <div class="busy-spinner" aria-hidden="true"></div>
         <p id="busy-message" class="busy-message">Đang xử lý…</p>
+      </div>
+    </div>
+
+    <div id="book-stage" class="book-stage-overlay" hidden aria-live="polite">
+      <div class="ambient-light" aria-hidden="true"></div>
+      <div class="stage-hero">
+        <div class="intro-copy">
+          <p class="eyebrow"><span></span> Bản thảo luyện viết</p>
+          <h1 id="stage-title"></h1>
+          <p id="stage-description" class="description"></p>
+        </div>
+
+        <div class="book-stage" aria-label="Quyển sách hành trình đang mở">
+          <div class="stage-glow" aria-hidden="true"></div>
+          <div class="book-shadow" aria-hidden="true"></div>
+
+          <div class="book-rig">
+            <div class="antique-book">
+              <div class="rear-cover" aria-hidden="true"></div>
+              <div class="page-block page-block-left" aria-hidden="true"></div>
+              <div class="page-block page-block-right" aria-hidden="true"></div>
+
+              <div class="spread">
+                <article class="paper left-paper">
+                  <div class="paper-ornament" aria-hidden="true"></div>
+                  <div class="page-content opening-page">
+                    <span class="folio">I</span>
+                    <p class="chapter-kicker">Hành trình hôm nay</p>
+                    <h2 id="spread-title"></h2>
+                    <div class="ornamental-rule"><span>◆</span></div>
+                    <p class="dropcap" id="spread-intro"></p>
+                  </div>
+                </article>
+
+                <article class="paper right-paper">
+                  <div class="paper-ornament" aria-hidden="true"></div>
+                  <div class="page-content story-page">
+                    <span class="folio">II</span>
+                    <p class="chapter-kicker">Chương thứ nhất</p>
+                    <h3 id="spread-chapter"></h3>
+                    <p id="spread-text"></p>
+                  </div>
+                </article>
+              </div>
+
+              <div class="turn-leaf leaf-one" aria-hidden="true">
+                <div class="leaf-face leaf-front"><span>Lật từng trang</span><b>✦</b></div>
+                <div class="leaf-face leaf-back"><span>Đọc chậm</span></div>
+              </div>
+              <div class="turn-leaf leaf-two" aria-hidden="true">
+                <div class="leaf-face leaf-front"><span>Chép tay</span><b>❧</b></div>
+                <div class="leaf-face leaf-back"><span>Ghi nhớ sâu</span></div>
+              </div>
+              <div class="turn-leaf leaf-three" aria-hidden="true">
+                <div class="leaf-face leaf-front"><span>Viết mỗi ngày</span><b>✧</b></div>
+                <div class="leaf-face leaf-back"><span>Kiên trì</span></div>
+              </div>
+
+              <div class="front-cover">
+                <div class="cover-face cover-front">
+                  <div class="cover-frame">
+                    <span class="cover-crown">♛</span>
+                    <p>Writing Journey</p>
+                    <h2 id="cover-title"></h2>
+                    <div class="cover-sigil"><i>習</i></div>
+                    <small id="cover-subtitle">Quyển thứ nhất</small>
+                  </div>
+                </div>
+                <div class="cover-face cover-inside">
+                  <div class="inside-pattern"></div>
+                </div>
+              </div>
+              <div class="spine" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+            </div>
+          </div>
+
+          <div class="interaction-copy">
+            <p class="state-label"><span id="state-pulse" class="state-dot"></span><span id="state-label-text">Đang nằm trên giá</span></p>
+            <div class="progress-track" aria-hidden="true"><i></i></div>
+          </div>
+        </div>
       </div>
     </div>
 
