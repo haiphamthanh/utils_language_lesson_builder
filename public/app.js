@@ -280,15 +280,28 @@ function renderReview(lesson) {
   let flatIndex = 0;
   for (const group of groups) {
     const groupEl = document.createElement('div');
-    groupEl.className = 'review-group';
+    groupEl.className = 'review-group is-collapsed';
 
-    const groupTitle = document.createElement('h3');
+    const groupTitle = document.createElement('button');
+    groupTitle.type = 'button';
     groupTitle.className = 'review-group-title';
-    groupTitle.textContent = group.kind;
+    groupTitle.setAttribute('aria-expanded', 'false');
+
+    const groupIcon = document.createElement('span');
+    groupIcon.className = 'review-group-icon';
+    groupIcon.setAttribute('aria-hidden', 'true');
+    groupIcon.textContent = '▸';
+
+    const groupLabel = document.createElement('span');
+    groupLabel.className = 'review-group-label';
+    groupLabel.textContent = group.kind;
+
+    groupTitle.append(groupIcon, groupLabel);
     groupEl.append(groupTitle);
 
     const listEl = document.createElement('ul');
     listEl.className = 'review-group-items';
+    listEl.hidden = true;
     for (const item of group.items) {
       const index = flatIndex;
       const listItem = document.createElement('li');
@@ -310,9 +323,19 @@ function renderReview(lesson) {
       flatIndex += 1;
     }
     groupEl.append(listEl);
+    groupTitle.addEventListener('click', () => toggleReviewGroup(groupEl));
     list.append(groupEl);
   }
 
+}
+
+function toggleReviewGroup(groupEl) {
+  const collapsed = groupEl.classList.contains('is-collapsed');
+  groupEl.classList.toggle('is-collapsed', !collapsed);
+  const listEl = groupEl.querySelector('.review-group-items');
+  const titleEl = groupEl.querySelector('.review-group-title');
+  if (listEl) listEl.hidden = collapsed;
+  if (titleEl) titleEl.setAttribute('aria-expanded', String(collapsed));
 }
 
 /* ---------- Highlights ---------- */

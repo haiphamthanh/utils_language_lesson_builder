@@ -1585,12 +1585,45 @@ mark.saved-note-highlight:focus-visible {
 }
 
 .review-group-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
   margin: 0 0 8px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
   color: var(--accent);
+  font: inherit;
   font-size: 0.68rem;
   font-weight: 750;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.review-group-title:hover,
+.review-group-title:focus-visible {
+  outline: 0;
+  color: var(--accent-strong, var(--accent));
+  background: var(--surface-2);
+}
+
+.review-group-icon {
+  display: inline-grid;
+  width: 16px;
+  height: 16px;
+  place-items: center;
+  font-size: 11px;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+
+.review-group:not(.is-collapsed) .review-group-icon {
+  transform: rotate(90deg);
 }
 
 .review-group-items {
@@ -3916,11 +3949,51 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   overflow: visible;
 }
 .book-stage-overlay .review-group-title {
-  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin: 0 0 5px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
   color: #79562d;
+  font: inherit;
   font-size: 9px;
+  font-weight: 700;
   letter-spacing: 0.22em;
   text-align: center;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 0.18s ease, background 0.18s ease;
+}
+.book-stage-overlay .review-group-title:hover,
+.book-stage-overlay .review-group-title:focus-visible {
+  outline: 0;
+  color: #5f3a16;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 220 143 / 22%),
+    transparent
+  );
+}
+.book-stage-overlay .review-group-icon {
+  display: inline-grid;
+  width: 14px;
+  height: 14px;
+  place-items: center;
+  font-size: 11px;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+.book-stage-overlay .review-group:not(.is-collapsed) .review-group-icon {
+  transform: rotate(90deg);
+}
+.book-stage-overlay .review-group-label {
+  letter-spacing: 0.14em;
 }
 .book-stage-overlay .review-group-items {
   gap: 0;
