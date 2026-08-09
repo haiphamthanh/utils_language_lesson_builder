@@ -3382,6 +3382,19 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   opacity: 0.3;
   cursor: default;
 }
+.reader-toolbar button.is-preloading {
+  position: relative;
+  opacity: 0.5;
+}
+.reader-toolbar button.is-preloading::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border: 1px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: adjacent-page-loading 0.8s linear infinite;
+}
 .reader-toolbar span {
   min-width: 120px;
   text-align: center;
@@ -4083,6 +4096,12 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
 /* whole paper stays clickable for page turns */
 .book-stage-overlay .paper.can-flip {
   cursor: pointer;
+}
+
+@keyframes adjacent-page-loading {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 700px) {

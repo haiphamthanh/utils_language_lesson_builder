@@ -136,6 +136,8 @@ let journeys = [];
 let libraryQuery = '';
 let libraryLanguageFilter = 'ALL';
 let activeJourneyId = null;
+const lessonCache = new Map();
+const lessonLoadPromises = new Map();
 
 /* ---------- Busy (single-flight generation) ---------- */
 
@@ -710,6 +712,7 @@ async function deleteHighlight() {
 }
 
 function showLesson(lesson) {
+  lessonCache.set(lesson.id, lesson);
   currentLesson = lesson;
   lessonHighlights = [];
   pendingHighlight = null;
@@ -1127,6 +1130,7 @@ async function renderSetup() {
 }
 
 async function loadHistory(activeLesson = bookmarkedLesson) {
+  if (activeLesson?.id) lessonCache.set(activeLesson.id, activeLesson);
   try {
     const journeyId = currentLesson?.journey?.id;
     const url = journeyId
@@ -1150,8 +1154,52 @@ async function loadHistory(activeLesson = bookmarkedLesson) {
       });
     }
     updateNavigation(currentLesson?.id, currentLesson?.isCurrent);
+    preloadAdjacentLessons(currentLesson?.id);
   } catch {
     lessonTimeline = activeLesson ? [{ id: activeLesson.id, isCurrent: true }] : [];
+    updateNavigation(currentLesson?.id, currentLesson?.isCurrent);
+  }
+}
+
+async function loadTimelineLesson(lessonId) {
+  if (!lessonId) return null;
+  if (lessonCache.has(lessonId)) return lessonCache.get(lessonId);
+  if (lessonLoadPromises.has(lessonId)) return lessonLoadPromises.get(lessonId);
+
+  const request = fetch(`/api/lessons/${lessonId}`)
+    .then(async (response) => {
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.message ?? 'Không thể tải trang sách.');
+      }
+      lessonCache.set(lessonId, payload.data);
+      return payload.data;
+    })
+    .finally(() => lessonLoadPromises.delete(lessonId));
+
+  lessonLoadPromises.set(lessonId, request);
+  return request;
+}
+
+function preloadAdjacentLessons(lessonId) {
+  const index = lessonTimeline.findIndex((lesson) => lesson.id === lessonId);
+  if (index < 0) return;
+
+  const adjacent = [lessonTimeline[index - 1], lessonTimeline[index + 1]].filter(
+    Boolean,
+  );
+  for (const lesson of adjacent) {
+    loadTimelineLesson(lesson.id)
+      .then(() => {
+        if (currentLesson?.id === lessonId && !isFlipping) {
+          updateNavigation(lessonId, currentLesson.isCurrent);
+        }
+      })
+      .catch(() => {
+        if (currentLesson?.id === lessonId && !isFlipping) {
+          updateNavigation(lessonId, currentLesson.isCurrent);
+        }
+      });
   }
 }
 
@@ -1159,15 +1207,35 @@ function updateNavigation(lessonId, isCurrent) {
   const index = lessonTimeline.findIndex((lesson) => lesson.id === lessonId);
   const leftPage = elements.bookStage.querySelector('.left-paper');
   const rightPage = elements.bookStage.querySelector('.right-paper');
-  const canPrev = index > 0;
-  const canNext = index >= 0 && index < lessonTimeline.length - 1;
+  const previousLesson = index > 0 ? lessonTimeline[index - 1] : null;
+  const nextLesson =
+    index >= 0 && index < lessonTimeline.length - 1
+      ? lessonTimeline[index + 1]
+      : null;
+  const previousIsLoading =
+    previousLesson && !lessonCache.has(previousLesson.id);
+  const nextIsLoading = nextLesson && !lessonCache.has(nextLesson.id);
+  const canPrev = !isFlipping && previousLesson && !previousIsLoading;
+  const canNext = !isFlipping && nextLesson && !nextIsLoading;
 
   leftPage.classList.toggle('can-flip', canPrev);
   rightPage.classList.toggle('can-flip', canNext);
+  leftPage.classList.toggle('is-preloading', Boolean(previousIsLoading));
+  rightPage.classList.toggle('is-preloading', Boolean(nextIsLoading));
   elements.bookStage.querySelector('.zone-prev').disabled = !canPrev;
   elements.bookStage.querySelector('.zone-next').disabled = !canNext;
   elements.readerPrev.disabled = !canPrev;
   elements.readerNext.disabled = !canNext;
+  elements.readerPrev.classList.toggle('is-preloading', Boolean(previousIsLoading));
+  elements.readerNext.classList.toggle('is-preloading', Boolean(nextIsLoading));
+  elements.readerPrev.setAttribute(
+    'aria-label',
+    previousIsLoading ? 'Đang tải bài trước' : 'Bài trước',
+  );
+  elements.readerNext.setAttribute(
+    'aria-label',
+    nextIsLoading ? 'Đang tải bài tiếp theo' : 'Bài tiếp theo',
+  );
 
   const timelineLesson = lessonTimeline[index];
   elements.readerPageLabel.textContent = timelineLesson
@@ -1326,7 +1394,7 @@ function createTurningLeaf(direction) {
   return leaf;
 }
 
-async function flipTimelineLesson(offset) {
+function flipTimelineLesson(offset) {
   if (isFlipping) return;
 
   const index = lessonTimeline.findIndex(
@@ -1334,29 +1402,17 @@ async function flipTimelineLesson(offset) {
   );
   const target = lessonTimeline[index + offset];
   if (!target) return;
-
-  isFlipping = true;
-  elements.readerPrev.disabled = true;
-  elements.readerNext.disabled = true;
-  elements.closeBookButton.disabled = true;
-  hideHighlightPopover();
-
-  let lesson;
-  try {
-    if (target.id === bookmarkedLesson?.id) {
-      lesson = bookmarkedLesson;
-    } else {
-      const response = await fetch(`/api/lessons/${target.id}`);
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.message ?? 'Không thể mở bài cũ.');
-      lesson = payload.data;
-    }
-  } catch (error) {
-    isFlipping = false;
-    elements.lessonStatus.textContent = error.message;
-    updateNavigation(currentLesson?.id, currentLesson?.isCurrent);
+  const lesson = lessonCache.get(target.id);
+  if (!lesson) {
+    preloadAdjacentLessons(currentLesson?.id);
     return;
   }
+
+  isFlipping = true;
+  updateNavigation(currentLesson?.id, currentLesson?.isCurrent);
+  elements.closeBookButton.disabled = true;
+  hideHighlightPopover();
+  closeObjectivePopover();
 
   createTurningLeaf(offset > 0 ? 'next' : 'prev');
 
@@ -1368,9 +1424,10 @@ async function flipTimelineLesson(offset) {
     elements.antiqueBook
       .querySelectorAll('.turn-leaf.manual-turn-leaf')
       .forEach((leaf) => leaf.remove());
-    updateNavigation(lesson.id, lesson.isCurrent);
     elements.closeBookButton.disabled = false;
     isFlipping = false;
+    updateNavigation(lesson.id, lesson.isCurrent);
+    preloadAdjacentLessons(lesson.id);
   }, 1220);
 }
 
