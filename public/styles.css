@@ -18,7 +18,6 @@
   font-family: Georgia, "Times New Roman", ui-serif, serif;
 }
 
-body[data-theme="light"],
 body[data-theme="dark"] {
   color-scheme: dark;
   --ink: #eadfca;
@@ -34,6 +33,23 @@ body[data-theme="dark"] {
   --accent-soft: rgb(209 170 103 / 12%);
   --danger: #d29a87;
   --shadow: 0 24px 60px rgb(0 0 0 / 45%);
+}
+
+body[data-theme="light"] {
+  color-scheme: light;
+  --ink: #2b231a;
+  --muted: #7a6c58;
+  --paper: #c9a05c;
+  --night: #f5efe1;
+  --surface: #fffdf6;
+  --surface-2: #f3ecdc;
+  --line: rgb(122 92 55 / 22%);
+  --line-soft: rgb(122 92 55 / 12%);
+  --accent: #9d6b2c;
+  --accent-strong: #7f511c;
+  --accent-soft: rgb(157 107 44 / 14%);
+  --danger: #8c3326;
+  --shadow: 0 24px 60px rgb(94 79 54 / 18%);
 }
 
 * {
@@ -69,13 +85,24 @@ body::before {
   filter: grayscale(0.9) contrast(1.4);
 }
 
-body[data-theme="dark"],
-body[data-theme="light"] {
+body[data-theme="dark"] {
   background:
     radial-gradient(circle at 66% 40%, rgb(165 112 52 / 16%), transparent 29%),
     radial-gradient(circle at 18% 20%, rgb(255 244 216 / 5%), transparent 24%),
     linear-gradient(115deg, #181711 0%, #11110d 56%, #19150e 100%);
   background-attachment: fixed;
+}
+
+body[data-theme="light"] {
+  background:
+    radial-gradient(circle at 72% 28%, rgb(190 140 70 / 16%), transparent 32%),
+    radial-gradient(circle at 14% 14%, rgb(255 248 226 / 55%), transparent 30%),
+    linear-gradient(115deg, #f2ead8 0%, #ece2ca 56%, #f4ecda 100%);
+  background-attachment: fixed;
+}
+
+body[data-theme="light"]::before {
+  opacity: 0.08;
 }
 
 .shell {
@@ -646,50 +673,27 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
 
 .book-flyer {
   position: fixed;
+  left: 0;
+  top: 0;
   z-index: 150;
+  width: 450px;
+  height: 590px;
   box-sizing: border-box;
   margin: 0;
-  padding: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding: 0;
+  overflow: hidden;
   border-radius: 8px 15px 15px 7px;
   pointer-events: none;
-  transform-origin: center;
-  color: #e0bd78;
-  font-family: Georgia, serif;
-  background: #704015 url("/img/leather-cover.webp") center/cover;
-  box-shadow:
-    inset 0 0 60px #140b05,
-    inset 0 0 0 6px rgb(32 18 7 / 72%),
-    0 30px 60px rgb(0 0 0 / 55%);
+  transform-origin: top left;
   will-change: transform, opacity;
 }
 
-.book-flyer::before {
-  content: "";
+.book-flyer .book-flyer-cover {
   position: absolute;
-  inset: 7px;
-  z-index: 1;
-  border: 1px solid rgb(163 111 44 / 80%);
-  outline: 1px solid rgb(221 166 73 / 30%);
-  outline-offset: -4px;
-  box-shadow: inset 0 0 30px rgb(0 0 0 / 45%);
-}
-
-.book-flyer-title {
-  position: relative;
-  z-index: 2;
-  display: block;
+  inset: 0;
   width: 100%;
-  max-height: 100%;
-  overflow: hidden;
-  text-align: center;
-  font-size: clamp(9px, 2.4vw, 20px);
-  font-weight: 400;
-  line-height: 1.12;
-  letter-spacing: 0.02em;
-  overflow-wrap: break-word;
+  height: 100%;
+  transform: none;
 }
 
 /* ---------- Panels (setup + completion) ---------- */
@@ -1955,7 +1959,7 @@ a:focus-visible {
 
 /* ---------- Antique library overrides ---------- */
 
-.stats {
+body[data-theme="dark"] .stats {
   background: rgb(34 28 20 / 72%);
 }
 
@@ -2438,8 +2442,13 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
 .reader-column {
   min-width: 0;
   display: grid;
-  grid-template-rows: minmax(0, auto) auto;
+  grid-template-rows: auto minmax(0, auto) auto;
   align-items: center;
+}
+
+.reader-column > .state-label {
+  justify-self: center;
+  padding-bottom: 10px;
 }
 
 .intro-copy {
@@ -2768,6 +2777,7 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   transform-style: preserve-3d;
   transform: rotateY(0deg);
   will-change: transform, opacity;
+  transition: opacity 0.45s ease;
 }
 
 .cover-face {
@@ -3048,18 +3058,7 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   animation: antique-progress 1.1s ease-in-out infinite;
 }
 
-/* Pha 1: quyển sách rời giá */
-.book-stage-overlay.state-lifting .book-rig {
-  transform: translate3d(-160px, 30px, 130px) rotateX(-7deg) rotateY(-12deg)
-    rotateZ(-4deg) scale(0.62);
-}
-.book-stage-overlay.state-lifting .book-shadow {
-  transform: scaleX(0.5);
-  opacity: 0.27;
-  bottom: 3%;
-}
-
-/* Pha 2: bìa quay chính diện */
+/* Pha 1: bìa quay chính diện */
 .book-stage-overlay.state-presenting .book-rig {
   transform: translate3d(-225px, -5px, 150px) rotateX(-2deg) rotateY(-2deg)
     rotateZ(0deg) scale(0.76);
@@ -3071,12 +3070,17 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   bottom: 4%;
 }
 
-/* Pha 3: mở theo gáy */
+/* Pha 2: mở theo gáy */
 .book-stage-overlay.state-opening .book-rig,
 .book-stage-overlay.state-turning .book-rig,
 .book-stage-overlay.state-open .book-rig {
   transform: translate3d(0, -8px, 80px) rotateX(7deg) rotateY(0deg)
     rotateZ(0deg) scale(0.86);
+}
+.book-stage-overlay.state-opening .book-rig {
+  transition:
+    transform 1.25s cubic-bezier(0.45, 0.05, 0.35, 1),
+    opacity 0.4s ease;
 }
 .book-stage-overlay.state-opening .spread,
 .book-stage-overlay.state-opening .rear-cover,
@@ -3089,14 +3093,19 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
 .book-stage-overlay.state-open .page-block {
   opacity: 1;
 }
+.book-stage-overlay.state-opening .spread,
+.book-stage-overlay.state-opening .rear-cover,
+.book-stage-overlay.state-opening .page-block {
+  transition-delay: 0.6s;
+}
 .book-stage-overlay.state-opening .front-cover {
-  animation: antique-cover-open 1.65s cubic-bezier(0.25, 0.72, 0.16, 1) both;
+  animation: antique-cover-open 1.25s cubic-bezier(0.45, 0.05, 0.35, 1) both;
 }
 .book-stage-overlay.state-opening .cover-front {
-  animation: antique-cover-front-hide 1.65s steps(1, end) both;
+  animation: antique-cover-front-hide 1.25s linear both;
 }
 .book-stage-overlay.state-opening .cover-inside {
-  animation: antique-cover-inside-show 1.65s steps(1, end) both;
+  animation: antique-cover-inside-show 1.25s linear both;
 }
 .book-stage-overlay.state-turning .front-cover,
 .book-stage-overlay.state-open .front-cover {
@@ -3117,31 +3126,34 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   opacity: 0.68;
   bottom: 7%;
 }
+.book-stage-overlay.state-opening .book-shadow {
+  transition-duration: 1.25s;
+}
 
 /* Pha 4: ba lớp giấy lật với nhịp lệch nhau */
 .book-stage-overlay.state-turning .turn-leaf {
   opacity: 1;
 }
 .book-stage-overlay.state-turning .leaf-one {
-  animation: antique-page-turn 1.28s cubic-bezier(0.28, 0.62, 0.17, 1) 0.05s
+  animation: antique-page-turn 0.92s cubic-bezier(0.28, 0.62, 0.17, 1) 0s
     forwards;
 }
 .book-stage-overlay.state-turning .leaf-two {
-  animation: antique-page-turn 1.22s cubic-bezier(0.28, 0.62, 0.17, 1) 0.62s
+  animation: antique-page-turn 0.88s cubic-bezier(0.28, 0.62, 0.17, 1) 0.32s
     forwards;
 }
 .book-stage-overlay.state-turning .leaf-three {
-  animation: antique-page-turn 1.16s cubic-bezier(0.28, 0.62, 0.17, 1) 1.18s
+  animation: antique-page-turn 0.84s cubic-bezier(0.28, 0.62, 0.17, 1) 0.62s
     forwards;
 }
 .book-stage-overlay.state-turning .leaf-one .leaf-face {
-  animation: antique-page-light 1.28s ease 0.05s both;
+  animation: antique-page-light 0.92s ease 0s both;
 }
 .book-stage-overlay.state-turning .leaf-two .leaf-face {
-  animation: antique-page-light 1.22s ease 0.62s both;
+  animation: antique-page-light 0.88s ease 0.32s both;
 }
 .book-stage-overlay.state-turning .leaf-three .leaf-face {
-  animation: antique-page-light 1.16s ease 1.18s both;
+  animation: antique-page-light 0.84s ease 0.62s both;
 }
 .book-stage-overlay.state-open .turn-leaf:not(.manual-turn-leaf) {
   opacity: 0;
@@ -3152,7 +3164,9 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
 .book-stage-overlay.state-open .book-rig {
   transform: translate3d(0, -9px, 95px) rotateX(6deg)
     scale(var(--book-scale, 1));
-  transition: none;
+  transition:
+    transform 0.85s cubic-bezier(0.2, 0.7, 0.2, 1),
+    opacity 0.4s ease;
 }
 .book-stage-overlay.state-open .book-shadow {
   filter: blur(32px);
@@ -3179,10 +3193,10 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   animation: antique-cover-close 1.15s cubic-bezier(0.35, 0.05, 0.18, 1) both;
 }
 .book-stage-overlay.state-closing .cover-front {
-  animation: antique-cover-front-show 1.15s steps(1, end) both;
+  animation: antique-cover-front-show 1.15s linear both;
 }
 .book-stage-overlay.state-closing .cover-inside {
-  animation: antique-cover-inside-hide 1.15s steps(1, end) both;
+  animation: antique-cover-inside-hide 1.15s linear both;
 }
 .book-stage-overlay.state-closing .turn-leaf {
   opacity: 0;
@@ -3208,10 +3222,6 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
     transform: rotateY(0deg);
     opacity: 1;
   }
-  58% {
-    transform: rotateY(-108deg);
-    opacity: 1;
-  }
   100% {
     transform: rotateY(-179deg);
     opacity: 1;
@@ -3219,42 +3229,50 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
 }
 @keyframes antique-cover-front-hide {
   0%,
-  49% {
+  41% {
     visibility: visible;
+    opacity: 1;
   }
-  50%,
+  42%,
   100% {
     visibility: hidden;
+    opacity: 0;
   }
 }
 @keyframes antique-cover-inside-show {
   0%,
-  49% {
+  41% {
     visibility: hidden;
+    opacity: 0;
   }
-  50%,
+  42%,
   100% {
     visibility: visible;
+    opacity: 1;
   }
 }
 @keyframes antique-cover-front-show {
   0%,
-  50% {
+  31% {
     visibility: hidden;
+    opacity: 0;
   }
-  51%,
+  32%,
   100% {
     visibility: visible;
+    opacity: 1;
   }
 }
 @keyframes antique-cover-inside-hide {
   0%,
-  50% {
+  31% {
     visibility: visible;
+    opacity: 1;
   }
-  51%,
+  32%,
   100% {
     visibility: hidden;
+    opacity: 0;
   }
 }
 @keyframes antique-cover-close {
@@ -3371,10 +3389,6 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   .book-rig {
     transform: translate3d(-225px, 175px, 0) rotateY(-14deg) rotateZ(-8deg)
       scale(0.27);
-  }
-  .book-stage-overlay.state-lifting .book-rig {
-    transform: translate3d(-180px, 20px, 100px) rotateY(-9deg) rotateZ(-3deg)
-      scale(0.38);
   }
   .book-stage-overlay.state-presenting .book-rig {
     transform: translate3d(-225px, -2px, 100px) rotateY(-2deg) scale(0.44);
@@ -3558,6 +3572,7 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
 
 /* page-turn zones on the left / right edges of the open book */
 .page-turn-zone {
+  display: none;
   position: absolute;
   z-index: 28;
   top: 0;

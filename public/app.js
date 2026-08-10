@@ -55,6 +55,9 @@ const elements = {
   coverSubtitle: document.querySelector("#cover-subtitle"),
   stateLabelText: document.querySelector("#state-label-text"),
   statePulse: document.querySelector("#state-pulse"),
+  stateLabelTop: document.querySelector("#state-label-top"),
+  stateLabelTextTop: document.querySelector("#state-label-text-top"),
+  stateLabelBottom: document.querySelector("#state-label-bottom"),
   closeBookButton: document.querySelector("#close-book-button"),
   readerPrev: document.querySelector("#reader-prev"),
   readerNext: document.querySelector("#reader-next"),
@@ -1014,8 +1017,6 @@ async function openJourney(journeyId, originEl) {
   showBusy("Đang mở hành trình…");
 
   bookFlyOriginRect = originEl ? originEl.getBoundingClientRect() : null;
-  const journey = journeys.find((item) => item.id === journeyId);
-  bookFlyTitle = journey?.title ?? "";
 
   try {
     const response = await fetch(`/api/journeys/${journeyId}/open`, {
@@ -1308,22 +1309,19 @@ let bookStageState = "idle";
 let bookStageTimers = [];
 let isFlipping = false;
 let bookFlyOriginRect = null;
-let bookFlyTitle = "";
 let currentFlyer = null;
 
 const BOOK_PHASES = {
   idle: "Đang nằm trên giá",
-  lifting: "Rời khỏi giá sách",
-  presenting: "Xoay về phía người đọc",
-  opening: "Mở bìa theo trục gáy",
-  turning: "Lật qua những trang đầu",
+  presenting: "Đang load dữ liệu sách …",
+  opening: "Đang mở sách",
+  turning: "Đang mở sách",
   open: "Sẵn sàng để đọc",
-  closing: "Khép sách",
+  closing: "Đang cất sách",
 };
 
 const BOOK_STAGE_STATES = [
   "state-idle",
-  "state-lifting",
   "state-presenting",
   "state-opening",
   "state-turning",
@@ -1336,6 +1334,9 @@ function setBookStageState(state) {
   elements.bookStage.classList.remove(...BOOK_STAGE_STATES);
   elements.bookStage.classList.add(`state-${state}`);
   elements.stateLabelText.textContent = BOOK_PHASES[state] ?? "";
+  elements.stateLabelTop.hidden = state !== "open";
+  elements.stateLabelBottom.hidden = state === "open";
+  elements.stateLabelTextTop.textContent = BOOK_PHASES[state] ?? "";
   elements.statePulse.classList.toggle(
     "pulse",
     !["idle", "open"].includes(state),
@@ -1365,6 +1366,8 @@ function resetBook() {
   elements.bookStage.classList.remove("is-dismissed");
   elements.bookStage.classList.remove("is-flying");
   elements.bookStage.hidden = true;
+  elements.stateLabelTop.hidden = true;
+  elements.stateLabelBottom.hidden = false;
   bookStageState = "idle";
 }
 
@@ -1409,7 +1412,6 @@ function playBookOpening(lesson) {
   elements.bookStage.classList.remove("is-dismissed");
   elements.bookStage.classList.remove("is-flying");
   const willFly = Boolean(bookFlyOriginRect);
-  if (willFly) elements.bookStage.classList.add("is-flying");
   elements.bookStage.hidden = false;
   void elements.bookStage.offsetWidth;
   updateBookScale();
@@ -1421,39 +1423,33 @@ function playBookOpening(lesson) {
   };
 
   if (willFly) {
-    const target = getPresentingCoverRect();
     setBookStageState("presenting");
-    launchBookFlyer(bookFlyOriginRect, target, 1100);
-    bookStageTimers.push(
-      window.setTimeout(() => {
+    const rig = elements.bookStage.querySelector(".book-rig");
+    const target = getSettledClosedCoverRect(rig);
+    if (target && bookFlyOriginRect) {
+      const duration = 900;
+      elements.bookStage.classList.add("is-flying");
+      const reveal = () => {
+        rig.style.transition = "none";
         elements.bookStage.classList.remove("is-flying");
-      }, 1100),
-    );
-    schedule("opening", 1850);
-    schedule("turning", 3150);
-    schedule("open", 5450);
+        void elements.bookStage.offsetWidth;
+        rig.style.transition = "";
+      };
+      launchBookFlyer(bookFlyOriginRect, target, duration, { fadeIn: true });
+      bookStageTimers.push(
+        window.setTimeout(reveal, Math.round(duration * 0.9)),
+      );
+    }
+    schedule("opening", 1200);
+    schedule("turning", 2450);
+    schedule("open", 3950);
     return;
   }
 
-  setBookStageState("lifting");
-  schedule("presenting", 850);
-  schedule("opening", 1550);
-  schedule("turning", 2850);
-  schedule("open", 5150);
-}
-
-function getPresentingCoverRect() {
-  const container = elements.bookStage.querySelector(".book-stage");
-  if (!container) return null;
-  const r = container.getBoundingClientRect();
-  const w = 450 * 0.76;
-  const h = 590 * 0.76;
-  return {
-    left: r.left + r.width / 2 - w / 2,
-    top: r.top + r.height / 2 - h / 2,
-    width: w,
-    height: h,
-  };
+  setBookStageState("presenting");
+  schedule("opening", 900);
+  schedule("turning", 2150);
+  schedule("open", 3650);
 }
 
 function getClosedCoverRect() {
@@ -1463,46 +1459,60 @@ function getClosedCoverRect() {
   return { left: r.left, top: r.top, width: r.width, height: r.height };
 }
 
-function launchBookFlyer(fromRect, toRect, duration) {
+function getSettledClosedCoverRect(rig) {
+  rig.style.transition = "none";
+  void rig.offsetWidth;
+  const rect = getClosedCoverRect();
+  rig.style.transition = "";
+  return rect;
+}
+
+function launchBookFlyer(fromRect, toRect, duration, { fadeIn = false } = {}) {
   clearBookFlyer();
 
   const flyer = document.createElement("div");
   flyer.className = "book-flyer";
-  const title = document.createElement("span");
-  title.className = "book-flyer-title";
-  title.textContent = bookFlyTitle || "Writing Journey";
-  flyer.append(title);
-  flyer.style.left = `${fromRect.left}px`;
-  flyer.style.top = `${fromRect.top}px`;
-  flyer.style.width = `${fromRect.width}px`;
-  flyer.style.height = `${fromRect.height}px`;
+  const frontCover = elements.bookStage.querySelector(".cover-front");
+  const coverClone = frontCover?.cloneNode(true);
+  if (coverClone) {
+    coverClone.removeAttribute("id");
+    coverClone
+      .querySelectorAll("[id]")
+      .forEach((node) => node.removeAttribute("id"));
+    coverClone.classList.add("book-flyer-cover");
+    coverClone.setAttribute("aria-hidden", "true");
+    flyer.append(coverClone);
+  }
   document.body.append(flyer);
   currentFlyer = flyer;
 
-  const fromCx = fromRect.left + fromRect.width / 2;
-  const fromCy = fromRect.top + fromRect.height / 2;
-  const toCx = toRect.left + toRect.width / 2;
-  const toCy = toRect.top + toRect.height / 2;
-  const dx = toCx - fromCx;
-  const dy = toCy - fromCy;
-  const sx = toRect.width / fromRect.width;
-  const sy = toRect.height / fromRect.height;
+  const coverWidth = 450;
+  const coverHeight = 590;
+  const fromTransform =
+    `translate(${fromRect.left}px, ${fromRect.top}px) ` +
+    `scale(${fromRect.width / coverWidth}, ${fromRect.height / coverHeight})`;
+  const toTransform =
+    `translate(${toRect.left}px, ${toRect.top}px) ` +
+    `scale(${toRect.width / coverWidth}, ${toRect.height / coverHeight})`;
 
-  const animation = flyer.animate(
-    [
-      { transform: "translate(0, 0) scale(1)", opacity: 1 },
-      {
-        transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`,
-        opacity: 1,
-        offset: 0.86,
-      },
-      {
-        transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`,
-        opacity: 0,
-      },
-    ],
-    { duration, easing: "cubic-bezier(0.25, 0.6, 0.2, 1)", fill: "forwards" },
-  );
+  const keyframes = fadeIn
+    ? [
+        { transform: fromTransform, opacity: 0 },
+        { transform: fromTransform, opacity: 1, offset: 0.12 },
+        { transform: toTransform, opacity: 1, offset: 0.86 },
+        { transform: toTransform, opacity: 0 },
+      ]
+    : [
+        { transform: fromTransform, opacity: 1 },
+        { transform: toTransform, opacity: 1, offset: 0.86 },
+        { transform: toTransform, opacity: 0 },
+      ];
+
+  const animation = flyer.animate(keyframes, {
+    duration,
+    easing: "cubic-bezier(0.25, 0.6, 0.2, 1)",
+    fill: "forwards",
+  });
 
   animation.finished.then(() => clearBookFlyer()).catch(() => clearBookFlyer());
   return animation.finished.catch(() => undefined);
@@ -1534,7 +1544,9 @@ function closeBookAndReturn() {
         if (fromRect) {
           elements.bookStage.classList.add("is-flying");
           elements.bookStage.classList.add("is-dismissed");
-          await launchBookFlyer(fromRect, bookFlyOriginRect, 850);
+          await launchBookFlyer(fromRect, bookFlyOriginRect, 850, {
+            fadeIn: true,
+          });
           finish();
           return;
         }
