@@ -3103,6 +3103,12 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   opacity: 0.3;
   bottom: 4%;
 }
+.book-stage-overlay.state-presenting .stage-shelf {
+  animation: antique-shelf-rise 0.9s cubic-bezier(0.22, 0.9, 0.3, 1) both;
+}
+.book-stage-overlay.state-presenting .stage-footer {
+  animation: antique-shelf-fade 0.7s ease both;
+}
 
 /* Pha 2: mở theo gáy */
 .book-stage-overlay.state-opening .book-rig,
@@ -3348,6 +3354,28 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   }
   100% {
     transform: translateX(340%);
+  }
+}
+
+@keyframes antique-shelf-rise {
+  from {
+    opacity: 0;
+    transform: translateY(70px);
+    filter: brightness(0.4);
+  }
+  to {
+    opacity: 0.72;
+    transform: translateY(0);
+    filter: brightness(1);
+  }
+}
+
+@keyframes antique-shelf-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 
