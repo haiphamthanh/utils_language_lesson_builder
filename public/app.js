@@ -1402,6 +1402,7 @@ function populateBookStage(lesson) {
     collectionRule,
     ` Hành trình · ${[language, level].filter(Boolean).join(" · ")}`,
   );
+  elements.antiqueBook.dataset.language = language;
   elements.stageDescription.textContent = journey.description ?? "";
 }
 
