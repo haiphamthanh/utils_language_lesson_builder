@@ -1305,6 +1305,7 @@ function updateNavigation(lessonId, isCurrent) {
 
 const BOOK_CLOSE_MS = 2100;
 const BOOK_STAGE_DISMISS_MS = 600;
+const SPINE_TURN_MS = 650;
 let bookStageState = "idle";
 let bookStageTimers = [];
 let isFlipping = false;
@@ -1365,6 +1366,7 @@ function resetBook() {
   elements.bookStage.classList.remove(...BOOK_STAGE_STATES);
   elements.bookStage.classList.remove("is-dismissed");
   elements.bookStage.classList.remove("is-flying");
+  elements.bookStage.classList.remove("is-spined");
   elements.bookStage.hidden = true;
   elements.stateLabelTop.hidden = true;
   elements.stateLabelBottom.hidden = false;
@@ -1546,6 +1548,59 @@ function launchBookFlyer(
   return animation.finished.catch(() => undefined);
 }
 
+function launchSpineFlyer(fromRect, toRect, duration) {
+  clearBookFlyer();
+
+  const flyer = document.createElement("div");
+  flyer.className = "book-flyer book-flyer-spine";
+  const antiqueStyle = getComputedStyle(elements.antiqueBook);
+  flyer.style.setProperty(
+    "--book-top",
+    antiqueStyle.getPropertyValue("--book-top").trim() || "#704015",
+  );
+  flyer.style.setProperty(
+    "--book-bottom",
+    antiqueStyle.getPropertyValue("--book-bottom").trim() || "#4a2a12",
+  );
+  document.body.append(flyer);
+  currentFlyer = flyer;
+
+  const width = flyer.offsetWidth;
+  const height = flyer.offsetHeight;
+  const center = (rect) => ({
+    x: rect.left + rect.width / 2 - width / 2,
+    y: rect.top + rect.height / 2 - height / 2,
+  });
+  const from = center(fromRect);
+  const to = center(toRect);
+
+  const keyframes = [
+    { transform: `translate(${from.x}px, ${from.y}px)`, opacity: 0 },
+    {
+      transform: `translate(${from.x}px, ${from.y}px)`,
+      opacity: 1,
+      offset: 0.15,
+    },
+    {
+      transform: `translate(${to.x}px, ${to.y}px)`,
+      opacity: 1,
+      offset: 0.85,
+    },
+    { transform: `translate(${to.x}px, ${to.y}px)`, opacity: 0 },
+  ];
+
+  const animation = flyer.animate(keyframes, {
+    duration,
+    easing: "cubic-bezier(0.25, 0.6, 0.2, 1)",
+    fill: "forwards",
+  });
+
+  animation.finished
+    .then(() => clearBookFlyer())
+    .catch(() => clearBookFlyer());
+  return animation.finished.catch(() => undefined);
+}
+
 function closeBookAndReturn() {
   if (isFlipping) return;
 
@@ -1555,34 +1610,38 @@ function closeBookAndReturn() {
   setBookStageState("closing");
 
   bookStageTimers.push(
-    window.setTimeout(async () => {
-      await loadLibrary();
-      showHomeBackdrop();
-
-      const finish = () => {
-        elements.bookStage.hidden = true;
-        elements.bookStage.classList.remove("is-dismissed");
-        elements.bookStage.classList.remove("is-flying");
-        bookStageState = "idle";
-        loadStats();
-      };
-
-      if (bookFlyOriginRect) {
-        const fromRect = getClosedCoverRect();
-        if (fromRect) {
-          elements.bookStage.classList.add("is-flying");
-          elements.bookStage.classList.add("is-dismissed");
-          await launchBookFlyer(fromRect, bookFlyOriginRect, 850, {
-            fadeIn: true,
-          });
-          finish();
-          return;
-        }
-      }
-
-      elements.bookStage.classList.add("is-dismissed");
+    window.setTimeout(() => {
+      elements.bookStage.classList.add("is-spined");
       bookStageTimers.push(
-        window.setTimeout(finish, BOOK_STAGE_DISMISS_MS + 80),
+        window.setTimeout(async () => {
+          await loadLibrary();
+          showHomeBackdrop();
+
+          const finish = () => {
+            elements.bookStage.hidden = true;
+            elements.bookStage.classList.remove("is-dismissed");
+            elements.bookStage.classList.remove("is-flying");
+            elements.bookStage.classList.remove("is-spined");
+            bookStageState = "idle";
+            loadStats();
+          };
+
+          if (bookFlyOriginRect) {
+            const fromRect = getClosedCoverRect();
+            if (fromRect) {
+              elements.bookStage.classList.add("is-flying");
+              elements.bookStage.classList.add("is-dismissed");
+              await launchSpineFlyer(fromRect, bookFlyOriginRect, 850);
+              finish();
+              return;
+            }
+          }
+
+          elements.bookStage.classList.add("is-dismissed");
+          bookStageTimers.push(
+            window.setTimeout(finish, BOOK_STAGE_DISMISS_MS + 80),
+          );
+        }, SPINE_TURN_MS),
       );
     }, BOOK_CLOSE_MS),
   );
