@@ -3263,6 +3263,11 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
 .book-stage-overlay.state-closing.is-spined .front-cover {
   filter: brightness(0.72);
 }
+.book-stage-overlay.state-closing.is-spined .book-rig {
+  transform: translate3d(-225px, 25px, 20px) rotateX(0) rotateY(-8deg)
+    rotateZ(-3deg) scale(calc(0.66 * var(--fold-scale, 1)));
+  transition-duration: 0.6s;
+}
 
 @keyframes antique-page-turn {
   0% {

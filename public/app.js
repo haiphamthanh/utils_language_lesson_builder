@@ -1305,7 +1305,7 @@ function updateNavigation(lessonId, isCurrent) {
 
 const BOOK_CLOSE_MS = 2100;
 const BOOK_STAGE_DISMISS_MS = 600;
-const SPINE_TURN_MS = 650;
+const SPINE_TURN_MS = 900;
 let bookStageState = "idle";
 let bookStageTimers = [];
 let isFlipping = false;
@@ -1367,6 +1367,7 @@ function resetBook() {
   elements.bookStage.classList.remove("is-dismissed");
   elements.bookStage.classList.remove("is-flying");
   elements.bookStage.classList.remove("is-spined");
+  elements.bookStage.style.removeProperty("--fold-scale");
   elements.bookStage.hidden = true;
   elements.stateLabelTop.hidden = true;
   elements.stateLabelBottom.hidden = false;
@@ -1567,26 +1568,40 @@ function launchSpineFlyer(fromRect, toRect, duration) {
 
   const width = flyer.offsetWidth;
   const height = flyer.offsetHeight;
-  const center = (rect) => ({
-    x: rect.left + rect.width / 2 - width / 2,
-    y: rect.top + rect.height / 2 - height / 2,
-  });
-  const from = center(fromRect);
-  const to = center(toRect);
+
+  const fromTransform =
+    `translate(${fromRect.left}px, ${fromRect.top}px) ` +
+    `scale(${fromRect.width / width}, ${fromRect.height / height})`;
+  const toTransform =
+    `translate(${toRect.left}px, ${toRect.top}px) ` +
+    `scale(${toRect.width / width}, ${toRect.height / height})`;
+  const toOvershoot =
+    `translate(${toRect.left}px, ${toRect.top}px) ` +
+    `scale(${(toRect.width / width) * 1.06}, ${toRect.height / height})`;
 
   const keyframes = [
-    { transform: `translate(${from.x}px, ${from.y}px)`, opacity: 0 },
+    { transform: fromTransform, opacity: 0 },
     {
-      transform: `translate(${from.x}px, ${from.y}px)`,
+      transform: fromTransform,
       opacity: 1,
-      offset: 0.15,
+      offset: 0.12,
     },
     {
-      transform: `translate(${to.x}px, ${to.y}px)`,
+      transform: toTransform,
       opacity: 1,
-      offset: 0.85,
+      offset: 0.76,
     },
-    { transform: `translate(${to.x}px, ${to.y}px)`, opacity: 0 },
+    {
+      transform: toOvershoot,
+      opacity: 1,
+      offset: 0.88,
+    },
+    {
+      transform: toTransform,
+      opacity: 1,
+      offset: 0.95,
+    },
+    { transform: toTransform, opacity: 0 },
   ];
 
   const animation = flyer.animate(keyframes, {
@@ -1611,6 +1626,14 @@ function closeBookAndReturn() {
 
   bookStageTimers.push(
     window.setTimeout(() => {
+      const coverRect = getClosedCoverRect();
+      const targetRect = bookFlyOriginRect;
+      const foldScale =
+        targetRect && coverRect ? targetRect.height / coverRect.height : 1;
+      elements.bookStage.style.setProperty(
+        "--fold-scale",
+        Math.max(0.2, Math.min(1.2, foldScale)).toFixed(3),
+      );
       elements.bookStage.classList.add("is-spined");
       bookStageTimers.push(
         window.setTimeout(async () => {
@@ -1627,11 +1650,20 @@ function closeBookAndReturn() {
           };
 
           if (bookFlyOriginRect) {
-            const fromRect = getClosedCoverRect();
-            if (fromRect) {
+            const coverRect = getClosedCoverRect();
+            const targetRect = bookFlyOriginRect;
+            if (coverRect && targetRect) {
+              const spineW = Math.max(24, Math.round(targetRect.width * 0.68));
+              const spineH = targetRect.height;
+              const fromRect = {
+                left: coverRect.left,
+                top: coverRect.top + (coverRect.height - spineH) / 2,
+                width: spineW,
+                height: spineH,
+              };
               elements.bookStage.classList.add("is-flying");
               elements.bookStage.classList.add("is-dismissed");
-              await launchSpineFlyer(fromRect, bookFlyOriginRect, 850);
+              await launchSpineFlyer(fromRect, targetRect, 850);
               finish();
               return;
             }
