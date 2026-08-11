@@ -1427,26 +1427,33 @@ function playBookOpening(lesson) {
     setBookStageState("presenting");
     const rig = elements.bookStage.querySelector(".book-rig");
     const target = getSettledClosedCoverRect(rig);
+    const duration = 1050;
     if (target && bookFlyOriginRect) {
-      const duration = 900;
       elements.bookStage.classList.add("is-flying");
       const reveal = () => {
         rig.style.transition = "none";
         elements.bookStage.classList.remove("is-flying");
         void elements.bookStage.offsetWidth;
         rig.style.transition = "";
+        // Keep the flyer in place for the paint immediately after the rig is
+        // revealed, then remove it. This makes the arrival read as one object
+        // settling into the standing cover instead of a fade/cut.
+        requestAnimationFrame(() => clearBookFlyer());
       };
-      launchBookFlyer(bookFlyOriginRect, target, duration, { fadeIn: true })
+      launchBookFlyer(bookFlyOriginRect, target, duration, {
+        fadeIn: true,
+        keepAtEnd: true,
+      })
         .then(() => {
           if (elements.bookStage.classList.contains("is-flying")) {
-            bookStageTimers.push(window.setTimeout(reveal, 0));
+            reveal();
           }
         })
-        .catch(() => bookStageTimers.push(window.setTimeout(reveal, 0)));
+        .catch(reveal);
     }
-    schedule("opening", 1200);
-    schedule("turning", 2450);
-    schedule("open", 3950);
+    schedule("opening", duration + 220);
+    schedule("turning", duration + 1470);
+    schedule("open", duration + 2970);
     return;
   }
 
@@ -1471,7 +1478,12 @@ function getSettledClosedCoverRect(rig) {
   return rect;
 }
 
-function launchBookFlyer(fromRect, toRect, duration, { fadeIn = false } = {}) {
+function launchBookFlyer(
+  fromRect,
+  toRect,
+  duration,
+  { fadeIn = false, keepAtEnd = false } = {},
+) {
   clearBookFlyer();
 
   const flyer = document.createElement("div");
@@ -1512,8 +1524,7 @@ function launchBookFlyer(fromRect, toRect, duration, { fadeIn = false } = {}) {
     ? [
         { transform: fromTransform, opacity: 0 },
         { transform: fromTransform, opacity: 1, offset: 0.12 },
-        { transform: toTransform, opacity: 1, offset: 0.86 },
-        { transform: toTransform, opacity: 0 },
+        { transform: toTransform, opacity: 1 },
       ]
     : [
         { transform: fromTransform, opacity: 1 },
@@ -1527,7 +1538,11 @@ function launchBookFlyer(fromRect, toRect, duration, { fadeIn = false } = {}) {
     fill: "forwards",
   });
 
-  animation.finished.then(() => clearBookFlyer()).catch(() => clearBookFlyer());
+  if (!keepAtEnd) {
+    animation.finished
+      .then(() => clearBookFlyer())
+      .catch(() => clearBookFlyer());
+  }
   return animation.finished.catch(() => undefined);
 }
 
