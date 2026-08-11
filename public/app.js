@@ -1436,10 +1436,13 @@ function playBookOpening(lesson) {
         void elements.bookStage.offsetWidth;
         rig.style.transition = "";
       };
-      launchBookFlyer(bookFlyOriginRect, target, duration, { fadeIn: true });
-      bookStageTimers.push(
-        window.setTimeout(reveal, Math.round(duration * 0.9)),
-      );
+      launchBookFlyer(bookFlyOriginRect, target, duration, { fadeIn: true })
+        .then(() => {
+          if (elements.bookStage.classList.contains("is-flying")) {
+            bookStageTimers.push(window.setTimeout(reveal, 0));
+          }
+        })
+        .catch(() => bookStageTimers.push(window.setTimeout(reveal, 0)));
     }
     schedule("opening", 1200);
     schedule("turning", 2450);
