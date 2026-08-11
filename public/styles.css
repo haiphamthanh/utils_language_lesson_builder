@@ -2547,6 +2547,7 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
 
 .book-stage-overlay.is-flying .book-rig {
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
 }
 
