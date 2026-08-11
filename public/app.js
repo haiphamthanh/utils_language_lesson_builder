@@ -1473,6 +1473,15 @@ function launchBookFlyer(fromRect, toRect, duration, { fadeIn = false } = {}) {
 
   const flyer = document.createElement("div");
   flyer.className = "book-flyer";
+  const antiqueStyle = getComputedStyle(elements.antiqueBook);
+  flyer.style.setProperty(
+    "--book-top",
+    antiqueStyle.getPropertyValue("--book-top").trim() || "#704015",
+  );
+  flyer.style.setProperty(
+    "--book-bottom",
+    antiqueStyle.getPropertyValue("--book-bottom").trim() || "#4a2a12",
+  );
   const frontCover = elements.bookStage.querySelector(".cover-front");
   const coverClone = frontCover?.cloneNode(true);
   if (coverClone) {
