@@ -1599,17 +1599,22 @@ function launchSpineFlyer(fromRect, toRect, duration) {
     {
       transform: toTransform,
       opacity: 1,
-      offset: 0.76,
+      offset: 0.6,
     },
     {
       transform: toOvershoot,
       opacity: 1,
-      offset: 0.88,
+      offset: 0.74,
     },
     {
       transform: toTransform,
       opacity: 1,
-      offset: 0.95,
+      offset: 0.82,
+    },
+    {
+      transform: toTransform,
+      opacity: 1,
+      offset: 0.94,
     },
     { transform: toTransform, opacity: 0 },
   ];
@@ -1673,7 +1678,7 @@ function closeBookAndReturn() {
               };
               elements.bookStage.classList.add("is-flying");
               elements.bookStage.classList.add("is-dismissed");
-              await launchSpineFlyer(fromRect, targetRect, 850);
+              await launchSpineFlyer(fromRect, targetRect, 1500);
               finish();
               return;
             }
