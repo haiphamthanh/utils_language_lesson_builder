@@ -1833,6 +1833,81 @@ elements.closeBookButton.addEventListener("click", () => {
 
 window.addEventListener("resize", updateBookScale);
 
+/* ---------- Hover sound for shelf books ---------- */
+
+let hoverAudioContext = null;
+let lastHoverSoundAt = 0;
+let hoveredBook = null;
+
+function ensureHoverAudioContext() {
+  if (!hoverAudioContext) {
+    const Ctor = window.AudioContext || window.webkitAudioContext;
+    if (Ctor) hoverAudioContext = new Ctor();
+  }
+  if (hoverAudioContext?.state === "suspended") {
+    hoverAudioContext.resume().catch(() => undefined);
+  }
+  return hoverAudioContext;
+}
+
+function playBookHoverSound() {
+  const now = performance.now();
+  if (now - lastHoverSoundAt < 100) return;
+  lastHoverSoundAt = now;
+
+  const ctx = ensureHoverAudioContext();
+  if (!ctx) return;
+  const t = ctx.currentTime;
+
+  const master = ctx.createGain();
+  master.gain.setValueAtTime(0.0001, t);
+  master.gain.exponentialRampToValueAtTime(0.085, t + 0.012);
+  master.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+  master.connect(ctx.destination);
+
+  const freq = 140 + Math.random() * 90;
+  const osc = ctx.createOscillator();
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(freq, t);
+  osc.frequency.exponentialRampToValueAtTime(freq * 0.55, t + 0.09);
+  osc.connect(master);
+  osc.start(t);
+  osc.stop(t + 0.14);
+
+  const noise = ctx.createBufferSource();
+  const buffer = ctx.createBuffer(
+    1,
+    Math.max(1, Math.floor(ctx.sampleRate * 0.03)),
+    ctx.sampleRate,
+  );
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < data.length; i++) {
+    data[i] = Math.random() * 2 - 1;
+  }
+  noise.buffer = buffer;
+  const filter = ctx.createBiquadFilter();
+  filter.type = "bandpass";
+  filter.frequency.setValueAtTime(700 + Math.random() * 500, t);
+  filter.Q.value = 1.4;
+  const tick = ctx.createGain();
+  tick.gain.setValueAtTime(0.035, t);
+  tick.gain.exponentialRampToValueAtTime(0.0001, t + 0.04);
+  noise.connect(filter).connect(tick).connect(master);
+  noise.start(t);
+  noise.stop(t + 0.05);
+}
+
+elements.homeShelf.addEventListener("mouseover", (event) => {
+  const book = event.target.closest?.(".book");
+  if (book && book !== hoveredBook) {
+    hoveredBook = book;
+    playBookHoverSound();
+  }
+});
+elements.homeShelf.addEventListener("mouseout", (event) => {
+  if (hoveredBook && !event.target.closest?.(".book")) hoveredBook = null;
+});
+
 elements.bookStage
   .querySelector(".zone-prev")
   .addEventListener("click", () => flipTimelineLesson(-1));
