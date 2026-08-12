@@ -266,23 +266,19 @@ function selectReviewItem(index) {
   openReviewDetail(reviewItems[index]);
 }
 
-function renderReview(lesson) {
+function buildReviewFragment(lesson) {
   const groups = reviewGroups(lesson.review);
-  reviewItems = groups.flatMap((group) =>
+  const items = groups.flatMap((group) =>
     group.items.map((item) => ({ ...item, kind: group.kind })),
   );
-  selectedReviewIndex = -1;
+  const fragment = document.createDocumentFragment();
 
-  const list = elements.reviewList;
-  list.replaceChildren();
-  closeReviewDetail();
-
-  if (reviewItems.length === 0) {
+  if (items.length === 0) {
     const empty = document.createElement("p");
     empty.className = "review-empty";
     empty.textContent = "Bài này không có mục ôn tập.";
-    list.append(empty);
-    return;
+    fragment.append(empty);
+    return { fragment, items };
   }
 
   let flatIndex = 0;
@@ -349,8 +345,19 @@ function renderReview(lesson) {
     }
     groupEl.append(listEl);
     groupTitle.addEventListener("click", () => toggleReviewGroup(groupEl));
-    list.append(groupEl);
+    fragment.append(groupEl);
   }
+  return { fragment, items };
+}
+
+function renderReview(lesson, prepared = null) {
+  const { fragment, items } = prepared ?? buildReviewFragment(lesson);
+  reviewItems = items;
+  selectedReviewIndex = -1;
+
+  const list = elements.reviewList;
+  list.replaceChildren(fragment);
+  closeReviewDetail();
 }
 
 function toggleReviewGroup(groupEl) {
@@ -517,18 +524,23 @@ function buildParagraphFragment(paragraphIndex, text) {
   return fragment;
 }
 
-function renderLessonContent(content) {
-  const container = elements.lessonContent;
-  container.replaceChildren();
-
+function buildLessonContentFragment(content) {
+  const fragment = document.createDocumentFragment();
   const paragraphs = String(content ?? "").split("\n");
   paragraphs.forEach((text, index) => {
     const paragraph = document.createElement("p");
     paragraph.className = "lesson-paragraph";
     paragraph.dataset.paragraphIndex = String(index);
     paragraph.append(buildParagraphFragment(index, text));
-    container.append(paragraph);
+    fragment.append(paragraph);
   });
+  return fragment;
+}
+
+function renderLessonContent(content, preparedFragment = null) {
+  const container = elements.lessonContent;
+  const fragment = preparedFragment ?? buildLessonContentFragment(content);
+  container.replaceChildren(fragment);
 }
 
 async function loadHighlights(lessonId) {
@@ -537,14 +549,19 @@ async function loadHighlights(lessonId) {
     const payload = await response.json();
     if (!response.ok)
       throw new Error(payload.message ?? "Không thể tải các đánh dấu.");
+    if (currentLesson?.id !== lessonId) return;
     lessonHighlights = payload.data ?? [];
+    if (lessonHighlights.length === 0) return;
     renderLessonContent(currentLesson?.content ?? "");
   } catch {
     lessonHighlights = [];
   }
 }
 
-function hideHighlightPopover({ clearSelection = true } = {}) {
+function hideHighlightPopover({
+  clearSelection = true,
+  skipRerender = false,
+} = {}) {
   pendingHighlight = null;
   editingHighlightId = null;
   popoverActiveHighlight = null;
@@ -553,7 +570,8 @@ function hideHighlightPopover({ clearSelection = true } = {}) {
   elements.highlightPopover.style.top = "";
   elements.highlightCommentInput.value = "";
   if (clearSelection) window.getSelection()?.removeAllRanges();
-  if (currentLesson) renderLessonContent(currentLesson.content);
+  if (currentLesson && !skipRerender)
+    renderLessonContent(currentLesson.content);
 }
 
 function positionHighlightPopover(anchorRect) {
@@ -751,7 +769,7 @@ async function deleteHighlight() {
   }
 }
 
-function showLesson(lesson) {
+function showLesson(lesson, prepared = null, { deferHighlights = false } = {}) {
   lessonCache.set(lesson.id, lesson);
   currentLesson = lesson;
   lessonHighlights = [];
@@ -765,8 +783,8 @@ function showLesson(lesson) {
   elements.mastheadEyebrow.textContent = "Hành trình chi tiết";
   elements.lessonTitle.textContent = lesson.title;
   elements.objective.textContent = lesson.objective;
-  renderLessonContent(lesson.content);
-  renderReview(lesson);
+  renderLessonContent(lesson.content, prepared?.content);
+  renderReview(lesson, prepared?.review);
 
   elements.loading.hidden = true;
   elements.error.hidden = true;
@@ -774,18 +792,37 @@ function showLesson(lesson) {
   elements.journeySetup.hidden = true;
   elements.completion.hidden = true;
 
-  elements.completeButton.hidden =
-    !lesson.isCurrent || lesson.status === "completed";
-  elements.regenerateButton.hidden =
-    !lesson.isCurrent ||
-    lesson.status !== "ready" ||
-    lesson.isLocked ||
-    lesson.cycleNumber !== 1;
-  elements.lessonStatus.textContent = lesson.isLocked
-    ? "Bài đã hoàn thành và được khóa."
-    : "";
+  updateLessonActionAvailability();
+  elements.lessonStatus.textContent = "";
+  updateOpenStateLabel();
   updateNavigation(lesson.id, lesson.isCurrent);
-  loadHighlights(lesson.id);
+  if (!deferHighlights) loadHighlights(lesson.id);
+}
+
+function updateLessonActionAvailability() {
+  const canComplete = Boolean(
+    currentLesson?.isCurrent && currentLesson.status !== "completed",
+  );
+  const canRegenerate = Boolean(
+    currentLesson?.isCurrent &&
+    currentLesson.status === "ready" &&
+    !currentLesson.isLocked &&
+    currentLesson.cycleNumber === 1,
+  );
+
+  elements.completeButton.hidden =
+    !currentLesson?.isCurrent || currentLesson.status === "completed";
+  elements.regenerateButton.hidden = !canRegenerate;
+  elements.completeButton.disabled = isFlipping || !canComplete;
+  elements.regenerateButton.disabled = isFlipping || !canRegenerate;
+}
+
+function updateOpenStateLabel() {
+  if (bookStageState !== "open") return;
+  const suffix = currentLesson?.isLocked
+    ? " (Bài đã hoàn thành và được khóa)"
+    : "";
+  elements.stateLabelTextTop.textContent = `${BOOK_PHASES.open}${suffix}`;
 }
 
 function showJourneyCompleted(journey) {
@@ -1331,6 +1368,10 @@ function updateNavigation(lessonId, isCurrent) {
 const BOOK_CLOSE_MS = 1800;
 const BOOK_STAGE_DISMISS_MS = 600;
 const SPINE_TURN_MS = 720;
+// A symmetric timeline keeps the sheet perpendicular to the spread exactly
+// halfway through the turn, which is also the safest moment to swap content.
+const PAGE_TURN_MS = 1180;
+const PAGE_CONTENT_SWAP_MS = Math.round(PAGE_TURN_MS / 2);
 let bookStageState = "idle";
 let bookStageTimers = [];
 let isFlipping = false;
@@ -1364,6 +1405,7 @@ function setBookStageState(state) {
   elements.stateLabelTop.hidden = state !== "open";
   elements.stateLabelBottom.hidden = state === "open";
   elements.stateLabelTextTop.textContent = BOOK_PHASES[state] ?? "";
+  updateOpenStateLabel();
   elements.statePulse.classList.toggle(
     "pulse",
     !["idle", "open"].includes(state),
@@ -1619,8 +1661,7 @@ function launchShelfBookFlyer(fromRect, targetBook, duration) {
     `translate(${fromRect.left}px, ${fromRect.top}px) ` +
     `scale(${fromRect.width / targetRect.width}, ${fromRect.height / targetRect.height})`;
   const toTransform =
-    `translate(${targetRect.left}px, ${targetRect.top}px) ` +
-    "scale(1)";
+    `translate(${targetRect.left}px, ${targetRect.top}px) ` + "scale(1)";
 
   const keyframes = [
     { transform: fromTransform, opacity: 1 },
@@ -1721,22 +1762,31 @@ function showHomeBackdrop() {
 function createTurningLeaf(direction) {
   const leaf = document.createElement("div");
   leaf.className = `turn-leaf manual-turn-leaf turn-${direction}`;
+  leaf.style.setProperty("--page-duration", `${PAGE_TURN_MS}ms`);
 
   const sheet = document.createElement("div");
   sheet.className = "turning-sheet";
 
   const front = document.createElement("div");
   front.className = "turning-sheet-face turning-sheet-front";
+  const frontOrnament = document.createElement("div");
+  frontOrnament.className = "turning-sheet-ornament";
+  frontOrnament.setAttribute("aria-hidden", "true");
+  front.append(frontOrnament);
+
   const back = document.createElement("div");
   back.className = "turning-sheet-face turning-sheet-back";
+  const backOrnament = document.createElement("div");
+  backOrnament.className = "turning-sheet-ornament";
+  backOrnament.setAttribute("aria-hidden", "true");
+  back.append(backOrnament);
+
   sheet.append(front, back);
 
-  const glint = document.createElement("div");
-  glint.className = "page-glint";
   const shadow = document.createElement("div");
   shadow.className = "moving-page-shadow";
 
-  leaf.append(sheet, glint, shadow);
+  leaf.append(shadow, sheet);
   elements.antiqueBook.append(leaf);
   return leaf;
 }
@@ -1756,26 +1806,72 @@ function flipTimelineLesson(offset) {
   }
 
   isFlipping = true;
+  elements.antiqueBook.classList.add("is-page-turning");
   updateNavigation(currentLesson?.id, currentLesson?.isCurrent);
+  updateLessonActionAvailability();
   elements.closeBookButton.disabled = true;
-  hideHighlightPopover();
+  hideHighlightPopover({ skipRerender: true });
   closeObjectivePopover();
 
-  createTurningLeaf(offset > 0 ? "next" : "prev");
+  // Start the turn immediately so the click answers within one frame, then
+  // build the incoming lesson off-screen on the next frame. Attached only at
+  // the mid-turn swap, the build never delays the leaf's first paint.
+  lessonHighlights = [];
+  const prepared = { content: null, review: null };
+  const prepareContent = () => {
+    if (prepared.content) return;
+    prepared.content = buildLessonContentFragment(lesson.content);
+    prepared.review = buildReviewFragment(lesson);
+  };
 
-  window.setTimeout(() => {
-    showLesson(lesson);
-  }, 560);
+  // Build the detached fragments before the animation starts. Doing this on
+  // its first requestAnimationFrame made Safari occasionally miss an early
+  // frame and gave the turn a small initial stutter.
+  prepareContent();
+  const leaf = createTurningLeaf(offset > 0 ? "next" : "prev");
+  requestAnimationFrame(() => {
+    playPageTurnSound(offset > 0 ? "next" : "prev");
+  });
 
-  window.setTimeout(() => {
-    elements.antiqueBook
-      .querySelectorAll(".turn-leaf.manual-turn-leaf")
-      .forEach((leaf) => leaf.remove());
+  let contentSwapped = false;
+  const swapContent = () => {
+    if (contentSwapped) return;
+    contentSwapped = true;
+    prepareContent();
+    showLesson(lesson, prepared, { deferHighlights: true });
+  };
+  const swapTimer = window.setTimeout(
+    () => requestAnimationFrame(swapContent),
+    PAGE_CONTENT_SWAP_MS,
+  );
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    window.clearTimeout(swapTimer);
+    swapContent();
+    // The turned sheet lands as a blank parchment; fade it out over the new
+    // spread so the handoff reads as ink settling rather than a hard cut.
+    leaf.style.transition = "opacity 150ms ease";
+    leaf.style.opacity = "0";
+    window.setTimeout(() => leaf.remove(), 160);
+    elements.antiqueBook.classList.remove("is-page-turning");
     elements.closeBookButton.disabled = false;
     isFlipping = false;
+    updateLessonActionAvailability();
     updateNavigation(lesson.id, lesson.isCurrent);
     preloadAdjacentLessons(lesson.id);
-  }, 1220);
+    loadHighlights(lesson.id);
+  };
+  const onTurnEnd = (event) => {
+    if (event.target !== leaf) return;
+    leaf.removeEventListener("animationend", onTurnEnd);
+    finish();
+  };
+  leaf.addEventListener("animationend", onTurnEnd);
+  window.setTimeout(() => {
+    if (leaf.isConnected) finish();
+  }, PAGE_TURN_MS + 120);
 }
 
 async function loadStats() {
@@ -1833,21 +1929,126 @@ elements.closeBookButton.addEventListener("click", () => {
 
 window.addEventListener("resize", updateBookScale);
 
-/* ---------- Hover sound for shelf books ---------- */
+/* ---------- Hover & page-turn sound ---------- */
 
-let hoverAudioContext = null;
+let audioContext = null;
+let sharedNoiseBuffer = null;
+const sharedNoiseSamples = new Float32Array(8192);
+for (let index = 0; index < sharedNoiseSamples.length; index += 1) {
+  sharedNoiseSamples[index] = Math.random() * 2 - 1;
+}
 let lastHoverSoundAt = 0;
 let hoveredBook = null;
 
-function ensureHoverAudioContext() {
-  if (!hoverAudioContext) {
+function ensureAudioContext() {
+  if (!audioContext) {
     const Ctor = window.AudioContext || window.webkitAudioContext;
-    if (Ctor) hoverAudioContext = new Ctor();
+    if (Ctor) audioContext = new Ctor();
   }
-  if (hoverAudioContext?.state === "suspended") {
-    hoverAudioContext.resume().catch(() => undefined);
+  if (audioContext?.state === "suspended") {
+    audioContext.resume().catch(() => undefined);
   }
-  return hoverAudioContext;
+  return audioContext;
+}
+
+function getSharedNoiseBuffer(ctx) {
+  if (!sharedNoiseBuffer) {
+    sharedNoiseBuffer = ctx.createBuffer(
+      1,
+      sharedNoiseSamples.length,
+      ctx.sampleRate,
+    );
+    sharedNoiseBuffer.copyToChannel(sharedNoiseSamples, 0);
+  }
+  return sharedNoiseBuffer;
+}
+
+function playPageTurnSound(direction = "next") {
+  const ctx = ensureAudioContext();
+  if (!ctx) return;
+
+  const t = ctx.currentTime;
+  const master = ctx.createGain();
+  master.gain.setValueAtTime(0.0001, t);
+  master.gain.exponentialRampToValueAtTime(0.072, t + 0.025);
+  master.gain.setValueAtTime(0.068, t + 0.58);
+  master.gain.exponentialRampToValueAtTime(0.0001, t + 1.02);
+  master.connect(ctx.destination);
+
+  const addSweep = (
+    start,
+    duration,
+    fromFrequency,
+    toFrequency,
+    level,
+    fromPan,
+    toPan,
+  ) => {
+    const noise = ctx.createBufferSource();
+    noise.buffer = getSharedNoiseBuffer(ctx);
+    noise.loop = true;
+
+    const highpass = ctx.createBiquadFilter();
+    highpass.type = "highpass";
+    highpass.frequency.setValueAtTime(260, start);
+    const filter = ctx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.Q.setValueAtTime(0.72, start);
+    filter.frequency.setValueAtTime(fromFrequency, start);
+    filter.frequency.exponentialRampToValueAtTime(
+      toFrequency,
+      start + duration,
+    );
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(level, start + 0.025);
+    gain.gain.exponentialRampToValueAtTime(
+      level * 0.42,
+      start + duration * 0.48,
+    );
+    gain.gain.exponentialRampToValueAtTime(
+      level * 0.72,
+      start + duration * 0.67,
+    );
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+
+    const panner = ctx.createStereoPanner?.();
+    if (panner) {
+      panner.pan.setValueAtTime(fromPan, start);
+      panner.pan.linearRampToValueAtTime(toPan, start + duration);
+      noise
+        .connect(highpass)
+        .connect(filter)
+        .connect(gain)
+        .connect(panner)
+        .connect(master);
+    } else {
+      noise.connect(highpass).connect(filter).connect(gain).connect(master);
+    }
+    noise.start(start, Math.random() * noise.buffer.duration * 0.6);
+    noise.stop(start + duration + 0.02);
+  };
+
+  const panFrom = direction === "next" ? 0.62 : -0.62;
+  const panTo = -panFrom;
+  // Paper lifting off and sweeping over the spine.
+  addSweep(t + 0.02, 0.48, 720, 2850, 0.52, panFrom, 0);
+  // Paper settling onto the other side.
+  addSweep(t + 0.46, 0.47, 2500, 520, 0.46, 0, panTo);
+
+  // Soft landing thump.
+  const thump = ctx.createOscillator();
+  thump.type = "sine";
+  thump.frequency.setValueAtTime(185, t + 0.9);
+  thump.frequency.exponentialRampToValueAtTime(82, t + 1.01);
+  const thumpGain = ctx.createGain();
+  thumpGain.gain.setValueAtTime(0.0001, t + 0.9);
+  thumpGain.gain.exponentialRampToValueAtTime(0.038, t + 0.92);
+  thumpGain.gain.exponentialRampToValueAtTime(0.0001, t + 1.03);
+  thump.connect(thumpGain).connect(master);
+  thump.start(t + 0.9);
+  thump.stop(t + 1.04);
 }
 
 function playBookHoverSound() {
@@ -1855,14 +2056,14 @@ function playBookHoverSound() {
   if (now - lastHoverSoundAt < 100) return;
   lastHoverSoundAt = now;
 
-  const ctx = ensureHoverAudioContext();
+  const ctx = ensureAudioContext();
   if (!ctx) return;
   const t = ctx.currentTime;
 
   const master = ctx.createGain();
   master.gain.setValueAtTime(0.0001, t);
-  master.gain.exponentialRampToValueAtTime(0.085, t + 0.012);
-  master.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+  master.gain.exponentialRampToValueAtTime(0.15, t + 0.012);
+  master.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
   master.connect(ctx.destination);
 
   const freq = 140 + Math.random() * 90;
@@ -1875,25 +2076,16 @@ function playBookHoverSound() {
   osc.stop(t + 0.14);
 
   const noise = ctx.createBufferSource();
-  const buffer = ctx.createBuffer(
-    1,
-    Math.max(1, Math.floor(ctx.sampleRate * 0.03)),
-    ctx.sampleRate,
-  );
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < data.length; i++) {
-    data[i] = Math.random() * 2 - 1;
-  }
-  noise.buffer = buffer;
+  noise.buffer = getSharedNoiseBuffer(ctx);
   const filter = ctx.createBiquadFilter();
   filter.type = "bandpass";
   filter.frequency.setValueAtTime(700 + Math.random() * 500, t);
   filter.Q.value = 1.4;
   const tick = ctx.createGain();
-  tick.gain.setValueAtTime(0.035, t);
-  tick.gain.exponentialRampToValueAtTime(0.0001, t + 0.04);
+  tick.gain.setValueAtTime(0.06, t);
+  tick.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
   noise.connect(filter).connect(tick).connect(master);
-  noise.start(t);
+  noise.start(t, Math.random() * noise.buffer.duration * 0.2, 0.05);
   noise.stop(t + 0.05);
 }
 
