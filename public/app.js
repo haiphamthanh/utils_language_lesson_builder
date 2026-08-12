@@ -1511,6 +1511,16 @@ function launchBookFlyer(
     coverClone.setAttribute("aria-hidden", "true");
     flyer.append(coverClone);
   }
+  const spineEl = elements.bookStage.querySelector(".spine");
+  const spineClone = spineEl?.cloneNode(true);
+  if (spineClone) {
+    spineClone
+      .querySelectorAll("[id]")
+      .forEach((node) => node.removeAttribute("id"));
+    spineClone.classList.add("book-flyer-spine-edge");
+    spineClone.setAttribute("aria-hidden", "true");
+    flyer.append(spineClone);
+  }
   document.body.append(flyer);
   currentFlyer = flyer;
 
