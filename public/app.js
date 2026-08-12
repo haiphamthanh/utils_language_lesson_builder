@@ -900,6 +900,30 @@ function getFilteredJourneys() {
 
 const BOOK_HEIGHTS = [198, 178, 212, 186, 204, 172, 218, 192];
 const BOOKS_PER_ROW = 7;
+const BOOK_COLOR_PALETTE = [
+  ["#3a8a6d", "#1c4a3b"],
+  ["#c07a60", "#7c4432"],
+  ["#7b88c0", "#434f82"],
+  ["#c2a24e", "#82641f"],
+  ["#9a7d47", "#5d4626"],
+  ["#4b88a0", "#28505c"],
+  ["#8a6d3f", "#5d4626"],
+];
+
+function getBookColors(bookId) {
+  const key = String(bookId ?? "book");
+  let hash = 0;
+  for (let index = 0; index < key.length; index += 1) {
+    hash = (hash * 31 + key.charCodeAt(index)) | 0;
+  }
+  return BOOK_COLOR_PALETTE[Math.abs(hash) % BOOK_COLOR_PALETTE.length];
+}
+
+function applyBookColors(element, bookId) {
+  const [top, bottom] = getBookColors(bookId);
+  element.style.setProperty("--book-top", top);
+  element.style.setProperty("--book-bottom", bottom);
+}
 
 function buildBookCard(journey, index = 0) {
   const button = document.createElement("button");
@@ -907,6 +931,7 @@ function buildBookCard(journey, index = 0) {
   button.className = "book";
   button.dataset.journeyId = journey.id;
   button.dataset.language = journey.language ?? "";
+  applyBookColors(button, journey.id);
   if (journey.id === activeJourneyId) button.classList.add("is-open");
   button.style.height = `${BOOK_HEIGHTS[index % BOOK_HEIGHTS.length]}px`;
   button.setAttribute(
@@ -1303,14 +1328,15 @@ function updateNavigation(lessonId, isCurrent) {
 
 /* ---------- Antique book-stage opening & page flipping ---------- */
 
-const BOOK_CLOSE_MS = 2100;
+const BOOK_CLOSE_MS = 1800;
 const BOOK_STAGE_DISMISS_MS = 600;
-const SPINE_TURN_MS = 900;
+const SPINE_TURN_MS = 720;
 let bookStageState = "idle";
 let bookStageTimers = [];
 let isFlipping = false;
 let bookFlyOriginRect = null;
 let currentFlyer = null;
+let currentFlyerCleanup = null;
 
 const BOOK_PHASES = {
   idle: "Đang nằm trên giá",
@@ -1355,6 +1381,8 @@ function clearBookFlyer() {
     currentFlyer.remove();
     currentFlyer = null;
   }
+  currentFlyerCleanup?.();
+  currentFlyerCleanup = null;
 }
 
 function resetBook() {
@@ -1406,6 +1434,7 @@ function populateBookStage(lesson) {
     ` Hành trình · ${[language, level].filter(Boolean).join(" · ")}`,
   );
   elements.antiqueBook.dataset.language = language;
+  applyBookColors(elements.antiqueBook, journey.id ?? title);
   elements.stageDescription.textContent = journey.description ?? "";
 }
 
@@ -1559,74 +1588,54 @@ function launchBookFlyer(
   return animation.finished.catch(() => undefined);
 }
 
-function launchSpineFlyer(fromRect, toRect, duration) {
+function getShelfBook(journeyId) {
+  return [...elements.homeShelf.querySelectorAll(".book")].find(
+    (book) => book.dataset.journeyId === String(journeyId),
+  );
+}
+
+function launchShelfBookFlyer(fromRect, targetBook, duration) {
   clearBookFlyer();
 
+  const targetRect = targetBook.getBoundingClientRect();
   const flyer = document.createElement("div");
-  flyer.className = "book-flyer book-flyer-spine";
-  const antiqueStyle = getComputedStyle(elements.antiqueBook);
-  flyer.style.setProperty(
-    "--book-top",
-    antiqueStyle.getPropertyValue("--book-top").trim() || "#704015",
-  );
-  flyer.style.setProperty(
-    "--book-bottom",
-    antiqueStyle.getPropertyValue("--book-bottom").trim() || "#4a2a12",
-  );
+  flyer.className = "book-flyer book-flyer-shelf";
+  flyer.style.width = `${targetBook.offsetWidth}px`;
+  flyer.style.height = `${targetBook.offsetHeight}px`;
+  const bookClone = targetBook.cloneNode(true);
+  bookClone.classList.add("book-flyer-shelf-book");
+  bookClone.disabled = true;
+  bookClone.setAttribute("aria-hidden", "true");
+  flyer.append(bookClone);
   document.body.append(flyer);
   currentFlyer = flyer;
-
-  const width = flyer.offsetWidth;
-  const height = flyer.offsetHeight;
+  const originalVisibility = targetBook.style.visibility;
+  targetBook.style.visibility = "hidden";
+  currentFlyerCleanup = () => {
+    targetBook.style.visibility = originalVisibility;
+  };
 
   const fromTransform =
     `translate(${fromRect.left}px, ${fromRect.top}px) ` +
-    `scale(${fromRect.width / width}, ${fromRect.height / height})`;
+    `scale(${fromRect.width / targetRect.width}, ${fromRect.height / targetRect.height})`;
   const toTransform =
-    `translate(${toRect.left}px, ${toRect.top}px) ` +
-    `scale(${toRect.width / width}, ${toRect.height / height})`;
-  const toOvershoot =
-    `translate(${toRect.left}px, ${toRect.top}px) ` +
-    `scale(${(toRect.width / width) * 1.06}, ${toRect.height / height})`;
+    `translate(${targetRect.left}px, ${targetRect.top}px) ` +
+    "scale(1)";
 
   const keyframes = [
-    { transform: fromTransform, opacity: 0 },
-    {
-      transform: fromTransform,
-      opacity: 1,
-      offset: 0.12,
-    },
-    {
-      transform: toTransform,
-      opacity: 1,
-      offset: 0.6,
-    },
-    {
-      transform: toOvershoot,
-      opacity: 1,
-      offset: 0.74,
-    },
-    {
-      transform: toTransform,
-      opacity: 1,
-      offset: 0.82,
-    },
-    {
-      transform: toTransform,
-      opacity: 1,
-      offset: 0.94,
-    },
-    { transform: toTransform, opacity: 0 },
+    { transform: fromTransform, opacity: 1 },
+    { transform: toTransform, opacity: 1, offset: 0.88 },
+    { transform: toTransform, opacity: 1 },
   ];
 
   const animation = flyer.animate(keyframes, {
     duration,
-    easing: "cubic-bezier(0.25, 0.6, 0.2, 1)",
+    easing: "cubic-bezier(0.22, 0.72, 0.2, 1)",
     fill: "forwards",
   });
 
   animation.finished
-    .then(() => clearBookFlyer())
+    .then(() => requestAnimationFrame(() => clearBookFlyer()))
     .catch(() => clearBookFlyer());
   return animation.finished.catch(() => undefined);
 }
@@ -1664,9 +1673,10 @@ function closeBookAndReturn() {
             loadStats();
           };
 
-          if (bookFlyOriginRect) {
+          const targetBook = getShelfBook(activeJourneyId);
+          if (targetBook) {
             const coverRect = getClosedCoverRect();
-            const targetRect = bookFlyOriginRect;
+            const targetRect = targetBook.getBoundingClientRect();
             if (coverRect && targetRect) {
               const spineW = Math.max(24, Math.round(targetRect.width * 0.68));
               const spineH = targetRect.height;
@@ -1678,7 +1688,7 @@ function closeBookAndReturn() {
               };
               elements.bookStage.classList.add("is-flying");
               elements.bookStage.classList.add("is-dismissed");
-              await launchSpineFlyer(fromRect, targetRect, 1500);
+              await launchShelfBookFlyer(fromRect, targetBook, 1150);
               finish();
               return;
             }

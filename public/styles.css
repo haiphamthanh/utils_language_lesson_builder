@@ -622,15 +622,6 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
   );
 }
 
-.bookshelf-row .book:nth-child(3n + 1) {
-  transform: rotate(-1.6deg);
-}
-.bookshelf-row .book:nth-child(3n + 2) {
-  transform: rotate(1.3deg);
-}
-.bookshelf-row .book:nth-child(3n) {
-  transform: rotate(2.6deg);
-}
 .bookshelf-row .book:hover {
   transform: translateY(-7px) rotate(0deg);
   box-shadow:
@@ -829,7 +820,9 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
 }
 
 .book-flyer-spine {
-  position: relative;
+  /* The animation transforms are viewport coordinates, so keep the flyer
+     fixed just like the full-cover flyer. */
+  position: fixed;
   width: 26px;
   height: 200px;
   border-radius: 4px 6px 6px 4px;
@@ -859,6 +852,38 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
     rgb(190 138 66 / 45%) 84px 86px,
     transparent 86px
   );
+}
+
+.book-flyer-spine-title {
+  position: absolute;
+  inset: 16px 3px;
+  z-index: 2;
+  overflow: hidden;
+  white-space: normal;
+  color: #f2dfae;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 8px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-overflow: clip;
+  text-shadow: 0 1px 1px rgb(0 0 0 / 70%);
+  writing-mode: vertical-rl;
+}
+
+.book-flyer-shelf {
+  overflow: visible;
+  border-radius: 0;
+}
+
+.book-flyer-shelf .book-flyer-shelf-book {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100% !important;
+  margin: 0;
+  transform: none;
 }
 
 /* ---------- Panels (setup + completion) ---------- */
