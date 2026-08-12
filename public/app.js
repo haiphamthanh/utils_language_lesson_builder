@@ -898,7 +898,7 @@ function getFilteredJourneys() {
   });
 }
 
-const BOOK_HEIGHTS = [168, 152, 182, 158, 176, 146, 188, 162];
+const BOOK_HEIGHTS = [198, 178, 212, 186, 204, 172, 218, 192];
 const BOOKS_PER_ROW = 7;
 
 function buildBookCard(journey, index = 0) {

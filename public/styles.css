@@ -448,20 +448,40 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 26px;
-  max-height: 620px;
-  padding: 26px 24px 24px;
+  gap: 24px;
+  max-height: 640px;
+  padding: 44px 30px 30px;
   overflow-y: auto;
-  border-radius: 16px;
+  border-radius: 16px 16px 12px 12px;
   scrollbar-color: rgb(0 0 0 / 30%) transparent;
   background:
-    repeating-linear-gradient(0deg, rgb(0 0 0 / 7%) 0 2px, transparent 2px 7px),
-    linear-gradient(180deg, #7a5233, #6a4529);
+    repeating-linear-gradient(90deg, rgb(0 0 0 / 5%) 0 2px, transparent 2px 34px),
+    linear-gradient(180deg, #4a2d17 0%, #6b4426 12%, #57371f 62%, #33200f 100%);
   box-shadow:
-    inset 0 0 0 1px rgb(0 0 0 / 22%),
-    inset 0 16px 30px rgb(0 0 0 / 30%),
-    inset 0 -16px 26px rgb(0 0 0 / 24%),
-    0 20px 44px rgb(44 40 33 / 30%);
+    inset 0 0 0 1px rgb(0 0 0 / 42%),
+    inset 0 22px 46px rgb(255 226 170 / 7%),
+    inset 0 -28px 56px rgb(0 0 0 / 50%),
+    0 24px 54px rgb(44 40 33 / 42%);
+}
+
+.library-shelf::before {
+  content: "";
+  order: -1;
+  flex: 0 0 18px;
+  margin: -44px -30px 0;
+  border-bottom: 1px solid rgb(201 147 74 / 55%);
+  background: linear-gradient(180deg, #9a6a36 0%, #5b3a22 55%, #33200f 100%);
+  box-shadow: 0 7px 18px rgb(0 0 0 / 38%);
+}
+
+.library-shelf::after {
+  content: "";
+  order: 99;
+  height: 12px;
+  margin: -2px -30px -30px;
+  border-top: 1px solid rgb(201 147 74 / 45%);
+  background: linear-gradient(180deg, #33200f, #201307);
+  box-shadow: 0 -5px 14px rgb(0 0 0 / 45%);
 }
 
 .library-empty {
@@ -475,11 +495,14 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
   display: flex;
   align-items: flex-end;
   gap: 6px;
-  min-height: 240px;
-  padding: 18px 10px 0;
-  border-bottom: 18px solid #8a5f38;
-  border-radius: 3px;
-  background: linear-gradient(180deg, rgb(0 0 0 / 10%), transparent 62%);
+  min-height: 252px;
+  padding: 22px 16px 0;
+  border-bottom: 14px solid #6b4426;
+  border-radius: 2px;
+  background: linear-gradient(180deg, rgb(0 0 0 / 15%), transparent 72%);
+  box-shadow:
+    inset 0 -2px 0 rgb(201 147 74 / 60%),
+    inset 0 -3px 0 rgb(0 0 0 / 42%);
 }
 
 .bookshelf-row::before {
@@ -487,12 +510,12 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
   position: absolute;
   left: 2px;
   right: 2px;
-  bottom: -18px;
-  height: 14px;
+  bottom: -14px;
+  height: 12px;
   pointer-events: none;
   background: radial-gradient(
     ellipse at 50% 0%,
-    rgb(0 0 0 / 28%),
+    rgb(0 0 0 / 32%),
     transparent 70%
   );
 }
@@ -505,7 +528,7 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
   top: 0;
   height: 7px;
   pointer-events: none;
-  background: linear-gradient(180deg, rgb(0 0 0 / 22%), transparent);
+  background: linear-gradient(180deg, rgb(0 0 0 / 24%), transparent);
 }
 
 .book[data-language="English"] {
@@ -542,25 +565,46 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
   align-items: center;
   justify-content: space-between;
   flex: 0 0 auto;
-  width: 66px;
-  height: 170px;
-  padding: 12px 8px 10px;
+  width: 58px;
+  height: 200px;
+  padding: 12px 7px 12px;
   border: 0;
-  border-radius: 6px 2px 2px 6px;
-  color: #fff;
+  border-radius: 4px 3px 3px 4px;
+  color: #eedbb0;
   background:
-    linear-gradient(90deg, rgb(255 255 255 / 9%), transparent 16%),
+    linear-gradient(90deg, rgb(255 255 255 / 7%), transparent 18%, rgb(0 0 0 / 24%)),
+    url("/img/leather-cover.webp") center / 240% auto,
     linear-gradient(180deg, var(--book-top), var(--book-bottom));
+  background-blend-mode: multiply;
   cursor: pointer;
   font: inherit;
   text-align: center;
   transform-origin: bottom center;
   box-shadow:
-    inset 0 0 16px rgb(0 0 0 / 20%),
-    0 7px 12px rgb(0 0 0 / 34%);
+    inset 0 9px 0 -7px rgb(190 138 66 / 55%),
+    inset 0 -9px 0 -7px rgb(190 138 66 / 55%),
+    inset 0 0 20px rgb(0 0 0 / 34%),
+    inset 0 0 0 1px rgb(0 0 0 / 22%),
+    0 8px 14px rgb(0 0 0 / 42%);
   transition:
     transform 0.16s ease,
     box-shadow 0.16s ease;
+}
+
+.book::before {
+  content: "";
+  position: absolute;
+  inset: 6px 2px;
+  z-index: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0 44px,
+    rgb(190 138 66 / 36%) 44px 46px,
+    transparent 46px 90px,
+    rgb(190 138 66 / 36%) 90px 92px,
+    transparent 92px
+  );
 }
 
 .book::after {
@@ -579,22 +623,21 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
 }
 
 .bookshelf-row .book:nth-child(3n + 1) {
-  height: 176px;
   transform: rotate(-1.6deg);
 }
 .bookshelf-row .book:nth-child(3n + 2) {
-  height: 192px;
   transform: rotate(1.3deg);
 }
 .bookshelf-row .book:nth-child(3n) {
-  height: 162px;
   transform: rotate(2.6deg);
 }
 .bookshelf-row .book:hover {
   transform: translateY(-7px) rotate(0deg);
   box-shadow:
-    inset 0 0 16px rgb(0 0 0 / 18%),
-    0 18px 26px rgb(0 0 0 / 42%);
+    inset 0 9px 0 -7px rgb(190 138 66 / 55%),
+    inset 0 -9px 0 -7px rgb(190 138 66 / 55%),
+    inset 0 0 20px rgb(0 0 0 / 30%),
+    0 20px 30px rgb(0 0 0 / 46%);
 }
 
 .book:hover {
@@ -606,6 +649,8 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
 
 .book.is-open {
   box-shadow:
+    inset 0 9px 0 -7px rgb(190 138 66 / 55%),
+    inset 0 -9px 0 -7px rgb(190 138 66 / 55%),
     inset 0 0 16px rgb(0 0 0 / 18%),
     0 0 0 3px var(--accent),
     0 16px 22px rgb(0 0 0 / 40%);
@@ -616,17 +661,21 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
   top: 0;
   left: 0;
   bottom: 0;
-  width: 12px;
-  border-radius: 6px 0 0 6px;
-  background: linear-gradient(90deg, rgb(0 0 0 / 32%), rgb(0 0 0 / 5%) 70%);
+  width: 10px;
+  border-radius: 5px 0 0 5px;
+  background: linear-gradient(90deg, rgb(0 0 0 / 40%), rgb(0 0 0 / 4%) 70%);
+  box-shadow: inset -1px 0 0 rgb(201 147 74 / 25%);
 }
 
 .book-status-dot {
-  width: 9px;
-  height: 9px;
-  margin-bottom: 4px;
+  position: relative;
+  z-index: 1;
+  width: 8px;
+  height: 8px;
+  margin-bottom: 5px;
   border-radius: 50%;
-  background: rgb(255 255 255 / 55%);
+  background: rgb(0 0 0 / 38%);
+  border: 1px solid rgb(201 147 74 / 65%);
 }
 
 .book-status-active {
@@ -649,51 +698,62 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
 }
 
 .book-title {
+  position: relative;
+  z-index: 1;
   flex: 1 1 auto;
   display: block;
   max-width: 100%;
+  padding: 9px 5px;
+  border: 1px solid rgb(201 147 74 / 50%);
+  outline: 1px solid rgb(201 147 74 / 16%);
+  outline-offset: 2px;
   overflow: hidden;
-  font-family: Georgia, serif;
-  font-size: 0.82rem;
-  font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: 0.06em;
+  color: #f2dfae;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   writing-mode: vertical-rl;
+  text-shadow: 0 1px 1px rgb(0 0 0 / 60%);
   text-overflow: ellipsis;
 }
 
 .book-footer {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 1px;
   margin-top: 8px;
-  line-height: 1.25;
+  line-height: 1.3;
 }
 
 .book-meta {
-  font-size: 0.56rem;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-  opacity: 0.92;
+  color: #d9bc86;
+  font-size: 0.52rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
 }
 
 .book-position {
-  font-size: 0.56rem;
-  font-weight: 700;
-  opacity: 0.78;
+  color: #b5955d;
+  font-size: 0.52rem;
+  font-weight: 600;
 }
 
 .book-progress {
   position: absolute;
-  top: 12px;
+  z-index: 1;
+  top: 20px;
   right: 5px;
-  bottom: 12px;
+  bottom: 20px;
   width: 4px;
   overflow: hidden;
   border-radius: 999px;
-  background: rgb(0 0 0 / 32%);
+  background: rgb(0 0 0 / 42%);
 }
 
 .book-progress-fill {
@@ -702,7 +762,8 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
   right: 0;
   bottom: 0;
   border-radius: inherit;
-  background: rgb(255 255 255 / 92%);
+  background: linear-gradient(180deg, #f3c978, #c9934a);
+  box-shadow: 0 0 7px rgb(201 147 74 / 75%);
 }
 
 /* ---------- Flying book (home shelf <-> book stage) ---------- */
@@ -2048,6 +2109,8 @@ body[data-theme="dark"] .stats {
 
 .book {
   box-shadow:
+    inset 0 9px 0 -7px rgb(190 138 66 / 55%),
+    inset 0 -9px 0 -7px rgb(190 138 66 / 55%),
     inset 0 0 16px rgb(0 0 0 / 26%),
     0 10px 16px rgb(0 0 0 / 50%);
 }
