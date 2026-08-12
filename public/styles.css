@@ -474,11 +474,12 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
   position: relative;
   display: flex;
   align-items: flex-end;
-  gap: 12px;
-  min-height: 200px;
-  padding: 12px 8px 0;
+  gap: 6px;
+  min-height: 240px;
+  padding: 18px 10px 0;
   border-bottom: 18px solid #8a5f38;
   border-radius: 3px;
+  background: linear-gradient(180deg, rgb(0 0 0 / 10%), transparent 62%);
 }
 
 .bookshelf-row::before {
@@ -553,12 +554,47 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
   cursor: pointer;
   font: inherit;
   text-align: center;
+  transform-origin: bottom center;
   box-shadow:
     inset 0 0 16px rgb(0 0 0 / 20%),
     0 7px 12px rgb(0 0 0 / 34%);
   transition:
     transform 0.16s ease,
     box-shadow 0.16s ease;
+}
+
+.book::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  bottom: -7px;
+  height: 12px;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    rgb(0 0 0 / 32%),
+    transparent 72%
+  );
+}
+
+.bookshelf-row .book:nth-child(3n + 1) {
+  height: 176px;
+  transform: rotate(-1.6deg);
+}
+.bookshelf-row .book:nth-child(3n + 2) {
+  height: 192px;
+  transform: rotate(1.3deg);
+}
+.bookshelf-row .book:nth-child(3n) {
+  height: 162px;
+  transform: rotate(2.6deg);
+}
+.bookshelf-row .book:hover {
+  transform: translateY(-7px) rotate(0deg);
+  box-shadow:
+    inset 0 0 16px rgb(0 0 0 / 18%),
+    0 18px 26px rgb(0 0 0 / 42%);
 }
 
 .book:hover {
