@@ -284,12 +284,13 @@ function buildReviewFragment(lesson) {
   let flatIndex = 0;
   for (const [groupIndex, group] of groups.entries()) {
     const groupEl = document.createElement("section");
-    groupEl.className = "review-group review-rhythm-section";
+    groupEl.className =
+      "review-group review-rhythm-section is-collapsed";
 
     const groupTitle = document.createElement("button");
     groupTitle.type = "button";
     groupTitle.className = "review-group-title review-rhythm-heading";
-    groupTitle.setAttribute("aria-expanded", "true");
+    groupTitle.setAttribute("aria-expanded", "false");
 
     const groupIcon = document.createElement("span");
     groupIcon.className = "review-group-icon";
@@ -307,10 +308,22 @@ function buildReviewFragment(lesson) {
     groupTitle.append(groupNumber, groupLabel, groupIcon);
     groupEl.append(groupTitle);
 
+    const collapsedHint = document.createElement("button");
+    collapsedHint.type = "button";
+    collapsedHint.className = "review-group-collapsed-hint";
+    collapsedHint.textContent = `(${group.items.length} mục · Nhấn để xem thêm)`;
+    collapsedHint.setAttribute(
+      "aria-label",
+      `Mở nhóm ${group.kind.toLowerCase()} gồm ${group.items.length} mục`,
+    );
+    collapsedHint.setAttribute("aria-expanded", "false");
+
     const listEl = document.createElement("ol");
     listEl.className = "review-group-items review-rhythm-track";
     listEl.id = `review-group-${groupIndex + 1}`;
+    listEl.hidden = true;
     groupTitle.setAttribute("aria-controls", listEl.id);
+    collapsedHint.setAttribute("aria-controls", listEl.id);
     if (group.items.length === 0) {
       const emptyItem = document.createElement("li");
       emptyItem.className = "review-group-empty";
@@ -343,8 +356,10 @@ function buildReviewFragment(lesson) {
       listEl.append(listItem);
       flatIndex += 1;
     }
-    groupEl.append(listEl);
-    groupTitle.addEventListener("click", () => toggleReviewGroup(groupEl));
+    groupEl.append(collapsedHint, listEl);
+    const toggleGroup = () => toggleReviewGroup(groupEl);
+    groupTitle.addEventListener("click", toggleGroup);
+    collapsedHint.addEventListener("click", toggleGroup);
     fragment.append(groupEl);
   }
   return { fragment, items };
@@ -365,8 +380,10 @@ function toggleReviewGroup(groupEl) {
   groupEl.classList.toggle("is-collapsed", !collapsed);
   const listEl = groupEl.querySelector(".review-group-items");
   const titleEl = groupEl.querySelector(".review-group-title");
+  const hintEl = groupEl.querySelector(".review-group-collapsed-hint");
   if (listEl) listEl.hidden = !collapsed;
-  if (titleEl) titleEl.setAttribute("aria-expanded", String(!collapsed));
+  if (hintEl) hintEl.hidden = collapsed;
+  if (titleEl) titleEl.setAttribute("aria-expanded", String(collapsed));
 }
 
 /* ---------- Highlights ---------- */
@@ -769,7 +786,21 @@ async function deleteHighlight() {
   }
 }
 
-function showLesson(lesson, prepared = null, { deferHighlights = false } = {}) {
+function renderLessonPage(lesson, preparedContent = null) {
+  elements.lessonTitle.textContent = lesson.title;
+  elements.objective.textContent = lesson.objective;
+  renderLessonContent(lesson.content, preparedContent);
+}
+
+function showLesson(
+  lesson,
+  prepared = null,
+  {
+    deferHighlights = false,
+    lessonPageAlreadyRendered = false,
+    reviewPageAlreadyRendered = false,
+  } = {},
+) {
   lessonCache.set(lesson.id, lesson);
   currentLesson = lesson;
   lessonHighlights = [];
@@ -781,10 +812,12 @@ function showLesson(lesson, prepared = null, { deferHighlights = false } = {}) {
   closeReviewDetail();
   activeJourneyId = lesson.journey?.id ?? null;
   elements.mastheadEyebrow.textContent = "Hành trình chi tiết";
-  elements.lessonTitle.textContent = lesson.title;
-  elements.objective.textContent = lesson.objective;
-  renderLessonContent(lesson.content, prepared?.content);
-  renderReview(lesson, prepared?.review);
+  if (!lessonPageAlreadyRendered) {
+    renderLessonPage(lesson, prepared?.content);
+  }
+  if (!reviewPageAlreadyRendered) {
+    renderReview(lesson, prepared?.review);
+  }
 
   elements.loading.hidden = true;
   elements.error.hidden = true;
@@ -1369,9 +1402,9 @@ const BOOK_CLOSE_MS = 1800;
 const BOOK_STAGE_DISMISS_MS = 600;
 const SPINE_TURN_MS = 720;
 // A symmetric timeline keeps the sheet perpendicular to the spread exactly
-// halfway through the turn, which is also the safest moment to swap content.
+// halfway through the turn. The underlying spread is updated only after the
+// sheet has landed, so its reverse never duplicates content below mid-flight.
 const PAGE_TURN_MS = 1180;
-const PAGE_CONTENT_SWAP_MS = Math.round(PAGE_TURN_MS / 2);
 let bookStageState = "idle";
 let bookStageTimers = [];
 let isFlipping = false;
@@ -1759,7 +1792,71 @@ function showHomeBackdrop() {
   elements.home.hidden = false;
 }
 
-function createTurningLeaf(direction) {
+function makeTurningPageInert(page) {
+  page.removeAttribute("id");
+  page.querySelectorAll("[id]").forEach((element) =>
+    element.removeAttribute("id"),
+  );
+  page.querySelectorAll("button, a, input, textarea, select").forEach(
+    (element) => {
+      element.tabIndex = -1;
+      element.setAttribute("aria-hidden", "true");
+    },
+  );
+  page.setAttribute("aria-hidden", "true");
+  return page;
+}
+
+function createTurningPageSnapshot(side, lesson, { useCurrentDom = false } = {}) {
+  const sourcePaper = elements.bookStage.querySelector(`.${side}-paper`);
+  const sourceContent = sourcePaper.querySelector(".page-content");
+  const page = sourceContent.cloneNode(true);
+  page.classList.add("turning-page-content");
+
+  if (!useCurrentDom && side === "left") {
+    page.querySelector(".book-page-head h1").textContent = lesson.title;
+    const objective = page.querySelector(".objective-popover p");
+    if (objective) objective.textContent = lesson.objective;
+    const objectivePopover = page.querySelector(".objective-popover");
+    if (objectivePopover) objectivePopover.hidden = true;
+    const objectiveToggle = page.querySelector(".objective-info-button");
+    if (objectiveToggle) objectiveToggle.setAttribute("aria-expanded", "false");
+    page
+      .querySelector(".lesson-content")
+      .replaceChildren(buildLessonContentFragment(lesson.content));
+  }
+
+  if (!useCurrentDom && side === "right") {
+    const review = buildReviewFragment(lesson);
+    const reviewRoot = page.querySelector(".review");
+    reviewRoot?.classList.remove("is-detail-open");
+    const title = page.querySelector(".review-title");
+    title.textContent = "Từ vựng và Cấu trúc";
+    title.classList.remove("is-item-detail");
+    const list = page.querySelector(".review-list");
+    list.hidden = false;
+    list.replaceChildren(review.fragment);
+    const detail = page.querySelector(".review-detail");
+    if (detail) detail.hidden = true;
+    const close = page.querySelector(".review-detail-close");
+    if (close) close.hidden = true;
+  }
+
+  return makeTurningPageInert(page);
+}
+
+function createTurningFace(side, lesson, options) {
+  const face = document.createElement("div");
+  face.className = `turning-sheet-face turning-sheet-${options.face}`;
+
+  const ornament = document.createElement("div");
+  ornament.className = "turning-sheet-ornament";
+  ornament.setAttribute("aria-hidden", "true");
+  face.append(ornament, createTurningPageSnapshot(side, lesson, options));
+  return face;
+}
+
+function createTurningLeaf(direction, sourceLesson, targetLesson) {
   const leaf = document.createElement("div");
   leaf.className = `turn-leaf manual-turn-leaf turn-${direction}`;
   leaf.style.setProperty("--page-duration", `${PAGE_TURN_MS}ms`);
@@ -1767,19 +1864,23 @@ function createTurningLeaf(direction) {
   const sheet = document.createElement("div");
   sheet.className = "turning-sheet";
 
-  const front = document.createElement("div");
-  front.className = "turning-sheet-face turning-sheet-front";
-  const frontOrnament = document.createElement("div");
-  frontOrnament.className = "turning-sheet-ornament";
-  frontOrnament.setAttribute("aria-hidden", "true");
-  front.append(frontOrnament);
-
-  const back = document.createElement("div");
-  back.className = "turning-sheet-face turning-sheet-back";
-  const backOrnament = document.createElement("div");
-  backOrnament.className = "turning-sheet-ornament";
-  backOrnament.setAttribute("aria-hidden", "true");
-  back.append(backOrnament);
+  // A real sheet carries the page being left on its leading face and the
+  // page being revealed on its reverse. Keeping the content inside each 3D
+  // face makes text and ornaments share the paper's perspective in Safari.
+  const front =
+    direction === "next"
+      ? createTurningFace("right", sourceLesson, {
+          face: "front",
+          useCurrentDom: true,
+        })
+      : createTurningFace("right", targetLesson, { face: "front" });
+  const back =
+    direction === "next"
+      ? createTurningFace("left", targetLesson, { face: "back" })
+      : createTurningFace("left", sourceLesson, {
+          face: "back",
+          useCurrentDom: true,
+        });
 
   sheet.append(front, back);
 
@@ -1813,9 +1914,8 @@ function flipTimelineLesson(offset) {
   hideHighlightPopover({ skipRerender: true });
   closeObjectivePopover();
 
-  // Start the turn immediately so the click answers within one frame, then
-  // build the incoming lesson off-screen on the next frame. Attached only at
-  // the mid-turn swap, the build never delays the leaf's first paint.
+  // Build the incoming spread off-screen, but keep the visible spread intact
+  // until the turning sheet has completely landed.
   lessonHighlights = [];
   const prepared = { content: null, review: null };
   const prepareContent = () => {
@@ -1828,9 +1928,32 @@ function flipTimelineLesson(offset) {
   // its first requestAnimationFrame made Safari occasionally miss an early
   // frame and gave the turn a small initial stutter.
   prepareContent();
-  const leaf = createTurningLeaf(offset > 0 ? "next" : "prev");
+  const leaf = createTurningLeaf(
+    offset > 0 ? "next" : "prev",
+    currentLesson,
+    lesson,
+  );
+
+  // Stage only the page that physically sits underneath the moving sheet.
+  // Keeping the outgoing page there produced two copies of the same glyphs;
+  // as their 3D projections diverged, Safari rendered that as shaking text.
+  // The other half of the spread stays unchanged until the sheet covers it.
+  const stagedLessonPage = offset < 0;
+  const stagedReviewPage = offset > 0;
+  if (stagedLessonPage) {
+    renderLessonPage(lesson, prepared.content);
+  } else {
+    renderReview(lesson, prepared.review);
+  }
+
+  // Give WebKit a complete paint with the sheet resting on the source page
+  // before promoting it into an animated 3D layer. Starting the animation in
+  // the insertion frame can make Safari rasterize the text one frame late.
   requestAnimationFrame(() => {
-    playPageTurnSound(offset > 0 ? "next" : "prev");
+    requestAnimationFrame(() => {
+      leaf.classList.add("is-animating");
+      playPageTurnSound(offset > 0 ? "next" : "prev");
+    });
   });
 
   let contentSwapped = false;
@@ -1838,30 +1961,31 @@ function flipTimelineLesson(offset) {
     if (contentSwapped) return;
     contentSwapped = true;
     prepareContent();
-    showLesson(lesson, prepared, { deferHighlights: true });
+    showLesson(lesson, prepared, {
+      deferHighlights: true,
+      lessonPageAlreadyRendered: stagedLessonPage,
+      reviewPageAlreadyRendered: stagedReviewPage,
+    });
   };
-  const swapTimer = window.setTimeout(
-    () => requestAnimationFrame(swapContent),
-    PAGE_CONTENT_SWAP_MS,
-  );
   let finished = false;
   const finish = () => {
     if (finished) return;
     finished = true;
-    window.clearTimeout(swapTimer);
+    // The back face now fully covers the destination page. Let Safari paint
+    // the new static spread underneath that face for one frame before taking
+    // the moving layer away; replacing both in one task causes a tiny text
+    // rasterization flash on WebKit.
     swapContent();
-    // The turned sheet lands as a blank parchment; fade it out over the new
-    // spread so the handoff reads as ink settling rather than a hard cut.
-    leaf.style.transition = "opacity 150ms ease";
-    leaf.style.opacity = "0";
-    window.setTimeout(() => leaf.remove(), 160);
-    elements.antiqueBook.classList.remove("is-page-turning");
-    elements.closeBookButton.disabled = false;
-    isFlipping = false;
-    updateLessonActionAvailability();
-    updateNavigation(lesson.id, lesson.isCurrent);
-    preloadAdjacentLessons(lesson.id);
-    loadHighlights(lesson.id);
+    requestAnimationFrame(() => {
+      leaf.remove();
+      elements.antiqueBook.classList.remove("is-page-turning");
+      elements.closeBookButton.disabled = false;
+      isFlipping = false;
+      updateLessonActionAvailability();
+      updateNavigation(lesson.id, lesson.isCurrent);
+      preloadAdjacentLessons(lesson.id);
+      loadHighlights(lesson.id);
+    });
   };
   const onTurnEnd = (event) => {
     if (event.target !== leaf) return;

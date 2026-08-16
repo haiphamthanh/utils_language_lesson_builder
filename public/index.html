@@ -11,7 +11,8 @@
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <main class="shell">
+    <a class="skip-link" href="#main-content">Đi thẳng đến nội dung</a>
+    <main id="main-content" class="shell">
       <header class="masthead">
         <div class="masthead-brand">
           <a class="brand" href="/">
@@ -43,46 +44,97 @@
 
       <section id="home" class="home" hidden>
         <div class="home-hero">
-          <p class="eyebrow">Kệ sách hành trình</p>
-          <h1>Chọn một hành trình để tiếp tục luyện viết.</h1>
-          <p class="home-intro">
-            Mỗi quyển sách là một hành trình rèn viết ngoại ngữ. Bấm vào một
-            quyển để mở bài học, hoặc bắt đầu một hành trình mới.
-          </p>
-          <button
-            id="home-create-button"
-            class="primary-button home-create-button"
-            type="button"
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 5v14M5 12h14" />
+          <div class="home-hero-copy">
+            <p class="eyebrow">Đại sảnh tri thức · Est. MMXXVI</p>
+            <h1>
+              <span>Chọn một hành trình</span>
+              <span>từ kệ sách cổ.</span>
+            </h1>
+            <p class="home-intro">
+              Mỗi quyển sách lưu giữ một hành trình rèn viết ngoại ngữ. Chọn
+              một quyển để mở bài học còn dang dở.
+            </p>
+            <button
+              id="home-create-button"
+              class="primary-button home-create-button"
+              type="button"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              Khởi tạo hành trình
+            </button>
+          </div>
+          <div class="home-seal" aria-hidden="true">
+            <svg viewBox="0 0 120 120">
+              <path d="M24 34c14-3 26 1 36 12 10-11 22-15 36-12v52c-14-3-26 1-36 12-10-11-22-15-36-12V34Z" />
+              <path d="M60 46v52M33 46c10 0 19 3 27 10M87 46c-10 0-19 3-27 10" />
             </svg>
-            Tạo hành trình mới
-          </button>
+            <span>Scientia<br />Iter</span>
+          </div>
         </div>
 
-        <div class="home-toolbar">
-          <label class="library-search" for="home-search-input">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.3-4.3" />
-            </svg>
-            <input
-              id="home-search-input"
-              type="search"
-              placeholder="Tìm hành trình…"
-              autocomplete="off"
-            />
-          </label>
-          <div
-            id="home-language-filter"
-            class="library-language-filter"
-            role="radiogroup"
-            aria-label="Lọc theo ngôn ngữ"
-          ></div>
-        </div>
+        <section class="library-cabinet" aria-labelledby="cabinet-title">
+          <div class="cabinet-crown" aria-hidden="true">
+            <span class="cabinet-crown-wing"></span>
+            <span class="cabinet-crest">WJ</span>
+            <span class="cabinet-crown-wing"></span>
+          </div>
+          <div class="cabinet-nameplate">
+            <span aria-hidden="true">✦</span>
+            <h2 id="cabinet-title">Bibliotheca Itinerum</h2>
+            <small>Kệ hành trình ngôn ngữ</small>
+            <span aria-hidden="true">✦</span>
+          </div>
 
-        <div id="home-shelf" class="library-shelf"></div>
+          <div class="home-toolbar">
+            <label class="library-search" for="home-search-input">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+              <input
+                id="home-search-input"
+                type="search"
+                placeholder="Tra cứu trong thư mục…"
+                autocomplete="off"
+              />
+            </label>
+            <div
+              id="home-language-filter"
+              class="library-language-filter"
+              role="radiogroup"
+              aria-label="Lọc theo ngôn ngữ"
+            ></div>
+          </div>
+
+          <div class="cabinet-body">
+            <span class="cabinet-pillar cabinet-pillar-left" aria-hidden="true">
+              <svg class="pillar-relief" viewBox="0 0 32 520" preserveAspectRatio="none">
+                <path class="pillar-vine" d="M16 0C3 38 4 76 16 108s13 74 0 112-13 78 0 116 13 78 0 116S4 495 16 520" />
+                <path class="pillar-leaf" d="M14 73C7 60 3 60 2 76c6 1 10 0 12-3ZM18 126c7-13 11-13 12 3-6 1-10 0-12-3ZM14 184C7 171 3 171 2 187c6 1 10 0 12-3ZM18 238c7-13 11-13 12 3-6 1-10 0-12-3ZM14 296C7 283 3 283 2 299c6 1 10 0 12-3ZM18 350c7-13 11-13 12 3-6 1-10 0-12-3ZM14 408C7 395 3 395 2 411c6 1 10 0 12-3ZM18 464c7-13 11-13 12 3-6 1-10 0-12-3Z" />
+                <g class="pillar-rosettes">
+                  <circle cx="16" cy="108" r="5" />
+                  <circle cx="16" cy="260" r="5" />
+                  <circle cx="16" cy="412" r="5" />
+                </g>
+              </svg>
+            </span>
+            <div id="home-shelf" class="library-shelf"></div>
+            <span class="cabinet-pillar cabinet-pillar-right" aria-hidden="true">
+              <svg class="pillar-relief" viewBox="0 0 32 520" preserveAspectRatio="none">
+                <path class="pillar-vine" d="M16 0C3 38 4 76 16 108s13 74 0 112-13 78 0 116 13 78 0 116S4 495 16 520" />
+                <path class="pillar-leaf" d="M14 73C7 60 3 60 2 76c6 1 10 0 12-3ZM18 126c7-13 11-13 12 3-6 1-10 0-12-3ZM14 184C7 171 3 171 2 187c6 1 10 0 12-3ZM18 238c7-13 11-13 12 3-6 1-10 0-12-3ZM14 296C7 283 3 283 2 299c6 1 10 0 12-3ZM18 350c7-13 11-13 12 3-6 1-10 0-12-3ZM14 408C7 395 3 395 2 411c6 1 10 0 12-3ZM18 464c7-13 11-13 12 3-6 1-10 0-12-3Z" />
+                <g class="pillar-rosettes">
+                  <circle cx="16" cy="108" r="5" />
+                  <circle cx="16" cy="260" r="5" />
+                  <circle cx="16" cy="412" r="5" />
+                </g>
+              </svg>
+            </span>
+          </div>
+          <div class="cabinet-plinth" aria-hidden="true"></div>
+        </section>
         <p id="home-empty" class="library-empty" hidden></p>
 
         <section class="stats" aria-label="Tiến độ học">

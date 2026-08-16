@@ -7,3 +7,7 @@ coverage/
 .server.port
 .server.log
 
+# Agent skill files
+*.agent
+.codex
+.opencode
