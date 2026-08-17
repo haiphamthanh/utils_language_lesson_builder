@@ -134,34 +134,38 @@ body:has(.home:not([hidden])) .shell {
 
 body:has(.home:not([hidden])) {
   background:
-    linear-gradient(180deg, rgb(5 2 1 / 18%), rgb(4 2 1 / 54%)),
-    linear-gradient(90deg, rgb(3 1 0 / 38%), transparent 20% 80%, rgb(3 1 0 / 38%)),
-    url("/img/ancient-library-hall.webp") top center / cover fixed no-repeat,
-    #0a0503;
+    radial-gradient(ellipse at 50% -12%, rgb(213 151 83 / 17%), transparent 38%),
+    linear-gradient(90deg, rgb(3 1 0 / 64%), transparent 17% 83%, rgb(3 1 0 / 64%)),
+    linear-gradient(180deg, rgb(5 2 1 / 12%), rgb(4 2 1 / 58%)),
+    url("/img/walnut-grain.webp") top center / 1254px auto fixed repeat,
+    #120905;
 }
 
 body:has(.home:not([hidden]))::before {
   z-index: -1;
   opacity: 1;
   background:
-    radial-gradient(ellipse at 50% 10%, transparent 0 23%, rgb(4 2 1 / 15%) 48%, rgb(3 1 0 / 62%) 100%),
-    linear-gradient(180deg, transparent 0 48%, rgb(5 2 1 / 16%) 68%, rgb(3 1 0 / 62%) 100%);
+    repeating-linear-gradient(90deg, transparent 0 312px, rgb(4 1 0 / 34%) 313px 315px, rgb(190 122 65 / 5%) 316px, transparent 317px 626px),
+    radial-gradient(ellipse at 50% 22%, transparent 0 32%, rgb(4 2 1 / 20%) 64%, rgb(3 1 0 / 67%) 100%),
+    linear-gradient(180deg, transparent 0 58%, rgb(5 2 1 / 28%) 82%, rgb(3 1 0 / 62%) 100%);
   filter: none;
 }
 
 body[data-theme="light"]:has(.home:not([hidden])) {
   background:
-    linear-gradient(180deg, rgb(83 52 27 / 4%), rgb(248 223 179 / 16%)),
-    linear-gradient(90deg, rgb(29 13 5 / 20%), transparent 20% 80%, rgb(29 13 5 / 20%)),
-    url("/img/ancient-library-hall.webp") top center / cover fixed no-repeat,
-    #d9c098;
+    radial-gradient(ellipse at 50% -12%, rgb(255 222 164 / 28%), transparent 42%),
+    linear-gradient(90deg, rgb(25 9 2 / 34%), transparent 18% 82%, rgb(25 9 2 / 34%)),
+    linear-gradient(180deg, rgb(255 225 176 / 10%), rgb(26 10 3 / 23%)),
+    url("/img/walnut-grain.webp") top center / 1254px auto fixed repeat,
+    #3a1f11;
 }
 
 body[data-theme="light"]:has(.home:not([hidden]))::before {
   opacity: 1;
   background:
-    radial-gradient(ellipse at 50% 8%, rgb(255 235 195 / 10%), transparent 42%),
-    linear-gradient(180deg, rgb(245 225 188 / 4%), rgb(36 18 8 / 22%));
+    repeating-linear-gradient(90deg, transparent 0 312px, rgb(16 5 1 / 24%) 313px 315px, rgb(255 219 158 / 7%) 316px, transparent 317px 626px),
+    radial-gradient(ellipse at 50% 8%, rgb(255 235 195 / 13%), transparent 45%),
+    linear-gradient(180deg, transparent, rgb(20 7 2 / 25%));
 }
 
 .skip-link {
@@ -420,11 +424,15 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
   z-index: -1;
   width: 46px;
   border: 1px solid rgb(190 138 66 / 18%);
-  border-radius: 50% 50% 4px 4px;
+  border-radius: 2px;
   background:
-    repeating-linear-gradient(90deg, transparent 0 9px, rgb(244 204 133 / 5%) 10px, transparent 11px 20px),
-    linear-gradient(90deg, #251208, #533018 52%, #1e0d05);
-  box-shadow: inset 0 0 16px rgb(0 0 0 / 58%), 0 14px 30px rgb(0 0 0 / 25%);
+    linear-gradient(90deg, rgb(0 0 0 / 58%), transparent 18% 76%, rgb(0 0 0 / 48%)),
+    url("/img/walnut-grain.webp") center / 230px auto,
+    #2c160b;
+  box-shadow:
+    inset 0 1px rgb(224 166 92 / 14%),
+    inset 0 0 18px rgb(0 0 0 / 68%),
+    0 14px 30px rgb(0 0 0 / 34%);
 }
 
 .home::before {
@@ -440,32 +448,31 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(150px, 0.32fr);
   align-items: center;
-  min-height: 205px;
+  min-height: 190px;
   padding: clamp(26px, 4.5vw, 44px) clamp(26px, 6vw, 64px);
   margin-bottom: 22px;
   overflow: hidden;
   border: 1px solid rgb(198 145 71 / 26%);
-  border-radius: 46% 46% 8px 8px / 30px 30px 8px 8px;
+  border-radius: 3px;
   background:
-    radial-gradient(circle at 78% 50%, rgb(225 174 97 / 15%), transparent 24%),
-    linear-gradient(90deg, rgb(16 8 3 / 82%), rgb(42 23 10 / 72%)),
-    url("/img/leather-cover.webp") center / 720px auto;
-  background-blend-mode: normal, normal, soft-light;
+    radial-gradient(circle at 78% 44%, rgb(225 174 97 / 11%), transparent 25%),
+    linear-gradient(90deg, rgb(7 3 1 / 78%), rgb(31 15 7 / 58%) 54%, rgb(9 4 2 / 78%)),
+    url("/img/walnut-grain.webp") center 42% / cover;
+  background-blend-mode: normal, normal, normal;
   box-shadow:
-    inset 0 0 0 7px rgb(105 59 24 / 35%),
-    inset 0 0 0 9px rgb(209 155 78 / 12%),
-    inset 0 -40px 70px rgb(0 0 0 / 42%),
-    0 24px 55px rgb(0 0 0 / 38%);
-  backdrop-filter: blur(1px);
+    inset 0 0 0 8px rgb(20 8 3 / 48%),
+    inset 0 0 0 9px rgb(209 155 78 / 10%),
+    inset 0 -34px 62px rgb(0 0 0 / 40%),
+    0 18px 42px rgb(0 0 0 / 42%);
 }
 
 .home-hero::before {
   content: "";
   position: absolute;
-  inset: 16px;
+  inset: 17px;
   pointer-events: none;
   border: 1px solid rgb(202 151 77 / 24%);
-  border-radius: inherit;
+  border-radius: 1px;
 }
 
 .home-hero::after {
@@ -511,6 +518,7 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
 .home-hero-copy {
   position: relative;
   z-index: 1;
+  min-width: 0;
 }
 
 .home-seal {
@@ -678,20 +686,20 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
 
 .library-cabinet {
   position: relative;
-  padding-top: 50px;
-  border: 1px solid #1b0c06;
+  padding-top: 56px;
+  border: 1px solid #100502;
   border-radius: 2px;
   background:
-    linear-gradient(90deg, rgb(0 0 0 / 30%), transparent 8% 92%, rgb(0 0 0 / 30%)),
-    linear-gradient(180deg, rgb(226 165 92 / 9%), transparent 20% 82%, rgb(4 1 0 / 26%)),
-    url("/img/walnut-grain.webp") center / cover no-repeat,
-    #2c1307;
+    linear-gradient(90deg, rgb(0 0 0 / 42%), transparent 9% 91%, rgb(0 0 0 / 42%)),
+    linear-gradient(180deg, rgb(226 165 92 / 6%), transparent 18% 84%, rgb(4 1 0 / 34%)),
+    url("/img/walnut-grain.webp") center top / 1120px auto repeat-y,
+    #291308;
   box-shadow:
-    inset 0 0 0 7px rgb(12 5 2 / 36%),
+    inset 0 0 0 9px rgb(12 5 2 / 48%),
     inset 0 1px rgb(196 134 70 / 22%),
     inset 0 0 0 1px rgb(214 158 84 / 26%),
     0 0 0 1px rgb(224 163 78 / 16%),
-    0 28px 58px rgb(0 0 0 / 46%);
+    0 30px 64px rgb(0 0 0 / 58%);
 }
 
 .cabinet-crown {
@@ -700,11 +708,11 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
   left: -8px;
   right: -8px;
   display: block;
-  height: 54px;
+  height: 61px;
   border: 1px solid #160904;
-  border-bottom: 7px solid #160904;
+  border-bottom: 10px solid #160904;
   background:
-    linear-gradient(180deg, rgb(214 149 74 / 14%), rgb(9 3 1 / 40%)),
+    linear-gradient(180deg, rgb(214 149 74 / 9%), rgb(9 3 1 / 48%)),
     url("/img/walnut-grain-horizontal.webp") center / cover no-repeat,
     #2b1308;
   clip-path: none;
@@ -730,13 +738,13 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
   align-items: center;
   width: fit-content;
   max-width: calc(100% - 72px);
-  margin: 5px auto 18px;
+  margin: 2px auto 20px;
   padding: 7px 18px;
-  border: 1px solid rgb(171 122 75 / 44%);
+  border: 1px solid rgb(171 122 75 / 34%);
   color: #cbb18d;
   background:
     linear-gradient(90deg, rgb(255 255 255 / 5%), transparent 14% 86%, rgb(0 0 0 / 12%)),
-    rgb(26 12 5 / 70%);
+    rgb(16 7 3 / 76%);
   box-shadow:
     inset 0 1px rgb(226 172 106 / 14%),
     inset 0 -1px 0 rgb(196 134 70 / 18%),
@@ -765,7 +773,7 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
 
 .cabinet-body {
   position: relative;
-  padding: 0 42px;
+  padding: 0 46px;
 }
 
 .cabinet-pillar {
@@ -773,7 +781,7 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
   top: -5px;
   bottom: -8px;
   z-index: 2;
-  width: 38px;
+  width: 40px;
   pointer-events: none;
   border: 1px solid rgb(35 14 4 / 72%);
   border-radius: 4px 4px 2px 2px;
@@ -866,22 +874,24 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
   flex-direction: column;
   gap: 0;
   max-height: 680px;
-  padding: 0 20px 22px;
+  padding: 0 18px 22px;
   overflow: auto;
-  border: 7px solid #1b0a04;
+  border: 9px solid #170804;
   border-radius: 2px;
   scrollbar-color: rgb(174 115 48 / 55%) #251309;
   background:
     linear-gradient(90deg, rgb(0 0 0 / 38%), transparent 7% 93%, rgb(0 0 0 / 38%)),
-    linear-gradient(180deg, rgb(7 3 1 / 30%), transparent 20% 74%, rgb(4 1 0 / 46%)),
-    url("/img/walnut-grain.webp") center / cover no-repeat,
+    radial-gradient(ellipse at 50% 7%, rgb(220 164 100 / 7%), transparent 34%),
+    repeating-linear-gradient(90deg, transparent 0 184px, rgb(7 2 1 / 44%) 185px 187px, rgb(166 104 58 / 10%) 188px, transparent 189px 374px),
+    linear-gradient(180deg, rgb(7 3 1 / 30%), transparent 20% 74%, rgb(4 1 0 / 50%)),
+    url("/img/walnut-grain.webp") center / 930px auto repeat-y,
     #251109;
   box-shadow:
     inset 0 0 0 1px rgb(169 110 63 / 34%),
     inset 0 0 0 4px rgb(8 3 1 / 38%),
     inset 18px 0 18px rgb(0 0 0 / 34%),
     inset -18px 0 18px rgb(0 0 0 / 34%),
-    inset 0 26px 48px rgb(255 210 136 / 7%),
+    inset 0 26px 48px rgb(255 210 136 / 6%),
     inset 0 -30px 54px rgb(0 0 0 / 56%),
     0 26px 58px rgb(27 15 8 / 52%),
     0 0 0 1px rgb(224 163 78 / 18%);
@@ -926,14 +936,14 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
   align-items: flex-end;
   gap: 7px;
   z-index: 1;
-  min-height: 248px;
-  padding: 25px 16px 0;
+  min-height: 258px;
+  padding: 31px 16px 0;
   border: 0;
-  border-bottom: 22px solid #1d0c04;
+  border-bottom: 25px solid #180904;
   border-radius: 0;
   background:
     linear-gradient(90deg, rgb(4 1 0 / 18%), transparent 8% 92%, rgb(4 1 0 / 18%)),
-    linear-gradient(180deg, rgb(5 2 1 / 20%), transparent 58%, rgb(0 0 0 / 10%));
+    linear-gradient(180deg, rgb(5 2 1 / 28%), transparent 42%, rgb(0 0 0 / 18%));
   box-shadow:
     inset 0 -1px 0 rgb(196 132 66 / 42%),
     inset 0 -4px 0 rgb(0 0 0 / 50%),
@@ -946,8 +956,8 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
   position: absolute;
   left: 2px;
   right: 2px;
-  bottom: -22px;
-  height: 21px;
+  bottom: -25px;
+  height: 24px;
   pointer-events: none;
   background:
     radial-gradient(ellipse at 50% 0%, rgb(0 0 0 / 26%), transparent 72%),
@@ -2749,16 +2759,18 @@ a:focus-visible {
 @media (max-width: 640px) {
   body:has(.home:not([hidden])) {
     background:
-      linear-gradient(180deg, rgb(3 1 0 / 20%), rgb(3 1 0 / 62%)),
-      url("/img/ancient-library-hall.webp") top center / auto 100vh fixed no-repeat,
+      radial-gradient(ellipse at 50% -8%, rgb(213 151 83 / 14%), transparent 35%),
+      linear-gradient(180deg, rgb(3 1 0 / 20%), rgb(3 1 0 / 64%)),
+      url("/img/walnut-grain.webp") top center / 860px auto fixed repeat,
       #090402;
   }
 
   body[data-theme="light"]:has(.home:not([hidden])) {
     background:
+      radial-gradient(ellipse at 50% -8%, rgb(255 222 164 / 22%), transparent 38%),
       linear-gradient(180deg, rgb(83 52 27 / 3%), rgb(31 15 7 / 30%)),
-      url("/img/ancient-library-hall.webp") top center / auto 100vh fixed no-repeat,
-      #cdb288;
+      url("/img/walnut-grain.webp") top center / 860px auto fixed repeat,
+      #3a1f11;
   }
 
   .shell {
@@ -2782,27 +2794,28 @@ a:focus-visible {
     margin-bottom: 22px;
     grid-template-columns: 1fr;
     min-height: 0;
-    padding: 30px 24px 32px;
-    border-radius: 32px 32px 5px 5px / 22px 22px 5px 5px;
+    padding: 25px 24px 27px;
+    border-radius: 3px;
   }
   .home-hero::after {
     display: none;
   }
   .home-hero h1 {
-    font-size: clamp(2rem, 9.5vw, 2.35rem);
-    line-height: 1.02;
+    font-size: clamp(1.82rem, 8.7vw, 2.15rem);
+    line-height: 1.04;
   }
   .home-hero h1 span {
     display: inline;
+    white-space: normal;
   }
   .home-hero .eyebrow {
     font-size: 0.67rem;
     letter-spacing: 0.09em;
   }
   .home-intro {
-    margin-bottom: 19px;
-    font-size: 0.9rem;
-    line-height: 1.55;
+    margin-bottom: 16px;
+    font-size: 0.86rem;
+    line-height: 1.48;
   }
   .home-seal {
     display: none;
@@ -2861,7 +2874,7 @@ a:focus-visible {
     margin-left: 0;
   }
   .cabinet-body {
-    padding: 0 24px;
+    padding: 0 26px;
   }
   .cabinet-pillar {
     width: 22px;
@@ -2882,12 +2895,14 @@ a:focus-visible {
     margin-inline: 7px;
   }
   .library-shelf {
-    gap: 20px;
-    padding: 22px 14px 28px;
+    gap: 0;
+    padding: 0 12px 26px;
     border-width: 5px;
   }
   .bookshelf-row {
     gap: 9px;
+    min-height: 250px;
+    padding-top: 28px;
     padding-inline: 12px;
   }
   .book {
