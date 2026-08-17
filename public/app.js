@@ -570,8 +570,6 @@ function renderLessonContent(content, preparedFragment = null) {
 
 /* ---------- Uploaded Markdown books ---------- */
 
-const MARKDOWN_PAGE_UNITS = 23;
-
 function splitMarkdownBlocks(markdown) {
   const lines = String(markdown ?? "").replace(/\r\n?/g, "\n").split("\n");
   const blocks = [];
@@ -624,32 +622,41 @@ function splitOversizedMarkdownBlock(block) {
   return chunks;
 }
 
-function markdownBlockUnits(block) {
-  const text = String(block);
-  if (text.startsWith("```")) return Math.max(5, text.split("\n").length * 0.92);
-  if (/^#\s/.test(text)) return 7;
-  if (/^##\s/.test(text)) return 5;
-  if (/^#{3,6}\s/.test(text)) return 3.8;
-  const lines = Math.max(1, Math.ceil(text.replace(/\s+/g, " ").length / 55));
-  const multiplier = text.startsWith(">") ? 1.12 : 1;
-  return Math.min(20, 1.8 + lines * multiplier);
-}
-
 function paginateMarkdown(markdown) {
+  const blocks = splitMarkdownBlocks(markdown);
   const pages = [];
   let page = [];
-  let usedUnits = 0;
-  for (const block of splitMarkdownBlocks(markdown)) {
-    const units = markdownBlockUnits(block);
-    if (page.length && usedUnits + units > MARKDOWN_PAGE_UNITS) {
+  const measurer = document.createElement("article");
+  measurer.className = "uploaded-book-page markdown-page-measurer";
+  measurer.setAttribute("aria-hidden", "true");
+  document.body.append(measurer);
+
+  const resetMeasurer = () => {
+    measurer.replaceChildren();
+    const folio = document.createElement("p");
+    folio.className = "uploaded-page-folio";
+    folio.textContent = "— 1 / 1 —";
+    measurer.append(folio);
+  };
+
+  resetMeasurer();
+  for (const block of blocks) {
+    const renderedBlock = renderMarkdownBlock(block);
+    measurer.append(renderedBlock);
+    if (
+      page.length &&
+      measurer.scrollHeight > measurer.clientHeight + 1
+    ) {
+      renderedBlock.remove();
       pages.push(page);
       page = [];
-      usedUnits = 0;
+      resetMeasurer();
+      measurer.append(renderMarkdownBlock(block));
     }
     page.push(block);
-    usedUnits += units;
   }
   if (page.length) pages.push(page);
+  measurer.remove();
   return pages.length ? pages : [["Sách chưa có nội dung."]];
 }
 

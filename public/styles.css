@@ -4577,6 +4577,18 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   display: none;
 }
 
+.markdown-page-measurer {
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  z-index: -1;
+  display: block;
+  width: 333px;
+  height: 450px;
+  visibility: hidden;
+  pointer-events: none;
+}
+
 .uploaded-page-folio {
   margin: 0 0 12px !important;
   color: #89643c;
