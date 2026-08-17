@@ -39,6 +39,9 @@ const elements = {
   highlightDeleteButton: document.querySelector("#highlight-delete-button"),
   home: document.querySelector("#home"),
   homeCreateButton: document.querySelector("#home-create-button"),
+  homeUploadButton: document.querySelector("#home-upload-button"),
+  homeUploadInput: document.querySelector("#home-upload-input"),
+  homeUploadStatus: document.querySelector("#home-upload-status"),
   homeSearchInput: document.querySelector("#home-search-input"),
   homeLanguageFilter: document.querySelector("#home-language-filter"),
   homeShelf: document.querySelector("#home-shelf"),
@@ -68,6 +71,8 @@ const elements = {
   reviewDetailMeaning: document.querySelector("#review-detail-meaning"),
   reviewDetailExamples: document.querySelector("#review-detail-examples"),
   reviewDetailClose: document.querySelector("#review-detail-close"),
+  uploadedLeftPage: document.querySelector("#uploaded-left-page"),
+  uploadedRightPage: document.querySelector("#uploaded-right-page"),
 };
 
 const LANGUAGES = ["English", "Japanese", "Chinese"];
@@ -135,9 +140,12 @@ let pendingHighlight = null;
 let editingHighlightId = null;
 let popoverActiveHighlight = null;
 let journeys = [];
+let uploadedBooks = [];
 let libraryQuery = "";
 let libraryLanguageFilter = "ALL";
 let activeJourneyId = null;
+let activeLibraryBookKey = null;
+let currentUploadedBook = null;
 const lessonCache = new Map();
 const lessonLoadPromises = new Map();
 
@@ -560,6 +568,220 @@ function renderLessonContent(content, preparedFragment = null) {
   container.replaceChildren(fragment);
 }
 
+/* ---------- Uploaded Markdown books ---------- */
+
+const MARKDOWN_PAGE_UNITS = 23;
+
+function splitMarkdownBlocks(markdown) {
+  const lines = String(markdown ?? "").replace(/\r\n?/g, "\n").split("\n");
+  const blocks = [];
+  let current = [];
+  let inFence = false;
+
+  const flush = () => {
+    const block = current.join("\n").trimEnd();
+    if (block.trim()) blocks.push(block);
+    current = [];
+  };
+
+  for (const line of lines) {
+    if (/^```/.test(line.trim())) {
+      current.push(line);
+      inFence = !inFence;
+      if (!inFence) flush();
+      continue;
+    }
+    if (inFence) {
+      current.push(line);
+      continue;
+    }
+    if (!line.trim()) {
+      flush();
+      continue;
+    }
+    const startsStandalone = /^(?:#{1,6}\s|---+$|___+$|\*\*\*+$)/.test(
+      line.trim(),
+    );
+    if (startsStandalone && current.length) flush();
+    current.push(line);
+    if (startsStandalone) flush();
+  }
+  flush();
+  return blocks.flatMap(splitOversizedMarkdownBlock);
+}
+
+function splitOversizedMarkdownBlock(block) {
+  if (!block.startsWith("```")) return [block];
+  const lines = block.split("\n");
+  if (lines.length <= 17) return [block];
+  const opening = lines[0];
+  const closing = lines.at(-1).startsWith("```") ? lines.at(-1) : "```";
+  const body = lines.slice(1, lines.at(-1).startsWith("```") ? -1 : undefined);
+  const chunks = [];
+  for (let index = 0; index < body.length; index += 14) {
+    chunks.push([opening, ...body.slice(index, index + 14), closing].join("\n"));
+  }
+  return chunks;
+}
+
+function markdownBlockUnits(block) {
+  const text = String(block);
+  if (text.startsWith("```")) return Math.max(5, text.split("\n").length * 0.92);
+  if (/^#\s/.test(text)) return 7;
+  if (/^##\s/.test(text)) return 5;
+  if (/^#{3,6}\s/.test(text)) return 3.8;
+  const lines = Math.max(1, Math.ceil(text.replace(/\s+/g, " ").length / 55));
+  const multiplier = text.startsWith(">") ? 1.12 : 1;
+  return Math.min(20, 1.8 + lines * multiplier);
+}
+
+function paginateMarkdown(markdown) {
+  const pages = [];
+  let page = [];
+  let usedUnits = 0;
+  for (const block of splitMarkdownBlocks(markdown)) {
+    const units = markdownBlockUnits(block);
+    if (page.length && usedUnits + units > MARKDOWN_PAGE_UNITS) {
+      pages.push(page);
+      page = [];
+      usedUnits = 0;
+    }
+    page.push(block);
+    usedUnits += units;
+  }
+  if (page.length) pages.push(page);
+  return pages.length ? pages : [["Sách chưa có nội dung."]];
+}
+
+function appendInlineMarkdown(parent, source) {
+  const text = String(source ?? "");
+  const tokenPattern = /(`[^`\n]+`|\*\*[^*\n]+\*\*|__[^_\n]+__|\*[^*\n]+\*|_[^_\n]+_)/g;
+  let cursor = 0;
+  for (const match of text.matchAll(tokenPattern)) {
+    if (match.index > cursor) parent.append(document.createTextNode(text.slice(cursor, match.index)));
+    const token = match[0];
+    const element = document.createElement(
+      token.startsWith("`") ? "code" : token.startsWith("**") || token.startsWith("__") ? "strong" : "em",
+    );
+    const edge = token.startsWith("**") || token.startsWith("__") ? 2 : 1;
+    element.textContent = token.slice(edge, -edge);
+    parent.append(element);
+    cursor = match.index + token.length;
+  }
+  if (cursor < text.length) parent.append(document.createTextNode(text.slice(cursor)));
+}
+
+function appendMarkdownLines(parent, lines) {
+  lines.forEach((line, index) => {
+    appendInlineMarkdown(parent, line.replace(/\s{2}$/, ""));
+    if (index < lines.length - 1) parent.append(document.createElement("br"));
+  });
+}
+
+function renderMarkdownBlock(block) {
+  const trimmed = block.trim();
+  const fence = trimmed.match(/^```([^\n]*)\n([\s\S]*?)\n```$/);
+  if (fence) {
+    const pre = document.createElement("pre");
+    const code = document.createElement("code");
+    if (fence[1].trim()) code.dataset.language = fence[1].trim();
+    code.textContent = fence[2];
+    pre.append(code);
+    return pre;
+  }
+
+  const heading = trimmed.match(/^(#{1,6})\s+([\s\S]+)$/);
+  if (heading) {
+    const level = Math.min(4, heading[1].length + 1);
+    const element = document.createElement(`h${level}`);
+    appendInlineMarkdown(element, heading[2]);
+    return element;
+  }
+
+  if (/^(?:---+|___+|\*\*\*+)$/.test(trimmed)) return document.createElement("hr");
+
+  const lines = trimmed.split("\n");
+  if (lines.every((line) => /^>\s?/.test(line))) {
+    const quote = document.createElement("blockquote");
+    appendMarkdownLines(quote, lines.map((line) => line.replace(/^>\s?/, "")));
+    return quote;
+  }
+
+  const unordered = lines.every((line) => /^\s*[-+*]\s+/.test(line));
+  const ordered = lines.every((line) => /^\s*\d+[.)]\s+/.test(line));
+  if (unordered || ordered) {
+    const list = document.createElement(ordered ? "ol" : "ul");
+    for (const line of lines) {
+      const item = document.createElement("li");
+      appendInlineMarkdown(item, line.replace(/^\s*(?:[-+*]|\d+[.)])\s+/, ""));
+      list.append(item);
+    }
+    return list;
+  }
+
+  const paragraph = document.createElement("p");
+  appendMarkdownLines(paragraph, lines);
+  return paragraph;
+}
+
+function renderUploadedPage(container, blocks, pageNumber, totalPages) {
+  container.replaceChildren();
+  const folio = document.createElement("p");
+  folio.className = "uploaded-page-folio";
+  folio.textContent = blocks?.length ? `— ${pageNumber} / ${totalPages} —` : "";
+  container.append(folio);
+  for (const block of blocks ?? []) container.append(renderMarkdownBlock(block));
+}
+
+function setReaderMode(mode) {
+  const uploaded = mode === "uploaded";
+  elements.antiqueBook.classList.toggle("reader-mode-uploaded", uploaded);
+  elements.uploadedLeftPage.hidden = !uploaded;
+  elements.uploadedRightPage.hidden = !uploaded;
+}
+
+function createUploadedSpreads(book) {
+  const pages = paginateMarkdown(book.content);
+  const spreads = [];
+  for (let index = 0; index < pages.length; index += 2) {
+    spreads.push({
+      id: `uploaded-${book.id}-${index / 2}`,
+      kind: "uploaded",
+      book,
+      leftBlocks: pages[index] ?? [],
+      rightBlocks: pages[index + 1] ?? [],
+      leftPageNumber: index + 1,
+      rightPageNumber: Math.min(index + 2, pages.length),
+      totalPages: pages.length,
+      isCurrent: false,
+      status: "ready",
+      journey: {
+        id: `uploaded:${book.id}`,
+        title: book.title,
+        description: book.description,
+        language: book.language,
+        level: "Sách Markdown",
+      },
+    });
+  }
+  return spreads;
+}
+
+function renderUploadedSpread(spread) {
+  renderUploadedPage(
+    elements.uploadedLeftPage,
+    spread.leftBlocks,
+    spread.leftPageNumber,
+    spread.totalPages,
+  );
+  renderUploadedPage(
+    elements.uploadedRightPage,
+    spread.rightBlocks,
+    spread.rightPageNumber,
+    spread.totalPages,
+  );
+}
+
 async function loadHighlights(lessonId) {
   try {
     const response = await fetch(`/api/lessons/${lessonId}/highlights`);
@@ -801,6 +1023,8 @@ function showLesson(
     reviewPageAlreadyRendered = false,
   } = {},
 ) {
+  setReaderMode("journey");
+  currentUploadedBook = null;
   lessonCache.set(lesson.id, lesson);
   currentLesson = lesson;
   lessonHighlights = [];
@@ -811,6 +1035,7 @@ function showLesson(
   closeObjectivePopover();
   closeReviewDetail();
   activeJourneyId = lesson.journey?.id ?? null;
+  activeLibraryBookKey = `journey:${activeJourneyId}`;
   elements.mastheadEyebrow.textContent = "Hành trình chi tiết";
   if (!lessonPageAlreadyRendered) {
     renderLessonPage(lesson, prepared?.content);
@@ -832,7 +1057,35 @@ function showLesson(
   if (!deferHighlights) loadHighlights(lesson.id);
 }
 
+function showUploadedSpread(spread) {
+  setReaderMode("uploaded");
+  currentLesson = spread;
+  currentUploadedBook = spread.book;
+  activeJourneyId = `uploaded:${spread.book.id}`;
+  activeLibraryBookKey = `uploaded:${spread.book.id}`;
+  hideHighlightPopover({ skipRerender: true });
+  closeObjectivePopover();
+  closeReviewDetail();
+  renderUploadedSpread(spread);
+
+  elements.mastheadEyebrow.textContent = "Sách Markdown";
+  elements.loading.hidden = true;
+  elements.error.hidden = true;
+  elements.home.hidden = true;
+  elements.journeySetup.hidden = true;
+  elements.completion.hidden = true;
+  elements.lessonStatus.textContent = "";
+  updateLessonActionAvailability();
+  updateOpenStateLabel();
+  updateNavigation(spread.id, false);
+}
+
 function updateLessonActionAvailability() {
+  if (currentLesson?.kind === "uploaded") {
+    elements.completeButton.hidden = true;
+    elements.regenerateButton.hidden = true;
+    return;
+  }
   const canComplete = Boolean(
     currentLesson?.isCurrent && currentLesson.status !== "completed",
   );
@@ -859,9 +1112,12 @@ function updateOpenStateLabel() {
 }
 
 function showJourneyCompleted(journey) {
+  setReaderMode("journey");
+  currentUploadedBook = null;
   currentLesson = null;
   bookmarkedLesson = null;
   activeJourneyId = journey?.id ?? null;
+  activeLibraryBookKey = journey?.id ? `journey:${journey.id}` : null;
   hideHighlightPopover();
   closeReviewDetail();
   resetBook();
@@ -875,9 +1131,12 @@ function showJourneyCompleted(journey) {
 }
 
 function showJourneySetup() {
+  setReaderMode("journey");
+  currentUploadedBook = null;
   currentLesson = null;
   bookmarkedLesson = null;
   activeJourneyId = null;
+  activeLibraryBookKey = null;
   hideHighlightPopover();
   closeReviewDetail();
   resetBook();
@@ -911,22 +1170,43 @@ function refreshActiveJourney() {
   const current = journeys.find(
     (journey) => journey.status === "active" || journey.status === "reviewing",
   );
-  if (current) activeJourneyId = current.id;
+  if (current && !activeLibraryBookKey?.startsWith("uploaded:")) {
+    activeJourneyId = current.id;
+    activeLibraryBookKey = `journey:${current.id}`;
+  }
   else if (!journeys.some((journey) => journey.id === activeJourneyId)) {
-    activeJourneyId = null;
+    if (!activeLibraryBookKey?.startsWith("uploaded:")) {
+      activeJourneyId = null;
+      activeLibraryBookKey = null;
+    }
   }
 }
 
 async function loadLibrary() {
-  try {
-    const response = await fetch("/api/journeys");
-    const payload = await response.json();
-    if (!response.ok) return;
-    journeys = payload.data ?? [];
-  } catch {
-    // The shelf stays usable even when the library cannot load.
+  const [journeyResult, bookResult] = await Promise.allSettled([
+    fetch("/api/journeys").then(async (response) => ({
+      ok: response.ok,
+      payload: await response.json(),
+    })),
+    fetch("/api/books").then(async (response) => ({
+      ok: response.ok,
+      payload: await response.json(),
+    })),
+  ]);
+  if (journeyResult.status === "fulfilled" && journeyResult.value.ok) {
+    journeys = journeyResult.value.payload.data ?? [];
+  }
+  if (bookResult.status === "fulfilled" && bookResult.value.ok) {
+    uploadedBooks = bookResult.value.payload.data ?? [];
   }
   renderHome();
+}
+
+function getLibraryItems() {
+  return [
+    ...journeys.map((journey) => ({ ...journey, type: "journey" })),
+    ...uploadedBooks.map((book) => ({ ...book, type: "uploaded" })),
+  ];
 }
 
 function renderHomeLanguageFilter() {
@@ -935,7 +1215,7 @@ function renderHomeLanguageFilter() {
 
   const languages = [
     "ALL",
-    ...new Set(journeys.map((journey) => journey.language).filter(Boolean)),
+    ...new Set(getLibraryItems().map((item) => item.language).filter(Boolean)),
   ];
 
   for (const language of languages) {
@@ -957,13 +1237,13 @@ function renderHomeLanguageFilter() {
   markSelected(container, ".library-filter-chip", libraryLanguageFilter);
 }
 
-function getFilteredJourneys() {
+function getFilteredLibraryItems() {
   const query = libraryQuery.trim().toLowerCase();
-  return journeys.filter((journey) => {
-    const matchesQuery = !query || journey.title.toLowerCase().includes(query);
+  return getLibraryItems().filter((item) => {
+    const matchesQuery = !query || item.title.toLowerCase().includes(query);
     const matchesLanguage =
       libraryLanguageFilter === "ALL" ||
-      journey.language === libraryLanguageFilter;
+      item.language === libraryLanguageFilter;
     return matchesQuery && matchesLanguage;
   });
 }
@@ -1025,34 +1305,44 @@ function applyBookColors(element, bookId) {
   element.style.setProperty("--book-bottom", bottom);
 }
 
-function buildBookCard(journey, index = 0) {
+function buildBookCard(item, index = 0) {
+  const uploaded = item.type === "uploaded";
+  const itemKey = `${item.type}:${item.id}`;
   const button = document.createElement("button");
   button.type = "button";
-  button.className = "book";
-  button.dataset.journeyId = journey.id;
-  button.dataset.language = journey.language ?? "";
-  applyBookColors(button, journey.id);
-  if (journey.id === activeJourneyId) button.classList.add("is-open");
+  button.className = `book${uploaded ? " book-uploaded" : ""}`;
+  button.dataset.bookKey = itemKey;
+  button.dataset.language = item.language ?? "";
+  applyBookColors(button, itemKey);
+  if (itemKey === activeLibraryBookKey) button.classList.add("is-open");
   button.style.height = `${BOOK_HEIGHTS[index % BOOK_HEIGHTS.length]}px`;
-  button.setAttribute(
-    "aria-label",
-    `Mở hành trình ${journey.title} (${journey.language} · ${journey.level}). Tiến độ ${journey.completedLessons}/${journey.totalLessons}.`,
-  );
-  button.title = `${journey.title}\n${journey.language} · ${journey.level}\n${
-    JOURNEY_STATUS_LABELS[journey.status] ?? journey.status
-  }`;
+  if (uploaded) {
+    button.setAttribute(
+      "aria-label",
+      `Mở sách đã upload ${item.title} (${item.language}, khoảng ${item.readingMinutes} phút đọc).`,
+    );
+    button.title = `${item.title}\n${item.language} · Sách Markdown\n${item.wordCount} từ`;
+  } else {
+    button.setAttribute(
+      "aria-label",
+      `Mở hành trình ${item.title} (${item.language} · ${item.level}). Tiến độ ${item.completedLessons}/${item.totalLessons}.`,
+    );
+    button.title = `${item.title}\n${item.language} · ${item.level}\n${
+      JOURNEY_STATUS_LABELS[item.status] ?? item.status
+    }`;
+  }
 
   const spine = document.createElement("span");
   spine.className = "book-spine";
   spine.setAttribute("aria-hidden", "true");
 
   const dot = document.createElement("span");
-  dot.className = `book-status-dot book-status-${journey.status}`;
+  dot.className = `book-status-dot book-status-${uploaded ? "uploaded" : item.status}`;
   dot.setAttribute("aria-hidden", "true");
 
   const title = document.createElement("strong");
   title.className = "book-title";
-  title.textContent = journey.title;
+  title.textContent = item.title;
 
   const progress = document.createElement("span");
   progress.className = "book-progress";
@@ -1060,10 +1350,10 @@ function buildBookCard(journey, index = 0) {
   const progressFill = document.createElement("span");
   progressFill.className = "book-progress-fill";
   const percent =
-    journey.totalLessons > 0
+    !uploaded && item.totalLessons > 0
       ? Math.min(
           100,
-          Math.round((journey.completedLessons / journey.totalLessons) * 100),
+          Math.round((item.completedLessons / item.totalLessons) * 100),
         )
       : 0;
   progressFill.style.height = `${percent}%`;
@@ -1074,20 +1364,26 @@ function buildBookCard(journey, index = 0) {
 
   const meta = document.createElement("span");
   meta.className = "book-meta";
-  meta.textContent = `${journey.language} · ${journey.level}`;
+  meta.textContent = uploaded
+    ? `${item.language} · MD`
+    : `${item.language} · ${item.level}`;
 
   const position = document.createElement("span");
   position.className = "book-position";
-  position.textContent = `${journey.completedLessons}/${journey.totalLessons} bài`;
+  position.textContent = uploaded
+    ? `${item.readingMinutes} phút đọc`
+    : `${item.completedLessons}/${item.totalLessons} bài`;
 
   footer.append(meta, position);
   button.append(spine, dot, title, progress, footer);
-  button.addEventListener("click", () => openJourney(journey.id, button));
+  button.addEventListener("click", () =>
+    uploaded ? openUploadedBook(item.id, button) : openJourney(item.id, button),
+  );
   return button;
 }
 
 function renderHomeShelf() {
-  const filtered = getFilteredJourneys();
+  const filtered = getFilteredLibraryItems();
   const shelf = elements.homeShelf;
   shelf.replaceChildren();
 
@@ -1097,17 +1393,17 @@ function renderHomeShelf() {
     row.className = "bookshelf-row";
     filtered
       .slice(start, start + booksPerRow)
-      .forEach((journey, index) =>
-        row.append(buildBookCard(journey, start + index)),
+      .forEach((item, index) =>
+        row.append(buildBookCard(item, start + index)),
       );
     shelf.append(row);
   }
 
   elements.homeEmpty.hidden = filtered.length > 0;
   elements.homeEmpty.textContent =
-    journeys.length === 0
-      ? "Chưa có hành trình nào. Hãy bắt đầu một hành trình mới."
-      : "Không có hành trình nào khớp với bộ lọc.";
+    getLibraryItems().length === 0
+      ? "Kệ sách đang trống. Hãy tạo hành trình hoặc upload một file Markdown."
+      : "Không có quyển sách nào khớp với bộ lọc.";
 }
 
 function renderHome() {
@@ -1122,7 +1418,7 @@ function showHome() {
   hideHighlightPopover();
   closeReviewDetail();
   resetBook();
-  elements.mastheadEyebrow.textContent = "Kệ sách hành trình";
+  elements.mastheadEyebrow.textContent = "Kệ sách của bạn";
   elements.loading.hidden = true;
   elements.error.hidden = true;
   elements.journeySetup.hidden = true;
@@ -1133,8 +1429,7 @@ function showHome() {
 }
 
 function showHomeOrSetup() {
-  if (journeys.length === 0) showJourneySetup();
-  else showHome();
+  showHome();
 }
 
 async function openJourney(journeyId, originEl) {
@@ -1154,6 +1449,7 @@ async function openJourney(journeyId, originEl) {
       throw new Error(payload.message ?? "Không thể mở hành trình.");
 
     activeJourneyId = journeyId;
+    activeLibraryBookKey = `journey:${journeyId}`;
 
     if (payload.data.journeyCompleted) {
       hideBusy();
@@ -1168,6 +1464,37 @@ async function openJourney(journeyId, originEl) {
     }
     await loadLibrary();
     loadStats();
+  } catch (error) {
+    elements.error.textContent = error.message;
+    elements.error.hidden = false;
+  } finally {
+    hideBusy();
+  }
+}
+
+async function openUploadedBook(bookId, originEl) {
+  elements.error.hidden = true;
+  showBusy("Đang mở sách Markdown…");
+  bookFlyOriginRect = originEl ? originEl.getBoundingClientRect() : null;
+
+  try {
+    const response = await fetch(`/api/books/${encodeURIComponent(bookId)}`);
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.message ?? "Không thể mở sách.");
+
+    const spreads = createUploadedSpreads(payload.data);
+    lessonTimeline = spreads.map((spread, index) => ({
+      id: spread.id,
+      sequenceNumber: index + 1,
+      isCurrent: false,
+    }));
+    lessonCache.clear();
+    spreads.forEach((spread) => lessonCache.set(spread.id, spread));
+    activeLibraryBookKey = `uploaded:${bookId}`;
+    activeJourneyId = `uploaded:${bookId}`;
+    hideBusy();
+    showUploadedSpread(spreads[0]);
+    playBookOpening(spreads[0]);
   } catch (error) {
     elements.error.textContent = error.message;
     elements.error.hidden = false;
@@ -1423,9 +1750,19 @@ function updateNavigation(lessonId, isCurrent) {
   );
 
   const timelineLesson = lessonTimeline[index];
-  elements.readerPageLabel.textContent = timelineLesson
-    ? `Trang ${index * 2 + 1}–${index * 2 + 2} / ${lessonTimeline.length * 2}`
-    : "";
+  if (currentLesson?.kind === "uploaded") {
+    const endPage = Math.min(
+      currentLesson.rightPageNumber,
+      currentLesson.totalPages,
+    );
+    elements.readerPageLabel.textContent = timelineLesson
+      ? `Trang ${currentLesson.leftPageNumber}–${endPage} / ${currentLesson.totalPages}`
+      : "";
+  } else {
+    elements.readerPageLabel.textContent = timelineLesson
+      ? `Trang ${index * 2 + 1}–${index * 2 + 2} / ${lessonTimeline.length * 2}`
+      : "";
+  }
 }
 
 /* ---------- Antique book-stage opening & page flipping ---------- */
@@ -1526,19 +1863,24 @@ function updateBookScale() {
 
 function populateBookStage(lesson) {
   const journey = lesson?.journey ?? {};
+  const uploaded = lesson?.kind === "uploaded";
   const title = journey.title ?? "";
   const language = journey.language ?? "";
   const level = journey.level ?? "";
 
   elements.coverTitle.textContent = title;
   elements.coverSubtitle.textContent =
-    [language, level].filter(Boolean).join(" · ") || "Writing Journey";
+    uploaded
+      ? [language, `${lesson.book.readingMinutes} phút đọc`].filter(Boolean).join(" · ")
+      : [language, level].filter(Boolean).join(" · ") || "Writing Journey";
   elements.stageTitle.textContent = title;
   elements.stageCollection.textContent = "";
   const collectionRule = document.createElement("span");
   elements.stageCollection.append(
     collectionRule,
-    ` Hành trình · ${[language, level].filter(Boolean).join(" · ")}`,
+    uploaded
+      ? ` Sách tải lên · ${language}`
+      : ` Hành trình · ${[language, level].filter(Boolean).join(" · ")}`,
   );
   elements.antiqueBook.dataset.language = language;
   applyBookColors(elements.antiqueBook, journey.id ?? title);
@@ -1695,9 +2037,9 @@ function launchBookFlyer(
   return animation.finished.catch(() => undefined);
 }
 
-function getShelfBook(journeyId) {
+function getShelfBook(bookKey) {
   return [...elements.homeShelf.querySelectorAll(".book")].find(
-    (book) => book.dataset.journeyId === String(journeyId),
+    (book) => book.dataset.bookKey === String(bookKey),
   );
 }
 
@@ -1779,7 +2121,7 @@ function closeBookAndReturn() {
             loadStats();
           };
 
-          const targetBook = getShelfBook(activeJourneyId);
+          const targetBook = getShelfBook(activeLibraryBookKey);
           if (targetBook) {
             const coverRect = getClosedCoverRect();
             const targetRect = targetBook.getBoundingClientRect();
@@ -1816,7 +2158,7 @@ function showHomeBackdrop() {
   hideHighlightPopover();
   closeReviewDetail();
   renderHome();
-  elements.mastheadEyebrow.textContent = "Kệ sách hành trình";
+  elements.mastheadEyebrow.textContent = "Kệ sách của bạn";
   elements.loading.hidden = true;
   elements.error.hidden = true;
   elements.journeySetup.hidden = true;
@@ -1845,7 +2187,19 @@ function createTurningPageSnapshot(side, lesson, { useCurrentDom = false } = {})
   const page = sourceContent.cloneNode(true);
   page.classList.add("turning-page-content");
 
-  if (!useCurrentDom && side === "left") {
+  if (!useCurrentDom && lesson.kind === "uploaded") {
+    const uploadedPage = page.querySelector(".uploaded-book-page");
+    const isLeft = side === "left";
+    uploadedPage.hidden = false;
+    renderUploadedPage(
+      uploadedPage,
+      isLeft ? lesson.leftBlocks : lesson.rightBlocks,
+      isLeft ? lesson.leftPageNumber : lesson.rightPageNumber,
+      lesson.totalPages,
+    );
+  }
+
+  if (!useCurrentDom && lesson.kind !== "uploaded" && side === "left") {
     page.querySelector(".book-page-head h1").textContent = lesson.title;
     const objective = page.querySelector(".objective-popover p");
     if (objective) objective.textContent = lesson.objective;
@@ -1858,7 +2212,7 @@ function createTurningPageSnapshot(side, lesson, { useCurrentDom = false } = {})
       .replaceChildren(buildLessonContentFragment(lesson.content));
   }
 
-  if (!useCurrentDom && side === "right") {
+  if (!useCurrentDom && lesson.kind !== "uploaded" && side === "right") {
     const review = buildReviewFragment(lesson);
     const reviewRoot = page.querySelector(".review");
     reviewRoot?.classList.remove("is-detail-open");
@@ -1875,6 +2229,73 @@ function createTurningPageSnapshot(side, lesson, { useCurrentDom = false } = {})
   }
 
   return makeTurningPageInert(page);
+}
+
+function flipUploadedSpread(offset) {
+  if (isFlipping) return;
+  const index = lessonTimeline.findIndex((item) => item.id === currentLesson?.id);
+  const target = lessonTimeline[index + offset];
+  const spread = target ? lessonCache.get(target.id) : null;
+  if (!spread) return;
+
+  isFlipping = true;
+  elements.antiqueBook.classList.add("is-page-turning");
+  updateNavigation(currentLesson.id, false);
+  updateLessonActionAvailability();
+  elements.closeBookButton.disabled = true;
+
+  const leaf = createTurningLeaf(
+    offset > 0 ? "next" : "prev",
+    currentLesson,
+    spread,
+  );
+
+  if (offset < 0) {
+    renderUploadedPage(
+      elements.uploadedLeftPage,
+      spread.leftBlocks,
+      spread.leftPageNumber,
+      spread.totalPages,
+    );
+  } else {
+    renderUploadedPage(
+      elements.uploadedRightPage,
+      spread.rightBlocks,
+      spread.rightPageNumber,
+      spread.totalPages,
+    );
+  }
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      leaf.classList.add("is-animating");
+      playPageTurnSound(offset > 0 ? "next" : "prev");
+    });
+  });
+
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    showUploadedSpread(spread);
+    requestAnimationFrame(() => {
+      leaf.remove();
+      elements.antiqueBook.classList.remove("is-page-turning");
+      elements.closeBookButton.disabled = false;
+      isFlipping = false;
+      updateLessonActionAvailability();
+      updateNavigation(spread.id, false);
+    });
+  };
+  const onTurnEnd = (event) => {
+    if (event.target !== leaf) return;
+    leaf.removeEventListener("animationend", onTurnEnd);
+    finish();
+  };
+  leaf.addEventListener("animationend", onTurnEnd);
+  window.setTimeout(() => {
+    if (leaf.isConnected) finish();
+  }, PAGE_TURN_MS + 120);
 }
 
 function createTurningFace(side, lesson, options) {
@@ -1925,6 +2346,10 @@ function createTurningLeaf(direction, sourceLesson, targetLesson) {
 }
 
 function flipTimelineLesson(offset) {
+  if (currentLesson?.kind === "uploaded") {
+    flipUploadedSpread(offset);
+    return;
+  }
   if (isFlipping) return;
 
   const index = lessonTimeline.findIndex(
@@ -2073,6 +2498,52 @@ elements.homeSearchInput.addEventListener("input", (event) => {
 
 elements.homeCreateButton.addEventListener("click", () => {
   showJourneySetup();
+});
+
+elements.homeUploadButton.addEventListener("click", () => {
+  elements.homeUploadInput.click();
+});
+
+elements.homeUploadInput.addEventListener("change", async () => {
+  const file = elements.homeUploadInput.files?.[0];
+  if (!file) return;
+  elements.homeUploadStatus.textContent = "";
+
+  if (!/\.(?:md|markdown)$/i.test(file.name)) {
+    elements.homeUploadStatus.textContent =
+      "Vui lòng chọn file Markdown có đuôi .md hoặc .markdown.";
+    elements.homeUploadInput.value = "";
+    return;
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    elements.homeUploadStatus.textContent = "File Markdown phải nhỏ hơn hoặc bằng 2 MB.";
+    elements.homeUploadInput.value = "";
+    return;
+  }
+
+  elements.homeUploadButton.disabled = true;
+  showBusy(`Đang đưa “${file.name}” lên kệ sách…`);
+  try {
+    const response = await fetch("/api/books", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fileName: file.name, content: await file.text() }),
+    });
+    const payload = await response.json();
+    if (!response.ok) throw new Error(payload.message ?? "Không thể upload sách.");
+
+    await loadLibrary();
+    showHome();
+    elements.homeUploadStatus.textContent = `Đã đặt “${payload.data.title}” lên kệ sách.`;
+    const uploadedBook = getShelfBook(`uploaded:${payload.data.id}`);
+    uploadedBook?.focus();
+  } catch (error) {
+    elements.homeUploadStatus.textContent = error.message;
+  } finally {
+    elements.homeUploadInput.value = "";
+    elements.homeUploadButton.disabled = false;
+    hideBusy();
+  }
 });
 
 elements.backHomeButton.addEventListener("click", () => {

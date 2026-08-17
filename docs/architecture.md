@@ -35,6 +35,7 @@ Hệ thống không có editor, submission hay chấm bài. `Done` là tín hi�
 HTTP routes (src/app.js)
   → services: điều phối use case
     → repositories: query + transaction PostgreSQL
+    → BookRepository: metadata.json + content.md trong books/<book-id>/
       → migrations: invariant ở tầng dữ liệu
 
 services

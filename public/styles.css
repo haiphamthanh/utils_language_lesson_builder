@@ -582,6 +582,61 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
   stroke-width: 2.2;
 }
 
+.home-primary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.home-upload-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  border: 1px solid rgb(209 162 93 / 64%);
+  border-radius: 3px;
+  color: #e6c98f;
+  background: rgb(41 21 8 / 74%);
+  box-shadow: inset 0 1px rgb(255 238 194 / 9%), 0 8px 18px rgb(0 0 0 / 24%);
+  letter-spacing: 0.03em;
+}
+
+.home-upload-button:hover {
+  border-color: #ddb66f;
+  color: #f4dfb2;
+  background: rgb(72 39 15 / 82%);
+}
+
+.home-upload-button svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.home-upload-status {
+  min-height: 1.4em;
+  margin: 9px 0 0;
+  color: #d9bd86;
+  font-size: 0.78rem;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
 .home-toolbar {
   display: flex;
   align-items: center;
@@ -1126,6 +1181,17 @@ body[data-theme="dark"] .theme-toggle .icon-sun {
 .book-status-paused {
   background: transparent;
   border: 1.5px solid rgb(255 255 255 / 75%);
+}
+
+.book-status-uploaded {
+  border-radius: 2px;
+  background: #efcf84;
+  box-shadow: 0 0 8px rgb(239 207 132 / 72%);
+  transform: rotate(45deg) scale(0.72);
+}
+
+.book-uploaded .book-progress {
+  display: none;
 }
 
 .book-title {
@@ -4484,6 +4550,126 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
 .text-action:disabled:hover {
   color: #9d8e76;
   border-color: #715a3a;
+}
+
+/* Uploaded Markdown books use both sides of the spread as continuous pages. */
+.reader-mode-uploaded .lesson-left > .book-page-head,
+.reader-mode-uploaded .lesson-left > .lesson-content,
+.reader-mode-uploaded .lesson-left > .highlight-hint,
+.reader-mode-uploaded .lesson-right > .review {
+  display: none;
+}
+
+.uploaded-book-page {
+  height: 100%;
+  padding: 0 3px 4px;
+  overflow: auto;
+  color: #3a2717;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 12.25px;
+  line-height: 1.57;
+  text-align: left;
+  scrollbar-color: rgb(112 72 33 / 46%) transparent;
+  scrollbar-width: thin;
+}
+
+.uploaded-book-page[hidden] {
+  display: none;
+}
+
+.uploaded-page-folio {
+  margin: 0 0 12px !important;
+  color: #89643c;
+  font-size: 8px;
+  letter-spacing: 0.18em;
+  text-align: center;
+}
+
+.uploaded-book-page h2,
+.uploaded-book-page h3,
+.uploaded-book-page h4 {
+  color: #4b2b18;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.uploaded-book-page h2 {
+  margin: 2px 0 13px;
+  font-size: 25px;
+  line-height: 1.06;
+}
+
+.uploaded-book-page h3 {
+  margin: 3px 0 10px;
+  font-size: 18px;
+  line-height: 1.18;
+}
+
+.uploaded-book-page h4 {
+  margin: 2px 0 8px;
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.uploaded-book-page p {
+  margin: 0 0 10px;
+}
+
+.uploaded-book-page blockquote {
+  margin: 0 0 11px;
+  padding: 8px 10px;
+  border-left: 2px solid #8c5930;
+  color: #56391f;
+  background: rgb(119 74 34 / 7%);
+}
+
+.uploaded-book-page ul,
+.uploaded-book-page ol {
+  margin: 0 0 10px;
+  padding-left: 20px;
+}
+
+.uploaded-book-page li {
+  margin-bottom: 4px;
+}
+
+.uploaded-book-page code {
+  padding: 0.08em 0.25em;
+  border: 1px solid rgb(96 54 23 / 15%);
+  border-radius: 2px;
+  background: rgb(92 53 23 / 8%);
+  font: 0.88em ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.uploaded-book-page pre {
+  margin: 0 0 10px;
+  padding: 9px 10px;
+  overflow: auto;
+  border: 1px solid rgb(92 53 23 / 18%);
+  background: rgb(82 45 18 / 8%);
+  font-size: 8.4px;
+  line-height: 1.35;
+  white-space: pre-wrap;
+}
+
+.uploaded-book-page pre code {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: inherit;
+}
+
+.uploaded-book-page hr {
+  width: 70%;
+  height: 1px;
+  margin: 15px auto;
+  border: 0;
+  background: linear-gradient(90deg, transparent, #8d6035, transparent);
+}
+
+.uploaded-book-page strong {
+  color: #4a2b19;
 }
 
 /* page-turn zones on the left / right edges of the open book */

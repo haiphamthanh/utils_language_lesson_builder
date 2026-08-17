@@ -1,6 +1,6 @@
 # Language Lesson Builder
 
-Một walking skeleton cho hành trình luyện viết ngoại ngữ: hệ thống đưa ra bài học, người học chép bằng tay trên giấy, sau đó xác nhận hoàn thành. PostgreSQL là nguồn dữ liệu duy nhất.
+Một walking skeleton cho hành trình luyện viết ngoại ngữ: hệ thống đưa ra bài học, người học chép bằng tay trên giấy, sau đó xác nhận hoàn thành. Hành trình được lưu trong PostgreSQL; sách Markdown tải lên được lưu trực tiếp trong `books/`.
 
 ## Chạy example
 
@@ -39,7 +39,7 @@ npm run db:seed
 | Biến | Mặc định | Vai trò |
 | --- | --- | --- |
 | `PORT` | `9999` | Cổng HTTP |
-| `DATABASE_URL` | PostgreSQL trong `compose.yaml` | Nguồn dữ liệu duy nhất |
+| `DATABASE_URL` | PostgreSQL trong `compose.yaml` | Nguồn dữ liệu hành trình và tiến độ |
 | `APP_TIME_ZONE` | `Asia/Ho_Chi_Minh` | Timezone của user demo để tính ngày học/streak |
 | `DEMO_USER_ID` | UUID cố định | Danh tính tạm trước khi có authentication |
 | `GENERATION_PROVIDER` | `opencode` | `opencode` cho bài thật; `sample` cho test/offline |
@@ -64,6 +64,7 @@ npm run db:seed
 11. **Đánh dấu (highlight)**: bôi đen một đoạn trong bài để đánh dấu kèm ghi chú; đoạn đánh dấu hiển thị như bút highlight có số, bấm vào để sửa/xoá. Dữ liệu lưu trong `lesson_highlights` theo lesson, offset theo từng đoạn.
 12. Mỗi từ vựng, cụm từ và cấu trúc có đúng 5 câu ví dụ trong target language.
 13. Hai nút mũi tên cho phép đi qua các bài đã khóa rồi quay về bài hiện tại; thao tác xem không thay đổi bookmark hoặc thống kê.
+14. Nút **Upload sách** nhận file `.md`/`.markdown` tối đa 2 MB. Mỗi sách được lưu tại `books/<book-id>/` gồm `metadata.json` và `content.md`, xuất hiện chung trên kệ và dùng cả hai trang sách như một reader liên tục.
 
 ## Ranh giới MVP hiện tại
 
@@ -71,6 +72,7 @@ npm run db:seed
 - OpenCode SDK chạy server nhúng, yêu cầu provider/model đã được cấu hình trong OpenCode. `GENERATION_PROVIDER=sample` vẫn có thể dùng khi test offline.
 - Tạo hành trình mới từ **chủ đề có sẵn** (system topics); chưa có màn hình thêm chủ đề mới hay chọn lại hành trình đã tạm dừng.
 - Không có editor: người học viết trên giấy.
+- Sách Markdown là tài liệu đọc độc lập, chưa có highlight hoặc đồng bộ tiến độ đọc.
 - Core dữ liệu gồm journey, lesson/version, bookmark và study day.
 
 Các ranh giới này giữ hệ thống nhỏ trước khi bổ sung tài khoản thật và màn hình tạo journey.

@@ -47,23 +47,43 @@
           <div class="home-hero-copy">
             <p class="eyebrow">Đại sảnh tri thức · Est. MMXXVI</p>
             <h1>
-              <span>Chọn một hành trình</span>
+              <span>Chọn một quyển sách</span>
               <span>từ kệ sách cổ.</span>
             </h1>
             <p class="home-intro">
-              Mỗi quyển sách lưu giữ một hành trình rèn viết ngoại ngữ. Chọn
-              một quyển để mở bài học còn dang dở.
+              Kệ sách lưu giữ cả hành trình rèn viết và những bản thảo Markdown
+              của riêng bạn. Chọn một quyển để tiếp tục đọc.
             </p>
-            <button
-              id="home-create-button"
-              class="primary-button home-create-button"
-              type="button"
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M12 5v14M5 12h14" />
-              </svg>
-              Khởi tạo hành trình
-            </button>
+            <div class="home-primary-actions">
+              <button
+                id="home-create-button"
+                class="primary-button home-create-button"
+                type="button"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                Khởi tạo hành trình
+              </button>
+              <button
+                id="home-upload-button"
+                class="secondary-button home-upload-button"
+                type="button"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 16V4M7 9l5-5 5 5M5 20h14" />
+                </svg>
+                Upload sách
+              </button>
+              <input
+                id="home-upload-input"
+                class="visually-hidden"
+                type="file"
+                accept=".md,.markdown,text/markdown,text/plain"
+                aria-label="Chọn file Markdown để upload thành sách"
+              />
+            </div>
+            <p id="home-upload-status" class="home-upload-status" aria-live="polite"></p>
           </div>
           <div class="home-seal" aria-hidden="true">
             <svg viewBox="0 0 120 120">
@@ -83,7 +103,7 @@
           <div class="cabinet-nameplate">
             <span aria-hidden="true">✦</span>
             <h2 id="cabinet-title">Bibliotheca Itinerum</h2>
-            <small>Kệ hành trình ngôn ngữ</small>
+            <small>Hành trình và sách Markdown</small>
             <span aria-hidden="true">✦</span>
           </div>
 
@@ -396,6 +416,12 @@
                       <p class="highlight-hint">
                         Bôi đen một đoạn trong bài để đánh dấu và ghi chú.
                       </p>
+                      <article
+                        id="uploaded-left-page"
+                        class="uploaded-book-page"
+                        aria-label="Trang trái của sách"
+                        hidden
+                      ></article>
                     </div>
                   </article>
 
@@ -455,6 +481,12 @@
                           </article>
                         </div>
                       </section>
+                      <article
+                        id="uploaded-right-page"
+                        class="uploaded-book-page"
+                        aria-label="Trang phải của sách"
+                        hidden
+                      ></article>
                     </div>
                   </article>
                 </div>

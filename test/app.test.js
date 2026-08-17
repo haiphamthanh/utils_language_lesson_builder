@@ -253,6 +253,66 @@ test('GET /api/journeys lists the learner journeys', async (context) => {
   assert.equal((await response.json()).data[0].language, 'English');
 });
 
+test('GET /api/books lists uploaded Markdown books', async (context) => {
+  const bookRepository = {
+    async list() {
+      return [{ id: 'book-1', type: 'uploaded', title: 'Grammar Flow' }];
+    },
+  };
+  const database = { query: async () => ({ rows: [] }) };
+  const app = createApp({ database, bookRepository });
+  const server = await listen(app);
+  context.after(() => server.close());
+
+  const address = server.address();
+  const response = await fetch(`http://127.0.0.1:${address.port}/api/books`);
+
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).data[0].type, 'uploaded');
+});
+
+test('POST /api/books uploads a Markdown book', async (context) => {
+  const bookRepository = {
+    async create(input) {
+      return { id: 'grammar-flow', title: 'Grammar Flow', ...input, content: undefined };
+    },
+  };
+  const database = { query: async () => ({ rows: [] }) };
+  const app = createApp({ database, bookRepository });
+  const server = await listen(app);
+  context.after(() => server.close());
+
+  const address = server.address();
+  const response = await fetch(`http://127.0.0.1:${address.port}/api/books`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fileName: 'grammar-flow.md', content: '# Grammar Flow' }),
+  });
+
+  assert.equal(response.status, 201);
+  assert.equal((await response.json()).data.id, 'grammar-flow');
+});
+
+test('GET /api/books/:id returns a book with Markdown content', async (context) => {
+  const bookRepository = {
+    async getById(id) {
+      return { id, title: 'Grammar Flow', content: '# Grammar Flow' };
+    },
+  };
+  const database = { query: async () => ({ rows: [] }) };
+  const app = createApp({ database, bookRepository });
+  const server = await listen(app);
+  context.after(() => server.close());
+
+  const address = server.address();
+  const response = await fetch(
+    `http://127.0.0.1:${address.port}/api/books/grammar-flow`,
+  );
+
+  assert.equal(response.status, 200);
+  assert.match((await response.json()).data.content, /^# Grammar Flow/);
+});
+
 test('POST /api/journeys/:id/open resumes a paused journey', async (context) => {
   const journeyService = {
     async openForUser({ journeyId }) {

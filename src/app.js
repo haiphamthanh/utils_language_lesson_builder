@@ -6,6 +6,7 @@ import { pool } from './db/pool.js';
 import { createJourneyGenerator } from './integrations/create-journey-generator.js';
 import { createLessonGenerator } from './integrations/create-lesson-generator.js';
 import { JourneyRepository } from './repositories/journey-repository.js';
+import { BookRepository } from './repositories/book-repository.js';
 import { GenerationStateRepository } from './repositories/generation-state-repository.js';
 import { HighlightRepository } from './repositories/highlight-repository.js';
 import { LessonRepository } from './repositories/lesson-repository.js';
@@ -34,6 +35,7 @@ export function createApp({
   highlightService = new HighlightService(new HighlightRepository(database)),
   journeyService,
   generationStateRepository = new GenerationStateRepository(database),
+  bookRepository = new BookRepository(),
 } = {}) {
   const app = express();
   const workflowRepository = new LessonWorkflowRepository(database);
@@ -82,7 +84,7 @@ export function createApp({
     });
 
   app.disable('x-powered-by');
-  app.use(express.json({ limit: '32kb' }));
+  app.use(express.json({ limit: '5mb' }));
 
   app.get('/api/health', async (_request, response, next) => {
     try {
@@ -203,6 +205,32 @@ export function createApp({
         config.demoUserId,
       );
       response.json({ data: journeys });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get('/api/books', async (_request, response, next) => {
+    try {
+      response.json({ data: await bookRepository.list() });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/api/books', async (request, response, next) => {
+    try {
+      const { fileName, content } = request.body ?? {};
+      const book = await bookRepository.create({ fileName, content });
+      response.status(201).json({ data: book });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get('/api/books/:bookId', async (request, response, next) => {
+    try {
+      response.json({ data: await bookRepository.getById(request.params.bookId) });
     } catch (error) {
       next(error);
     }
