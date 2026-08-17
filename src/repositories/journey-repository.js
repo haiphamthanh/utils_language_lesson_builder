@@ -105,7 +105,14 @@ export class JourneyRepository {
        LEFT JOIN lessons l ON l.id = p.current_lesson_id
        LEFT JOIN lesson_versions lv ON lv.id = l.active_version_id
        WHERE j.user_id = $1
-       ORDER BY j.updated_at DESC`,
+       ORDER BY
+         CASE j.language
+           WHEN 'Japanese' THEN 1
+           WHEN 'English' THEN 2
+           WHEN 'Chinese' THEN 3
+           ELSE 4
+         END,
+         j.created_at ASC`,
       [userId],
     );
 

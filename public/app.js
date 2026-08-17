@@ -969,7 +969,37 @@ function getFilteredJourneys() {
 }
 
 const BOOK_HEIGHTS = [198, 178, 212, 186, 204, 172, 218, 192];
-const BOOKS_PER_ROW = 7;
+
+function getBooksPerRow() {
+  const shelf = elements.homeShelf;
+  if (!shelf || shelf.clientWidth <= 0) return 7;
+
+  const probe = document.createElement("div");
+  probe.className = "bookshelf-row";
+  probe.style.visibility = "hidden";
+  probe.style.position = "absolute";
+  shelf.append(probe);
+
+  const rowStyle = getComputedStyle(probe);
+  const rowPadding =
+    parseFloat(rowStyle.paddingLeft) + parseFloat(rowStyle.paddingRight);
+
+  const book = document.createElement("span");
+  book.className = "book";
+  probe.append(book);
+  const bookWidth = book.getBoundingClientRect().width;
+  const gap = parseFloat(rowStyle.gap) || 0;
+
+  probe.remove();
+
+  const shelfStyle = getComputedStyle(shelf);
+  const shelfPadding =
+    parseFloat(shelfStyle.paddingLeft) + parseFloat(shelfStyle.paddingRight);
+
+  const available = shelf.clientWidth - shelfPadding - rowPadding;
+  return Math.max(1, Math.floor((available + gap) / (bookWidth + gap)));
+}
+
 const BOOK_COLOR_PALETTE = [
   ["#3a8a6d", "#1c4a3b"],
   ["#c07a60", "#7c4432"],
@@ -1061,11 +1091,12 @@ function renderHomeShelf() {
   const shelf = elements.homeShelf;
   shelf.replaceChildren();
 
-  for (let start = 0; start < filtered.length; start += BOOKS_PER_ROW) {
+  const booksPerRow = getBooksPerRow();
+  for (let start = 0; start < filtered.length; start += booksPerRow) {
     const row = document.createElement("div");
     row.className = "bookshelf-row";
     filtered
-      .slice(start, start + BOOKS_PER_ROW)
+      .slice(start, start + booksPerRow)
       .forEach((journey, index) =>
         row.append(buildBookCard(journey, start + index)),
       );
@@ -1091,13 +1122,14 @@ function showHome() {
   hideHighlightPopover();
   closeReviewDetail();
   resetBook();
-  renderHome();
   elements.mastheadEyebrow.textContent = "Kệ sách hành trình";
   elements.loading.hidden = true;
   elements.error.hidden = true;
   elements.journeySetup.hidden = true;
   elements.completion.hidden = true;
   elements.home.hidden = false;
+  void elements.home.offsetWidth;
+  renderHome();
 }
 
 function showHomeOrSetup() {
@@ -2052,6 +2084,14 @@ elements.closeBookButton.addEventListener("click", () => {
 });
 
 window.addEventListener("resize", updateBookScale);
+
+let shelfResizeTimer = null;
+window.addEventListener("resize", () => {
+  window.clearTimeout(shelfResizeTimer);
+  shelfResizeTimer = window.setTimeout(() => {
+    if (!elements.home.hidden) renderHomeShelf();
+  }, 150);
+});
 
 /* ---------- Hover & page-turn sound ---------- */
 
