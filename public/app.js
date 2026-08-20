@@ -79,6 +79,7 @@ const elements = {
   reviewDetailClose: document.querySelector("#review-detail-close"),
   uploadedLeftPage: document.querySelector("#uploaded-left-page"),
   uploadedRightPage: document.querySelector("#uploaded-right-page"),
+  readModeToggle: document.querySelector("#read-mode-toggle"),
 };
 
 const LANGUAGES = ["English", "Japanese", "Chinese"];
@@ -258,6 +259,7 @@ let libraryLanguageFilter = "ALL";
 let activeJourneyId = null;
 let activeLibraryBookKey = null;
 let currentUploadedBook = null;
+let isReadMode = false;
 const lessonCache = new Map();
 const lessonLoadPromises = new Map();
 
@@ -811,7 +813,10 @@ function renderMarkdownBlock(block) {
 
   const heading = trimmed.match(/^(#{1,6})\s+([\s\S]+)$/);
   if (heading) {
-    const level = Math.min(4, heading[1].length + 1);
+    // Preserve the Markdown hierarchy. This also lets the reader give # and
+    // ## their own stable typographic rhythm instead of treating both as a
+    // generic section heading.
+    const level = Math.min(4, heading[1].length);
     const element = document.createElement(`h${level}`);
     appendInlineMarkdown(element, heading[2]);
     return element;
@@ -2115,6 +2120,13 @@ function setBookStageState(state) {
   bookStageState = state;
   elements.bookStage.classList.remove(...BOOK_STAGE_STATES);
   elements.bookStage.classList.add(`state-${state}`);
+  if (state === "open" && elements.bookStage.classList.contains("is-flying")) {
+    // Safari can leave the Web Animations `finished` promise pending when a
+    // tab is backgrounded. The timed opening sequence is authoritative, so
+    // make sure its temporary flying cover cannot keep the real book hidden.
+    clearBookFlyer();
+    elements.bookStage.classList.remove("is-flying");
+  }
   elements.stateLabelText.textContent = BOOK_PHASES[state] ?? "";
   elements.stateLabelTop.hidden = state !== "open";
   elements.stateLabelBottom.hidden = state === "open";
@@ -2125,6 +2137,32 @@ function setBookStageState(state) {
     !["idle", "open"].includes(state),
   );
   elements.closeBookButton.disabled = state !== "open";
+  elements.readModeToggle.hidden = state !== "open";
+  elements.readModeToggle.disabled = state !== "open";
+}
+
+function setReadMode(enabled) {
+  const next = Boolean(enabled && bookStageState === "open");
+  if (next === isReadMode) return;
+  isReadMode = next;
+  elements.bookStage.classList.toggle("is-read-mode", next);
+  elements.readModeToggle.setAttribute("aria-pressed", String(next));
+  elements.readModeToggle.textContent = next ? "Thoát Read mode" : "Read mode";
+  // Use the read-mode dimensions as the transform target immediately. This
+  // makes the book and the disappearing intro move together in one motion.
+  updateBookScale();
+  // Both states have a different document height. Resetting to the beginning
+  // prevents Safari from keeping an obsolete offset that cuts off the book or
+  // makes the restored intro appear to be missing.
+  elements.bookStage.scrollTop = 0;
+  if (!next) {
+    // Safari applies the restored grid width after the class change paints.
+    // Re-reading its compact width on that frame prevents a stale large
+    // scale from briefly remaining after Read mode is turned off.
+    requestAnimationFrame(() => {
+      if (!isReadMode) updateBookScale();
+    });
+  }
 }
 
 function clearBookStageTimers() {
@@ -2144,6 +2182,7 @@ function clearBookFlyer() {
 function resetBook() {
   clearBookStageTimers();
   clearBookFlyer();
+  isReadMode = false;
   elements.antiqueBook
     .querySelectorAll(".turn-leaf")
     .forEach((leaf) => leaf.remove());
@@ -2151,6 +2190,9 @@ function resetBook() {
   elements.bookStage.classList.remove("is-dismissed");
   elements.bookStage.classList.remove("is-flying");
   elements.bookStage.classList.remove("is-spined");
+  elements.bookStage.classList.remove("is-read-mode");
+  elements.readModeToggle.setAttribute("aria-pressed", "false");
+  elements.readModeToggle.textContent = "Read mode";
   elements.bookStage.classList.remove("skip-page-turns");
   elements.bookStage.style.removeProperty("--fold-scale");
   elements.bookStage.hidden = true;
@@ -2161,12 +2203,39 @@ function resetBook() {
 
 function updateBookScale() {
   const bookStageContainer = elements.bookStage.querySelector(".book-stage");
-  const availableHeight = bookStageContainer?.clientHeight
-    ? bookStageContainer.clientHeight - 30
-    : window.innerHeight - 300;
+  const isReadMode = elements.bookStage.classList.contains("is-read-mode");
+  const readModeHeight = Math.max(
+    600,
+    Math.min(window.innerHeight * 0.82, 820),
+  );
+  const readModeHorizontalPadding = Math.min(
+    64,
+    Math.max(18, window.innerWidth * 0.035),
+  );
+  // The stage's height/grid/padding animate when Read mode is toggled. The
+  // live element reports a mid-flight size for the whole transition, which
+  // would lock --book-scale to a stale value (the book never returns to its
+  // settled size). Pause those transitions for one synchronous layout so the
+  // measurement reflects the settled layout instead.
+  const heroElement = elements.bookStage.querySelector(".stage-hero");
+  const heroSavedTransition = heroElement?.style.transition;
+  const containerSavedTransition = bookStageContainer?.style.transition;
+  if (heroElement) heroElement.style.transition = "none";
+  if (bookStageContainer) bookStageContainer.style.transition = "none";
+  void bookStageContainer?.offsetWidth;
+  const availableHeight = isReadMode
+    ? readModeHeight - 30
+    : bookStageContainer?.clientHeight
+      ? bookStageContainer.clientHeight - 30
+      : window.innerHeight - 300;
   const availableWidth = bookStageContainer?.clientWidth
-    ? bookStageContainer.clientWidth - 40
+    ? isReadMode
+      ? Math.max(0, window.innerWidth - readModeHorizontalPadding * 2 - 40)
+      : bookStageContainer.clientWidth - 40
     : window.innerWidth - 400;
+  if (heroElement) heroElement.style.transition = heroSavedTransition;
+  if (bookStageContainer)
+    bookStageContainer.style.transition = containerSavedTransition;
   const scale = Math.max(
     0.6,
     Math.min(1.4, availableHeight / 613, availableWidth / 968),
@@ -2409,6 +2478,7 @@ function closeBookAndReturn() {
   if (isFlipping) return;
 
   saveCurrentOpenView();
+  setReadMode(false);
   closeUploadedReaderIndex();
   clearBookStageTimers();
   elements.bookStage.classList.remove("is-dismissed");
@@ -2926,6 +2996,10 @@ elements.readerIndexButton.addEventListener("click", () => {
   else closeUploadedReaderIndex();
 });
 
+elements.readModeToggle.addEventListener("click", () => {
+  setReadMode(!isReadMode);
+});
+
 elements.readerIndexClose.addEventListener("click", closeUploadedReaderIndex);
 
 elements.readerPageJumpForm.addEventListener("submit", (event) => {
@@ -2934,6 +3008,11 @@ elements.readerPageJumpForm.addEventListener("submit", (event) => {
 });
 
 window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && isReadMode) {
+    setReadMode(false);
+    elements.readModeToggle.focus();
+    return;
+  }
   if (event.key === "Escape" && !elements.readerIndexPanel.hidden) {
     closeUploadedReaderIndex();
     elements.readerIndexButton.focus();

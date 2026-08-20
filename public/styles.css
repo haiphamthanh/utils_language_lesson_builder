@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@500;600;700&display=swap");
+
 :root {
   color-scheme: dark;
   --ink: #eadfca;
@@ -3208,6 +3210,7 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   grid-template-columns: minmax(350px, 0.55fr) minmax(640px, 1.45fr);
   align-items: center;
   padding: 96px 4.5vw 118px;
+  transition: padding 0.72s cubic-bezier(0.2, 0.76, 0.2, 1);
 }
 
 .stage-shelf {
@@ -3322,8 +3325,12 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
 .intro-copy {
   position: relative;
   z-index: 22;
+  min-width: 0;
   align-self: center;
   padding-bottom: 6vh;
+  transition:
+    opacity 0.36s ease,
+    transform 0.62s cubic-bezier(0.2, 0.76, 0.2, 1);
 }
 
 .intro-copy .eyebrow {
@@ -3369,6 +3376,7 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   display: grid;
   place-items: center;
   perspective: 2400px;
+  transition: height 0.78s cubic-bezier(0.2, 0.72, 0.2, 1);
 }
 
 .stage-glow {
@@ -4405,14 +4413,60 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
 
 /* ---------- Reading view: the opened book is the lesson ---------- */
 
-.book-stage-overlay.state-open .intro-copy {
-  pointer-events: none;
-}
-.book-stage-overlay.state-open .intro-copy .description {
-  display: block;
-}
 .book-stage-overlay.state-open .progress-track {
   display: none;
+}
+
+/* Once the cover has opened, the stage becomes a dedicated reading surface.
+   The same book is enlarged in place, so the opening choreography resolves
+   into reading mode rather than cutting to a separate layout. */
+.book-stage-overlay.is-read-mode .stage-hero {
+  /* A fixed zero-width track avoids Safari glitches when interpolating
+     minmax()/fr grid tracks during the read-mode toggle. */
+  grid-template-columns: 0px minmax(0, 1fr);
+  padding: 88px clamp(18px, 3.5vw, 64px) 44px;
+  align-items: start;
+}
+.book-stage-overlay.is-read-mode .intro-copy {
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transform: translateX(-28px);
+}
+.book-stage-overlay.is-read-mode .reader-column {
+  width: 100%;
+}
+.book-stage-overlay.is-read-mode .book-stage {
+  height: min(82svh, 820px);
+  min-height: 600px;
+  will-change: height;
+}
+.book-stage-overlay.is-read-mode .book-rig {
+  transform: translate3d(0, -2px, 110px) rotateX(3deg)
+    scale(var(--book-scale, 1));
+  transition-timing-function: cubic-bezier(0.18, 0.78, 0.2, 1);
+  will-change: transform;
+}
+.book-stage-overlay.is-read-mode .book-shadow {
+  opacity: 0.56;
+  transform: scaleX(0.88);
+}
+.book-stage-overlay.is-read-mode .stage-shelf,
+.book-stage-overlay.is-read-mode .stage-footer {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.35s ease, transform 0.5s ease;
+}
+
+@media (min-width: 701px) and (max-width: 1100px) {
+  .book-stage-overlay.is-read-mode .stage-hero {
+    grid-template-columns: 1fr;
+  }
+  .book-stage-overlay.is-read-mode .intro-copy {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
 }
 
 .book-stage-overlay .rear-cover,
@@ -4427,7 +4481,12 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   display: flex;
 }
 .book-stage-overlay.state-open .interaction-copy {
-  margin-top: -42px;
+  margin-top: -66px;
+}
+.read-mode-toggle[aria-pressed="true"] {
+  border-color: #d0a05a;
+  color: #f0d5a7;
+  background: rgba(164, 107, 39, 0.3);
 }
 
 /* reader toolbar (prev / page / next) */
@@ -4783,31 +4842,56 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   text-align: center;
 }
 
+.uploaded-book-page h1,
 .uploaded-book-page h2,
 .uploaded-book-page h3,
 .uploaded-book-page h4 {
   color: #4b2b18;
-  font-weight: 500;
-  overflow-wrap: anywhere;
-  text-wrap: balance;
+  font-family:
+    "Hiragino Mincho ProN", "Yu Mincho", "Palatino Linotype", Palatino,
+    Georgia, "Times New Roman", ui-serif, serif;
+  font-weight: 600;
+  font-synthesis: none;
+  font-kerning: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: none;
+  text-wrap: wrap;
+}
+
+.uploaded-book-page h1 {
+  margin: 3px 0 15px;
+  font-size: 24px;
+  line-height: 1.22;
+  letter-spacing: -0.018em;
+  font-family:
+    "Source Serif 4", "Hiragino Mincho ProN", "Yu Mincho",
+    "Palatino Linotype", Palatino, Georgia, serif;
+  font-weight: 700;
 }
 
 .uploaded-book-page h2 {
-  margin: 2px 0 13px;
-  font-size: 25px;
-  line-height: 1.06;
+  margin: 4px 0 12px;
+  font-size: 18px;
+  line-height: 1.28;
+  letter-spacing: -0.01em;
+  font-family:
+    "Source Serif 4", "Hiragino Mincho ProN", "Yu Mincho",
+    "Palatino Linotype", Palatino, Georgia, serif;
+  font-weight: 600;
 }
 
 .uploaded-book-page h3 {
-  margin: 3px 0 10px;
-  font-size: 18px;
-  line-height: 1.18;
+  margin: 4px 0 9px;
+  font-size: 15px;
+  line-height: 1.34;
+  letter-spacing: -0.006em;
 }
 
 .uploaded-book-page h4 {
-  margin: 2px 0 8px;
-  font-size: 14px;
-  line-height: 1.25;
+  margin: 3px 0 8px;
+  font-size: 13px;
+  line-height: 1.38;
 }
 
 .uploaded-book-page p {
@@ -5839,7 +5923,7 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
 }
 
 @media (max-width: 700px) {
-  .book-stage-overlay.state-open .intro-copy {
+  .book-stage-overlay.is-read-mode .intro-copy {
     display: none;
   }
   .book-stage-overlay.state-open .stage-hero {
