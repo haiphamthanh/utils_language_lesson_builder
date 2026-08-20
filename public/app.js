@@ -65,6 +65,12 @@ const elements = {
   readerPrev: document.querySelector("#reader-prev"),
   readerNext: document.querySelector("#reader-next"),
   readerPageLabel: document.querySelector("#reader-page-label"),
+  readerIndexButton: document.querySelector("#reader-index-button"),
+  readerIndexPanel: document.querySelector("#reader-index-panel"),
+  readerIndexClose: document.querySelector("#reader-index-close"),
+  readerPageJumpForm: document.querySelector("#reader-page-jump-form"),
+  readerPageJumpInput: document.querySelector("#reader-page-jump-input"),
+  readerIndexList: document.querySelector("#reader-index-list"),
   reviewTitle: document.querySelector("#review-title"),
   reviewDetail: document.querySelector("#review-detail"),
   reviewDetailKind: document.querySelector("#review-detail-kind"),
@@ -78,6 +84,112 @@ const elements = {
 const LANGUAGES = ["English", "Japanese", "Chinese"];
 const LEVELS = ["Beginner", "Intermediate", "Advanced"];
 const THEME_STORAGE_KEY = "writing-journey:theme";
+const OPEN_VIEW_STORAGE_KEY = "writing-journey:open-view";
+
+function readReadingState() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(OPEN_VIEW_STORAGE_KEY) ?? "null");
+    if (!parsed || typeof parsed !== "object") {
+      return { uploaded: {}, journey: {}, lastUploaded: null, lastJourney: null };
+    }
+    return {
+      uploaded:
+        parsed.uploaded && typeof parsed.uploaded === "object"
+          ? parsed.uploaded
+          : {},
+      journey:
+        parsed.journey && typeof parsed.journey === "object"
+          ? parsed.journey
+          : {},
+      lastUploaded: typeof parsed.lastUploaded === "string" ? parsed.lastUploaded : null,
+      lastJourney: typeof parsed.lastJourney === "string" ? parsed.lastJourney : null,
+    };
+  } catch {
+    // A broken or unavailable localStorage entry should never block the shelf.
+    return { uploaded: {}, journey: {}, lastUploaded: null, lastJourney: null };
+  }
+}
+
+function writeReadingState(state) {
+  try {
+    localStorage.setItem(OPEN_VIEW_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // The book remains usable when storage is unavailable.
+  }
+}
+
+function readStoredOpenView() {
+  const state = readReadingState();
+  if (state.lastUploaded) {
+    const spreadIndex = Number(state.uploaded[state.lastUploaded]);
+    if (Number.isInteger(spreadIndex) && spreadIndex >= 0) {
+      return { kind: "uploaded", bookId: state.lastUploaded, spreadIndex };
+    }
+  }
+  if (state.lastJourney) {
+    const lessonId = state.journey[state.lastJourney];
+    if (typeof lessonId === "string") {
+      return { kind: "journey", journeyId: state.lastJourney, lessonId };
+    }
+  }
+  return null;
+}
+
+function getStoredUploadedSpread(bookId) {
+  const state = readReadingState();
+  const spreadIndex = Number(state.uploaded[bookId]);
+  return Number.isInteger(spreadIndex) && spreadIndex >= 0 ? spreadIndex : 0;
+}
+
+function getStoredJourneyLesson(journeyId) {
+  const state = readReadingState();
+  const lessonId = state.journey[journeyId];
+  return typeof lessonId === "string" ? lessonId : null;
+}
+
+function saveOpenView(view) {
+  const state = readReadingState();
+  if (view.kind === "uploaded" && typeof view.bookId === "string") {
+    state.uploaded[view.bookId] = Math.max(0, Number(view.spreadIndex) || 0);
+    state.lastUploaded = view.bookId;
+  } else if (
+    view.kind === "journey" &&
+    typeof view.journeyId === "string" &&
+    typeof view.lessonId === "string"
+  ) {
+    state.journey[view.journeyId] = view.lessonId;
+    state.lastJourney = view.journeyId;
+  }
+  writeReadingState(state);
+}
+
+function clearOpenView() {
+  const state = readReadingState();
+  state.lastUploaded = null;
+  state.lastJourney = null;
+  writeReadingState(state);
+}
+
+function saveCurrentOpenView() {
+  if (currentLesson?.kind === "uploaded" && currentUploadedBook?.id) {
+    const spreadIndex = lessonTimeline.findIndex(
+      (item) => item.id === currentLesson.id,
+    );
+    saveOpenView({
+      kind: "uploaded",
+      bookId: currentUploadedBook.id,
+      spreadIndex: Math.max(0, spreadIndex),
+    });
+    return;
+  }
+  if (currentLesson?.journey?.id && currentLesson.id) {
+    saveOpenView({
+      kind: "journey",
+      journeyId: currentLesson.journey.id,
+      lessonId: currentLesson.id,
+    });
+  }
+}
 
 function getStoredTheme() {
   try {
@@ -745,16 +857,39 @@ function setReaderMode(mode) {
   elements.antiqueBook.classList.toggle("reader-mode-uploaded", uploaded);
   elements.uploadedLeftPage.hidden = !uploaded;
   elements.uploadedRightPage.hidden = !uploaded;
+  elements.readerIndexButton.hidden = !uploaded;
+  if (!uploaded) closeUploadedReaderIndex();
+}
+
+function getUploadedPageIndexEntry(blocks, pageNumber) {
+  const heading = (blocks ?? []).find((block) => /^#{1,6}\s+/.test(block.trim()));
+  const source = heading ?? blocks?.[0] ?? "";
+  const title = source
+    .replace(/^#{1,6}\s+/, "")
+    .replace(/[`*_]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return {
+    pageNumber,
+    title: title ? title.slice(0, 72) : `Trang ${pageNumber}`,
+    isHeading: Boolean(heading),
+  };
 }
 
 function createUploadedSpreads(book) {
   const pages = paginateMarkdown(book.content);
+  const indexedBook = {
+    ...book,
+    pageIndex: pages.map((blocks, index) =>
+      getUploadedPageIndexEntry(blocks, index + 1),
+    ),
+  };
   const spreads = [];
   for (let index = 0; index < pages.length; index += 2) {
     spreads.push({
       id: `uploaded-${book.id}-${index / 2}`,
       kind: "uploaded",
-      book,
+      book: indexedBook,
       leftBlocks: pages[index] ?? [],
       rightBlocks: pages[index + 1] ?? [],
       leftPageNumber: index + 1,
@@ -787,6 +922,38 @@ function renderUploadedSpread(spread) {
     spread.rightPageNumber,
     spread.totalPages,
   );
+}
+
+function renderUploadedReaderIndex(spread) {
+  const entries = spread.book.pageIndex ?? [];
+  const activePage = spread.leftPageNumber;
+  elements.readerPageJumpInput.max = String(spread.totalPages);
+  elements.readerPageJumpInput.placeholder = `1–${spread.totalPages}`;
+  elements.readerIndexList.replaceChildren();
+
+  for (const entry of entries) {
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = "reader-index-item";
+    item.dataset.pageNumber = String(entry.pageNumber);
+    item.setAttribute("aria-label", `Trang ${entry.pageNumber}: ${entry.title}`);
+    item.setAttribute(
+      "aria-current",
+      entry.pageNumber === activePage || entry.pageNumber === activePage + 1
+        ? "page"
+        : "false",
+    );
+
+    const page = document.createElement("span");
+    page.className = "reader-index-page";
+    page.textContent = String(entry.pageNumber).padStart(2, "0");
+    const title = document.createElement("span");
+    title.className = "reader-index-title";
+    title.textContent = entry.title;
+    item.append(page, title);
+    item.addEventListener("click", () => goToUploadedPage(entry.pageNumber));
+    elements.readerIndexList.append(item);
+  }
 }
 
 async function loadHighlights(lessonId) {
@@ -1043,6 +1210,13 @@ function showLesson(
   closeReviewDetail();
   activeJourneyId = lesson.journey?.id ?? null;
   activeLibraryBookKey = `journey:${activeJourneyId}`;
+  if (lesson.journey?.id && lesson.id) {
+    saveOpenView({
+      kind: "journey",
+      journeyId: lesson.journey.id,
+      lessonId: lesson.id,
+    });
+  }
   elements.mastheadEyebrow.textContent = "Hành trình chi tiết";
   if (!lessonPageAlreadyRendered) {
     renderLessonPage(lesson, prepared?.content);
@@ -1070,10 +1244,17 @@ function showUploadedSpread(spread) {
   currentUploadedBook = spread.book;
   activeJourneyId = `uploaded:${spread.book.id}`;
   activeLibraryBookKey = `uploaded:${spread.book.id}`;
+  const spreadIndex = lessonTimeline.findIndex((item) => item.id === spread.id);
+  saveOpenView({
+    kind: "uploaded",
+    bookId: spread.book.id,
+    spreadIndex: Math.max(0, spreadIndex),
+  });
   hideHighlightPopover({ skipRerender: true });
   closeObjectivePopover();
   closeReviewDetail();
   renderUploadedSpread(spread);
+  renderUploadedReaderIndex(spread);
 
   elements.mastheadEyebrow.textContent = "Sách Markdown";
   elements.loading.hidden = true;
@@ -1119,6 +1300,7 @@ function updateOpenStateLabel() {
 }
 
 function showJourneyCompleted(journey) {
+  clearOpenView();
   setReaderMode("journey");
   currentUploadedBook = null;
   currentLesson = null;
@@ -1138,6 +1320,7 @@ function showJourneyCompleted(journey) {
 }
 
 function showJourneySetup() {
+  clearOpenView();
   setReaderMode("journey");
   currentUploadedBook = null;
   currentLesson = null;
@@ -1420,6 +1603,7 @@ function renderHome() {
 }
 
 function showHome() {
+  clearOpenView();
   currentLesson = null;
   bookmarkedLesson = null;
   hideHighlightPopover();
@@ -1465,9 +1649,28 @@ async function openJourney(journeyId, originEl) {
     } else {
       hideBusy();
       bookmarkedLesson = payload.data.lesson;
-      showLesson(payload.data.lesson);
-      playBookOpening(payload.data.lesson);
       await loadHistory(payload.data.lesson);
+
+      const storedLessonId = getStoredJourneyLesson(journeyId);
+      let lessonToShow = payload.data.lesson;
+      let restoredSavedPage = false;
+      if (storedLessonId && storedLessonId !== payload.data.lesson.id) {
+        try {
+          lessonToShow = await loadTimelineLesson(storedLessonId);
+          restoredSavedPage = Boolean(lessonToShow);
+        } catch {
+          // Keep the current bookmark open if the historical page is unavailable.
+        }
+      }
+      showLesson(lessonToShow);
+      if (restoredSavedPage) {
+        playBookOpening(lessonToShow);
+      } else {
+        playBookOpening(lessonToShow, { skipPageTurns: true });
+        waitForBookStageOpen().then(() => {
+          elements.bookStage.classList.remove("skip-page-turns");
+        });
+      }
     }
     await loadLibrary();
     loadStats();
@@ -1479,7 +1682,11 @@ async function openJourney(journeyId, originEl) {
   }
 }
 
-async function openUploadedBook(bookId, originEl) {
+async function openUploadedBook(
+  bookId,
+  originEl,
+  requestedSpreadIndex = null,
+) {
   elements.error.hidden = true;
   showBusy("Đang mở sách Markdown…");
   bookFlyOriginRect = originEl ? originEl.getBoundingClientRect() : null;
@@ -1499,15 +1706,61 @@ async function openUploadedBook(bookId, originEl) {
     spreads.forEach((spread) => lessonCache.set(spread.id, spread));
     activeLibraryBookKey = `uploaded:${bookId}`;
     activeJourneyId = `uploaded:${bookId}`;
+    const savedIndex = Number.isInteger(requestedSpreadIndex)
+      ? requestedSpreadIndex
+      : getStoredUploadedSpread(bookId);
+    const spreadIndex = Math.min(
+      Math.max(0, Number(savedIndex) || 0),
+      spreads.length - 1,
+    );
     hideBusy();
-    showUploadedSpread(spreads[0]);
-    playBookOpening(spreads[0]);
+    showUploadedSpread(spreads[spreadIndex]);
+    playBookOpening(spreads[spreadIndex]);
+    await waitForBookStageOpen();
   } catch (error) {
     elements.error.textContent = error.message;
     elements.error.hidden = false;
   } finally {
     hideBusy();
   }
+}
+
+async function restoreOpenView(view) {
+  if (view.kind === "uploaded") {
+    if (!uploadedBooks.some((book) => book.id === view.bookId)) return false;
+    await openUploadedBook(view.bookId, null, view.spreadIndex);
+    return currentLesson?.kind === "uploaded";
+  }
+
+  const response = await fetch(`/api/journeys/${encodeURIComponent(view.journeyId)}/open`, {
+    method: "POST",
+  });
+  const payload = await response.json();
+  if (!response.ok || payload.data?.journeyCompleted) return false;
+
+  bookmarkedLesson = payload.data.lesson;
+  bookFlyOriginRect = null;
+  await loadHistory(payload.data.lesson);
+
+  const storedLesson = lessonTimeline.find(
+    (lesson) => lesson.id === view.lessonId,
+  );
+  if (storedLesson && storedLesson.id !== payload.data.lesson.id) {
+    try {
+      const lesson = await loadTimelineLesson(storedLesson.id);
+      showLesson(lesson);
+    } catch {
+      // Keep the current bookmark open if the historical page is unavailable.
+    }
+  } else {
+    showLesson(payload.data.lesson);
+  }
+
+  playBookOpening(currentLesson);
+  await waitForBookStageOpen();
+  await loadLibrary();
+  loadStats();
+  return true;
 }
 
 function markSelected(container, selector, value) {
@@ -1757,7 +2010,10 @@ function updateNavigation(lessonId, isCurrent) {
   );
 
   const timelineLesson = lessonTimeline[index];
-  if (currentLesson?.kind === "uploaded") {
+  const isUploadedBook = currentLesson?.kind === "uploaded";
+  elements.readerIndexButton.hidden = !isUploadedBook;
+  elements.readerIndexButton.disabled = !isUploadedBook || isFlipping;
+  if (isUploadedBook) {
     const endPage = Math.min(
       currentLesson.rightPageNumber,
       currentLesson.totalPages,
@@ -1772,6 +2028,52 @@ function updateNavigation(lessonId, isCurrent) {
   }
 }
 
+function openUploadedReaderIndex() {
+  if (currentLesson?.kind !== "uploaded" || isFlipping) return;
+  elements.readerIndexPanel.hidden = false;
+  elements.readerIndexButton.setAttribute("aria-expanded", "true");
+  elements.readerPageJumpInput.value = "";
+  requestAnimationFrame(() => elements.readerPageJumpInput.focus());
+}
+
+function closeUploadedReaderIndex() {
+  elements.readerIndexPanel.hidden = true;
+  elements.readerIndexButton?.setAttribute("aria-expanded", "false");
+}
+
+function goToUploadedPage(value) {
+  if (currentLesson?.kind !== "uploaded" || isFlipping) return;
+  const pageNumber = Number(value);
+  const totalPages = currentLesson.totalPages;
+  if (!Number.isInteger(pageNumber) || pageNumber < 1 || pageNumber > totalPages) {
+    elements.readerPageJumpInput.setCustomValidity(
+      `Nhập một trang từ 1 đến ${totalPages}.`,
+    );
+    elements.readerPageJumpInput.reportValidity();
+    return;
+  }
+  elements.readerPageJumpInput.setCustomValidity("");
+  const targetIndex = Math.floor((pageNumber - 1) / 2);
+  const currentIndex = lessonTimeline.findIndex(
+    (item) => item.id === currentLesson.id,
+  );
+  // Persist the reader's intent before the animation starts. If the page is
+  // reloaded or the book is closed during the flight, restoration still lands
+  // on the page they chose from the index.
+  saveOpenView({
+    kind: "uploaded",
+    bookId: currentUploadedBook.id,
+    spreadIndex: targetIndex,
+  });
+  closeUploadedReaderIndex();
+  if (targetIndex === currentIndex) return;
+  flipUploadedSpread(targetIndex > currentIndex ? 1 : -1, {
+    targetIndex,
+    durationMs: FAST_PAGE_TURN_MS,
+    rapid: true,
+  });
+}
+
 /* ---------- Antique book-stage opening & page flipping ---------- */
 
 const BOOK_CLOSE_MS = 1800;
@@ -1781,6 +2083,9 @@ const SPINE_TURN_MS = 720;
 // halfway through the turn. The underlying spread is updated only after the
 // sheet has landed, so its reverse never duplicates content below mid-flight.
 const PAGE_TURN_MS = 1180;
+// Restore and quick-jump turns keep the same paper-flight treatment, but move
+// quickly enough that a long Markdown book feels like it is riffling itself.
+const FAST_PAGE_TURN_MS = 240;
 let bookStageState = "idle";
 let bookStageTimers = [];
 let isFlipping = false;
@@ -1846,6 +2151,7 @@ function resetBook() {
   elements.bookStage.classList.remove("is-dismissed");
   elements.bookStage.classList.remove("is-flying");
   elements.bookStage.classList.remove("is-spined");
+  elements.bookStage.classList.remove("skip-page-turns");
   elements.bookStage.style.removeProperty("--fold-scale");
   elements.bookStage.hidden = true;
   elements.stateLabelTop.hidden = true;
@@ -1894,12 +2200,16 @@ function populateBookStage(lesson) {
   elements.stageDescription.textContent = journey.description ?? "";
 }
 
-function playBookOpening(lesson) {
+function playBookOpening(
+  lesson,
+  { skipPageTurns = false } = {},
+) {
   populateBookStage(lesson);
   clearBookStageTimers();
   clearBookFlyer();
   elements.bookStage.classList.remove("is-dismissed");
   elements.bookStage.classList.remove("is-flying");
+  elements.bookStage.classList.toggle("skip-page-turns", skipPageTurns);
   const willFly = Boolean(bookFlyOriginRect);
   elements.bookStage.hidden = false;
   void elements.bookStage.offsetWidth;
@@ -1940,15 +2250,15 @@ function playBookOpening(lesson) {
         .catch(reveal);
     }
     schedule("opening", duration + 220);
-    schedule("turning", duration + 1470);
-    schedule("open", duration + 2970);
+    if (!skipPageTurns) schedule("turning", duration + 1470);
+    schedule("open", duration + (skipPageTurns ? 1700 : 2970));
     return;
   }
 
   setBookStageState("presenting");
   schedule("opening", 900);
-  schedule("turning", 2150);
-  schedule("open", 3650);
+  if (!skipPageTurns) schedule("turning", 2150);
+  schedule("open", skipPageTurns ? 2400 : 3650);
 }
 
 function getClosedCoverRect() {
@@ -2098,6 +2408,8 @@ function launchShelfBookFlyer(fromRect, targetBook, duration) {
 function closeBookAndReturn() {
   if (isFlipping) return;
 
+  saveCurrentOpenView();
+  closeUploadedReaderIndex();
   clearBookStageTimers();
   elements.bookStage.classList.remove("is-dismissed");
   elements.bookStage.hidden = false;
@@ -2238,12 +2550,19 @@ function createTurningPageSnapshot(side, lesson, { useCurrentDom = false } = {})
   return makeTurningPageInert(page);
 }
 
-function flipUploadedSpread(offset) {
+function flipUploadedSpread(
+  offset,
+  { targetIndex = null, durationMs = PAGE_TURN_MS, rapid = false } = {},
+) {
   if (isFlipping) return;
   const index = lessonTimeline.findIndex((item) => item.id === currentLesson?.id);
-  const target = lessonTimeline[index + offset];
+  const resolvedTargetIndex = Number.isInteger(targetIndex)
+    ? targetIndex
+    : index + offset;
+  const target = lessonTimeline[resolvedTargetIndex];
   const spread = target ? lessonCache.get(target.id) : null;
   if (!spread) return;
+  const direction = resolvedTargetIndex > index ? "next" : "prev";
 
   isFlipping = true;
   elements.antiqueBook.classList.add("is-page-turning");
@@ -2252,12 +2571,13 @@ function flipUploadedSpread(offset) {
   elements.closeBookButton.disabled = true;
 
   const leaf = createTurningLeaf(
-    offset > 0 ? "next" : "prev",
+    direction,
     currentLesson,
     spread,
+    { durationMs, rapid },
   );
 
-  if (offset < 0) {
+  if (direction === "prev") {
     renderUploadedPage(
       elements.uploadedLeftPage,
       spread.leftBlocks,
@@ -2276,7 +2596,7 @@ function flipUploadedSpread(offset) {
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       leaf.classList.add("is-animating");
-      playPageTurnSound(offset > 0 ? "next" : "prev");
+      playPageTurnSound(direction);
     });
   });
 
@@ -2302,7 +2622,28 @@ function flipUploadedSpread(offset) {
   leaf.addEventListener("animationend", onTurnEnd);
   window.setTimeout(() => {
     if (leaf.isConnected) finish();
-  }, PAGE_TURN_MS + 120);
+  }, durationMs + 120);
+}
+
+function waitForBookStageOpen(timeoutMs = 6_000) {
+  return waitForBookStageState("open", timeoutMs);
+}
+
+function waitForBookStageState(targetState, timeoutMs = 10_000) {
+  return new Promise((resolve) => {
+    const startedAt = performance.now();
+    const check = () => {
+      if (
+        bookStageState === targetState ||
+        performance.now() - startedAt >= timeoutMs
+      ) {
+        resolve();
+        return;
+      }
+      window.setTimeout(check, 50);
+    };
+    check();
+  });
 }
 
 function createTurningFace(side, lesson, options) {
@@ -2316,10 +2657,15 @@ function createTurningFace(side, lesson, options) {
   return face;
 }
 
-function createTurningLeaf(direction, sourceLesson, targetLesson) {
+function createTurningLeaf(
+  direction,
+  sourceLesson,
+  targetLesson,
+  { durationMs = PAGE_TURN_MS, rapid = false } = {},
+) {
   const leaf = document.createElement("div");
-  leaf.className = `turn-leaf manual-turn-leaf turn-${direction}`;
-  leaf.style.setProperty("--page-duration", `${PAGE_TURN_MS}ms`);
+  leaf.className = `turn-leaf manual-turn-leaf turn-${direction}${rapid ? " is-rapid-turn" : ""}`;
+  leaf.style.setProperty("--page-duration", `${durationMs}ms`);
 
   const sheet = document.createElement("div");
   sheet.className = "turning-sheet";
@@ -2352,9 +2698,12 @@ function createTurningLeaf(direction, sourceLesson, targetLesson) {
   return leaf;
 }
 
-function flipTimelineLesson(offset) {
+function flipTimelineLesson(
+  offset,
+  { durationMs = PAGE_TURN_MS, rapid = false } = {},
+) {
   if (currentLesson?.kind === "uploaded") {
-    flipUploadedSpread(offset);
+    flipUploadedSpread(offset, { durationMs, rapid });
     return;
   }
   if (isFlipping) return;
@@ -2396,6 +2745,7 @@ function flipTimelineLesson(offset) {
     offset > 0 ? "next" : "prev",
     currentLesson,
     lesson,
+    { durationMs, rapid },
   );
 
   // Stage only the page that physically sits underneath the moving sheet.
@@ -2459,7 +2809,7 @@ function flipTimelineLesson(offset) {
   leaf.addEventListener("animationend", onTurnEnd);
   window.setTimeout(() => {
     if (leaf.isConnected) finish();
-  }, PAGE_TURN_MS + 120);
+  }, durationMs + 120);
 }
 
 async function loadStats() {
@@ -2486,6 +2836,16 @@ async function initialize() {
     showBusy(BUSY_MESSAGES[status.requestType] ?? "Đang xử lý…");
     busyPollTimer = window.setTimeout(pollUntilIdle, BUSY_POLL_MS);
     return;
+  }
+
+  const storedOpenView = readStoredOpenView();
+  if (storedOpenView) {
+    try {
+      if (await restoreOpenView(storedOpenView)) return;
+    } catch {
+      // A deleted book or unavailable journey should fall back to the shelf.
+    }
+    clearOpenView();
   }
 
   showHomeOrSetup();
@@ -2559,6 +2919,25 @@ elements.backHomeButton.addEventListener("click", () => {
 
 elements.closeBookButton.addEventListener("click", () => {
   closeBookAndReturn();
+});
+
+elements.readerIndexButton.addEventListener("click", () => {
+  if (elements.readerIndexPanel.hidden) openUploadedReaderIndex();
+  else closeUploadedReaderIndex();
+});
+
+elements.readerIndexClose.addEventListener("click", closeUploadedReaderIndex);
+
+elements.readerPageJumpForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  goToUploadedPage(elements.readerPageJumpInput.value);
+});
+
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !elements.readerIndexPanel.hidden) {
+    closeUploadedReaderIndex();
+    elements.readerIndexButton.focus();
+  }
 });
 
 window.addEventListener("resize", updateBookScale);

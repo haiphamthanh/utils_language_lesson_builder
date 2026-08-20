@@ -569,6 +569,20 @@
               </button>
               <span id="reader-page-label" aria-live="polite"></span>
               <button
+                id="reader-index-button"
+                class="reader-index-button"
+                type="button"
+                aria-label="Mở mục lục và chọn trang"
+                aria-expanded="false"
+                aria-controls="reader-index-panel"
+                hidden
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M6 5h12M6 10h12M6 15h8M4 5h.01M4 10h.01M4 15h.01" />
+                </svg>
+                <span>Mục lục</span>
+              </button>
+              <button
                 id="reader-next"
                 type="button"
                 aria-label="Bài tiếp theo"
@@ -577,6 +591,48 @@
                 →
               </button>
             </nav>
+
+            <aside
+              id="reader-index-panel"
+              class="reader-index-panel"
+              aria-label="Mục lục sách Markdown"
+              hidden
+            >
+              <header class="reader-index-head">
+                <div>
+                  <small>Điều hướng nhanh</small>
+                  <h2>Mục lục &amp; trang</h2>
+                </div>
+                <button
+                  id="reader-index-close"
+                  type="button"
+                  aria-label="Đóng mục lục"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6 6l12 12M18 6 6 18" />
+                  </svg>
+                </button>
+              </header>
+              <form id="reader-page-jump-form" class="reader-page-jump-form">
+                <label for="reader-page-jump-input">Đi tới trang</label>
+                <div>
+                  <input
+                    id="reader-page-jump-input"
+                    type="number"
+                    inputmode="numeric"
+                    min="1"
+                    step="1"
+                    placeholder="Số trang"
+                  />
+                  <button type="submit">Đi</button>
+                </div>
+              </form>
+              <div
+                id="reader-index-list"
+                class="reader-index-list"
+                role="list"
+              ></div>
+            </aside>
 
             <div class="open-actions">
               <button
