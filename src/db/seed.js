@@ -49,6 +49,34 @@ const systemTopics = [
     description: 'Describe a project you are working on right now.',
     languageScope: null,
   },
+  {
+    id: '00000000-0000-4000-8000-000000000020',
+    name: 'Software Engineering',
+    slug: 'software-engineering-jp',
+    description: 'Describe everyday software work, features, and team habits.',
+    languageScope: 'Japanese',
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000021',
+    name: 'Artificial Intelligence',
+    slug: 'artificial-intelligence-jp',
+    description: 'Write about AI ideas, tools, and small projects.',
+    languageScope: 'Japanese',
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000030',
+    name: 'Software Engineering',
+    slug: 'software-engineering-zh',
+    description: 'Describe everyday software work, features, and team habits.',
+    languageScope: 'Chinese',
+  },
+  {
+    id: '00000000-0000-4000-8000-000000000031',
+    name: 'Artificial Intelligence',
+    slug: 'artificial-intelligence-zh',
+    description: 'Write about AI ideas, tools, and small projects.',
+    languageScope: 'Chinese',
+  },
 ];
 
 export async function seed(database = pool) {
@@ -72,8 +100,10 @@ export async function seed(database = pool) {
     }
     await client.query(
       `INSERT INTO journeys
-         (id, user_id, topic_id, language, level, title, status, max_cycles, planned_lesson_count)
-       VALUES ($1, $2, $3, 'English', 'Beginner', 'Software Engineering English', 'active', 2, 3)
+         (id, user_id, topic_id, language, level, title, description, status, max_cycles, planned_lesson_count)
+       VALUES ($1, $2, $3, 'English', 'Beginner', 'Software Engineering English',
+               'Một hành trình khám phá công việc phần mềm hằng ngày, được kể lại qua những bài viết tiếng Anh ngắn.',
+               'active', 2, 3)
        ON CONFLICT (id) DO NOTHING`,
       [ids.journey, config.demoUserId, ids.topic],
     );

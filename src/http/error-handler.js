@@ -8,6 +8,13 @@ export function notFoundHandler(request, response) {
 }
 
 export function errorHandler(error, _request, response, _next) {
+  if (error?.type === 'entity.too.large') {
+    return response.status(413).json({
+      error: 'PAYLOAD_TOO_LARGE',
+      message: 'Dữ liệu tải lên vượt quá giới hạn cho phép.',
+    });
+  }
+
   if (error instanceof AppError) {
     return response.status(error.status).json({
       error: error.code,

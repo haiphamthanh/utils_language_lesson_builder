@@ -35,6 +35,7 @@ export class LessonRepository {
          lv.version_number,
          j.id AS journey_id,
          j.title AS journey_title,
+         j.description AS journey_description,
          j.language,
          j.level,
          j.planned_lesson_count,
@@ -70,6 +71,7 @@ export class LessonRepository {
          lv.version_number,
          j.id AS journey_id,
          j.title AS journey_title,
+         j.description AS journey_description,
          j.language,
          j.level,
          j.planned_lesson_count,
@@ -91,7 +93,7 @@ export class LessonRepository {
     return result.rows[0] ?? null;
   }
 
-  async findCompletedHistoryByUserId(userId) {
+  async findCompletedHistoryByUserId(userId, journeyId) {
     const result = await this.database.query(
       `SELECT
          l.id,
@@ -105,8 +107,9 @@ export class LessonRepository {
        JOIN lesson_versions lv ON lv.id = l.active_version_id
        WHERE p.user_id = $1
          AND l.status = 'completed'
+         ${journeyId ? 'AND l.journey_id = $2' : ''}
        ORDER BY l.cycle_number, l.sequence_number`,
-      [userId],
+      journeyId ? [userId, journeyId] : [userId],
     );
 
     return result.rows;

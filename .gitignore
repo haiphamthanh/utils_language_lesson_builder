@@ -3,4 +3,11 @@ node_modules/
 .DS_Store
 npm-debug.log*
 coverage/
+.server.pid
+.server.port
+.server.log
 
+# Agent skill files
+*.agent
+.codex
+.opencode

@@ -9,6 +9,7 @@ import {
 function validJourney() {
   return {
     title: 'Travel Writing Journey',
+    description: 'Một hành trình ghi lại những miền đất và trải nghiệm đáng nhớ qua từng trang viết.',
     steps: [
       { title: 'Introducing Travel', objective: 'Introduce your travel interests.', continuation_hint: 'Describe a place.' },
       { title: 'A Place', objective: 'Describe one place you love.', continuation_hint: 'Share a story.' },
@@ -19,6 +20,7 @@ function validJourney() {
 
 test('generated journey schema requires a title and 3-8 steps', () => {
   assert.equal(generatedJourneySchema.required.includes('title'), true);
+  assert.equal(generatedJourneySchema.required.includes('description'), true);
   assert.equal(generatedJourneySchema.properties.steps.minItems, 3);
   assert.equal(generatedJourneySchema.properties.steps.maxItems, 8);
   assert.equal(
@@ -36,6 +38,15 @@ test('validateGeneratedJourney rejects a missing title', () => {
   const journey = validJourney();
   delete journey.title;
   assert.throws(() => validateGeneratedJourney(journey), /"title" must be non-empty/);
+});
+
+test('validateGeneratedJourney rejects a missing description', () => {
+  const journey = validJourney();
+  delete journey.description;
+  assert.throws(
+    () => validateGeneratedJourney(journey),
+    /"description" must be non-empty/,
+  );
 });
 
 test('validateGeneratedJourney rejects fewer than 3 steps', () => {

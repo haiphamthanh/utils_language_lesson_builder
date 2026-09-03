@@ -1,29 +1,44 @@
 export class CompleteLessonService {
-  constructor(workflowRepository, generationService, currentLessonService) {
+  constructor(
+    workflowRepository,
+    generationService,
+    currentLessonService,
+    generationStateRepository,
+  ) {
     this.workflowRepository = workflowRepository;
     this.generationService = generationService;
     this.currentLessonService = currentLessonService;
+    this.generationStateRepository = generationStateRepository;
   }
 
   async completeForUser({ userId, lessonId }) {
-    const result = await this.workflowRepository.completeCurrent({
+    await this.generationStateRepository.begin({
       userId,
-      lessonId,
+      requestType: 'lesson_generation',
     });
 
-    if (result.nextLessonNeedsGeneration) {
-      await this.generationService.generateForUser({
+    try {
+      const result = await this.workflowRepository.completeCurrent({
         userId,
-        lessonId: result.nextLessonId,
+        lessonId,
       });
-    }
 
-    return {
-      alreadyCompleted: result.alreadyCompleted,
-      journeyCompleted: result.journeyCompleted,
-      nextLesson: result.journeyCompleted
-        ? null
-        : await this.currentLessonService.getForUser(userId),
-    };
+      if (result.nextLessonNeedsGeneration) {
+        await this.generationService.generateForUser({
+          userId,
+          lessonId: result.nextLessonId,
+        });
+      }
+
+      return {
+        alreadyCompleted: result.alreadyCompleted,
+        journeyCompleted: result.journeyCompleted,
+        nextLesson: result.journeyCompleted
+          ? null
+          : await this.currentLessonService.getForUser(userId),
+      };
+    } finally {
+      await this.generationStateRepository.finish({ userId });
+    }
   }
 }

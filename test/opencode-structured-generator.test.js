@@ -145,3 +145,56 @@ test('plain-text fallback rejects output that is not JSON', async () => {
     /did not return parseable JSON/,
   );
 });
+
+test('an occupied default port is skipped in favour of a free one', async () => {
+  const net = await import('node:net');
+  const server = net.createServer();
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const { port: occupiedPort } = server.address();
+
+  const ports = [];
+  const runtimeFactory = async (options) => {
+    ports.push(options.port);
+    return {
+      client: {
+        session: {
+          async create() {
+            return { data: { id: 'session-1' } };
+          },
+          async prompt() {
+            return {
+              data: {
+                info: { structured: { title: 'OK' }, providerID: 'p', modelID: 'm' },
+                parts: [],
+              },
+            };
+          },
+          async delete() {
+            return { data: true };
+          },
+        },
+      },
+      server: { close() {} },
+    };
+  };
+
+  const schema = {
+    type: 'object',
+    required: ['title'],
+    properties: { title: { type: 'string' } },
+  };
+  const generator = new OpenCodeStructuredGenerator({
+    hostname: '127.0.0.1',
+    port: occupiedPort,
+    runtimeFactory,
+    generationTimeoutMs: 1_000,
+    systemPrompt: 'System',
+    schema,
+    buildPrompt: () => 'Return JSON.',
+  });
+
+  await generator.generate({ sequenceNumber: 1 });
+
+  server.close();
+  assert.ok(ports[0] !== occupiedPort, `expected a free port, got ${ports[0]}`);
+});

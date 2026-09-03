@@ -6,6 +6,7 @@ import { CreateJourneyService } from '../src/services/create-journey-service.js'
 function outlineFixture() {
   return {
     title: 'Travel Writing Journey',
+    description: 'Một hành trình khám phá những chuyến đi qua từng trang viết ngắn.',
     steps: [
       { title: 'Introducing Travel', objective: 'Introduce travel.', continuation_hint: 'Go deeper.' },
       { title: 'A Place', objective: 'Describe a place.', continuation_hint: 'Tell a story.' },
@@ -35,6 +36,7 @@ test('creating a journey generates an outline, persists it, and generates the fi
       assert.equal(topic.id, 'topic-1');
       assert.equal(language, 'English');
       assert.equal(level, 'Beginner');
+      assert.match(outline.description, /hành trình/);
       assert.equal(outline.steps.length, 3);
       return { journeyId: 'journey-1', lessonId: 'lesson-1' };
     },
@@ -52,12 +54,23 @@ test('creating a journey generates an outline, persists it, and generates the fi
       return { id: 'lesson-1', title: 'Introducing Travel' };
     },
   };
+  const generationStateRepository = {
+    async begin({ userId, requestType }) {
+      calls.push(`begin:${requestType}`);
+      assert.equal(userId, 'user-1');
+    },
+    async finish({ userId }) {
+      calls.push('finish');
+      assert.equal(userId, 'user-1');
+    },
+  };
   const service = new CreateJourneyService({
     topicRepository,
     journeyRepository,
     journeyGenerator,
     lessonGenerationService,
     currentLessonService,
+    generationStateRepository,
   });
 
   const result = await service.createForUser({
@@ -69,10 +82,12 @@ test('creating a journey generates an outline, persists it, and generates the fi
 
   assert.deepEqual(calls, [
     'find-topic',
+    'begin:journey_creation',
     'generate-outline',
     'create-journey',
     'generate-lesson',
     'read-current',
+    'finish',
   ]);
   assert.equal(result.id, 'lesson-1');
 });

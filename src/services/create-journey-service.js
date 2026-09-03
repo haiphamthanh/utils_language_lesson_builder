@@ -8,12 +8,14 @@ export class CreateJourneyService {
     journeyGenerator,
     lessonGenerationService,
     currentLessonService,
+    generationStateRepository,
   }) {
     this.topicRepository = topicRepository;
     this.journeyRepository = journeyRepository;
     this.journeyGenerator = journeyGenerator;
     this.lessonGenerationService = lessonGenerationService;
     this.currentLessonService = currentLessonService;
+    this.generationStateRepository = generationStateRepository;
   }
 
   async createForUser({ userId, topicId, language, level }) {
@@ -30,24 +32,33 @@ export class CreateJourneyService {
       throw new AppError(404, 'TOPIC_NOT_FOUND', 'The selected topic was not found.');
     }
 
-    const outline = validateGeneratedJourney(
-      await this.journeyGenerator.generate({
-        topic: { name: topic.name, description: topic.description },
-        language,
-        level,
-      }),
-    );
-
-    const { lessonId } = await this.journeyRepository.create({
+    await this.generationStateRepository.begin({
       userId,
-      topic,
-      language,
-      level,
-      outline,
+      requestType: 'journey_creation',
     });
 
-    await this.lessonGenerationService.generateForUser({ userId, lessonId });
+    try {
+      const outline = validateGeneratedJourney(
+        await this.journeyGenerator.generate({
+          topic: { name: topic.name, description: topic.description },
+          language,
+          level,
+        }),
+      );
 
-    return this.currentLessonService.getForUser(userId);
+      const { lessonId } = await this.journeyRepository.create({
+        userId,
+        topic,
+        language,
+        level,
+        outline,
+      });
+
+      await this.lessonGenerationService.generateForUser({ userId, lessonId });
+
+      return this.currentLessonService.getForUser(userId);
+    } finally {
+      await this.generationStateRepository.finish({ userId });
+    }
   }
 }

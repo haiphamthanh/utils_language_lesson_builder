@@ -19,6 +19,7 @@ test('OpenCode journey generator requests the journey schema and cleans up', asy
               info: {
                 structured: {
                   title: 'Travel Journey',
+                  description: 'Một hành trình đi qua những miền đất mới và lưu giữ trải nghiệm bằng từng trang viết.',
                   steps: [
                     { title: 'Intro', objective: 'Introduce.', continuation_hint: 'Continue.' },
                     { title: 'Place', objective: 'Describe.', continuation_hint: 'Share.' },
@@ -51,6 +52,7 @@ test('OpenCode journey generator requests the journey schema and cleans up', asy
   });
 
   assert.equal(journey.title, 'Travel Journey');
+  assert.match(journey.description, /hành trình/);
   assert.equal(journey.steps.length, 3);
   assert.match(journey.promptVersion, /journey/);
   assert.deepEqual(calls, ['create', 'prompt', 'delete']);
@@ -69,6 +71,7 @@ test('Sample journey generator produces a valid progressive outline', async () =
   });
 
   assert.equal(journey.title, 'Travel Writing Journey');
+  assert.match(journey.description, /hành trình/);
   assert.ok(journey.steps.length >= 3);
   assert.match(journey.steps[0].objective, /Travel/);
 });

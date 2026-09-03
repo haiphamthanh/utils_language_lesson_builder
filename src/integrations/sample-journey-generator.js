@@ -1,5 +1,5 @@
 export class SampleJourneyGenerator {
-  promptVersion = 'sample-journey-v1';
+  promptVersion = 'sample-journey-v2';
 
   async generate(context) {
     const topicName = context.topic?.name ?? 'My Learning Topic';
@@ -35,6 +35,7 @@ export class SampleJourneyGenerator {
 
     return {
       title: `${topicName} Writing Journey`,
+      description: `Một hành trình luyện viết mở ra những góc nhìn gần gũi về ${topicName}, được bồi đắp qua từng trang ngắn.`,
       steps,
       promptVersion: this.promptVersion,
       generationMetadata: {

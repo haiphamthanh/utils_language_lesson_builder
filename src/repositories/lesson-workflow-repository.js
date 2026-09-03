@@ -23,6 +23,7 @@ export class LessonWorkflowRepository {
          j.language,
          j.level,
          j.title AS journey_title,
+         j.description AS journey_description,
          j.planned_lesson_count,
          t.name AS topic_name,
          t.description AS topic_description,

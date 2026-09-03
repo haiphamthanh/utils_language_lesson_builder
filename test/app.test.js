@@ -225,8 +225,135 @@ test('POST /api/journeys creates a journey and returns the first lesson', async 
   assert.equal((await response.json()).data.title, 'Introducing Travel');
 });
 
-test('GET /api/lessons/:id/highlights lists the lesson highlights', async (context) => {
-  const highlightService = {
+test('GET /api/journeys lists the learner journeys', async (context) => {
+  const journeyService = {
+    async listForUser() {
+      return [
+        {
+          id: 'journey-1',
+          title: 'Software Engineering English',
+          language: 'English',
+          level: 'Beginner',
+          status: 'active',
+          completedLessons: 1,
+          totalLessons: 6,
+        },
+      ];
+    },
+  };
+  const database = { query: async () => ({ rows: [] }) };
+  const app = createApp({ database, journeyService });
+  const server = await listen(app);
+  context.after(() => server.close());
+
+  const address = server.address();
+  const response = await fetch(`http://127.0.0.1:${address.port}/api/journeys`);
+
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).data[0].language, 'English');
+});
+
+test('GET /api/books lists uploaded Markdown books', async (context) => {
+  const bookRepository = {
+    async list() {
+      return [{ id: 'book-1', type: 'uploaded', title: 'Grammar Flow' }];
+    },
+  };
+  const database = { query: async () => ({ rows: [] }) };
+  const app = createApp({ database, bookRepository });
+  const server = await listen(app);
+  context.after(() => server.close());
+
+  const address = server.address();
+  const response = await fetch(`http://127.0.0.1:${address.port}/api/books`);
+
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).data[0].type, 'uploaded');
+});
+
+test('POST /api/books uploads a Markdown book', async (context) => {
+  const bookRepository = {
+    async create(input) {
+      return { id: 'grammar-flow', title: 'Grammar Flow', ...input, content: undefined };
+    },
+  };
+  const database = { query: async () => ({ rows: [] }) };
+  const app = createApp({ database, bookRepository });
+  const server = await listen(app);
+  context.after(() => server.close());
+
+  const address = server.address();
+  const response = await fetch(`http://127.0.0.1:${address.port}/api/books`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fileName: 'grammar-flow.md', content: '# Grammar Flow' }),
+  });
+
+  assert.equal(response.status, 201);
+  assert.equal((await response.json()).data.id, 'grammar-flow');
+});
+
+test('GET /api/books/:id returns a book with Markdown content', async (context) => {
+  const bookRepository = {
+    async getById(id) {
+      return { id, title: 'Grammar Flow', content: '# Grammar Flow' };
+    },
+  };
+  const database = { query: async () => ({ rows: [] }) };
+  const app = createApp({ database, bookRepository });
+  const server = await listen(app);
+  context.after(() => server.close());
+
+  const address = server.address();
+  const response = await fetch(
+    `http://127.0.0.1:${address.port}/api/books/grammar-flow`,
+  );
+
+  assert.equal(response.status, 200);
+  assert.match((await response.json()).data.content, /^# Grammar Flow/);
+});
+
+test('POST /api/journeys/:id/open resumes a paused journey', async (context) => {
+  const journeyService = {
+    async openForUser({ journeyId }) {
+      return {
+        journeyCompleted: false,
+        journey: { id: journeyId, title: 'Travel English' },
+        lesson: { id: 'lesson-9', title: 'Packing', isCurrent: true },
+      };
+    },
+  };
+  const database = { query: async () => ({ rows: [] }) };
+  const app = createApp({ database, journeyService });
+  const server = await listen(app);
+  context.after(() => server.close());
+
+  const address = server.address();
+  const response = await fetch(
+    `http://127.0.0.1:${address.port}/api/journeys/journey-1/open`,
+    { method: 'POST' },
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).data.lesson.id, 'lesson-9');
+});
+
+test('GET /api/status reports whether a generation is in flight', async (context) => {
+  const database = { query: async () => ({ rows: [] }) };
+  const app = createApp({ database });
+  const server = await listen(app);
+  context.after(() => server.close());
+
+  const address = server.address();
+  const response = await fetch(`http://127.0.0.1:${address.port}/api/status`);
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), {
+    data: { busy: false, requestType: null },
+  });
+});
+
+test('POST /api/lessons/:id/highlights lists the lesson highlights', async (context) => {  const highlightService = {
     async listForLesson({ lessonId }) {
       return [{ id: 'h1', lessonId, text: 'developer' }];
     },

@@ -33,10 +33,21 @@ test('regenerate preserves the workflow order and returns the new active version
       return { id: 'lesson-1', versionNumber: 2 };
     },
   };
+  const generationStateRepository = {
+    async begin({ userId, requestType }) {
+      calls.push(`begin:${requestType}`);
+      assert.equal(userId, 'user-1');
+    },
+    async finish({ userId }) {
+      calls.push('finish');
+      assert.equal(userId, 'user-1');
+    },
+  };
   const service = new RegenerateLessonService(
     workflowRepository,
     generator,
     currentLessonService,
+    generationStateRepository,
   );
 
   const lesson = await service.regenerateForUser({
@@ -44,7 +55,14 @@ test('regenerate preserves the workflow order and returns the new active version
     lessonId: 'lesson-1',
   });
 
-  assert.deepEqual(calls, ['claim', 'generate', 'finish:request-1', 'read-current']);
+  assert.deepEqual(calls, [
+    'begin:regeneration',
+    'claim',
+    'generate',
+    'finish:request-1',
+    'read-current',
+    'finish',
+  ]);
   assert.equal(lesson.versionNumber, 2);
 });
 
@@ -69,6 +87,7 @@ test('regenerate restores the prior ready lesson when generation fails', async (
     workflowRepository,
     generator,
     { getForUser: async () => null },
+    { begin: async () => {}, finish: async () => {} },
   );
 
   await assert.rejects(

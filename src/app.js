@@ -6,6 +6,8 @@ import { pool } from './db/pool.js';
 import { createJourneyGenerator } from './integrations/create-journey-generator.js';
 import { createLessonGenerator } from './integrations/create-lesson-generator.js';
 import { JourneyRepository } from './repositories/journey-repository.js';
+import { BookRepository } from './repositories/book-repository.js';
+import { GenerationStateRepository } from './repositories/generation-state-repository.js';
 import { HighlightRepository } from './repositories/highlight-repository.js';
 import { LessonRepository } from './repositories/lesson-repository.js';
 import { LessonWorkflowRepository } from './repositories/lesson-workflow-repository.js';
@@ -15,6 +17,7 @@ import { CompleteLessonService } from './services/complete-lesson-service.js';
 import { CreateJourneyService } from './services/create-journey-service.js';
 import { CurrentLessonService } from './services/current-lesson-service.js';
 import { HighlightService } from './services/highlight-service.js';
+import { JourneyService } from './services/journey-service.js';
 import { LessonGenerationService } from './services/lesson-generation-service.js';
 import { RegenerateLessonService } from './services/regenerate-lesson-service.js';
 import { StatsService } from './services/stats-service.js';
@@ -30,6 +33,9 @@ export function createApp({
   topicRepository = new TopicRepository(database),
   createJourneyService,
   highlightService = new HighlightService(new HighlightRepository(database)),
+  journeyService,
+  generationStateRepository = new GenerationStateRepository(database),
+  bookRepository = new BookRepository(),
 } = {}) {
   const app = express();
   const workflowRepository = new LessonWorkflowRepository(database);
@@ -39,6 +45,7 @@ export function createApp({
     config.generationProvider,
     config.opencode,
   );
+  app.locals.journeyGenerator = journeyGenerator;
   const generationService = new LessonGenerationService(
     workflowRepository,
     generator,
@@ -49,6 +56,7 @@ export function createApp({
       workflowRepository,
       generationService,
       currentLessonService,
+      generationStateRepository,
     );
   const resolvedRegenerateLessonService =
     regenerateLessonService ??
@@ -56,6 +64,7 @@ export function createApp({
       workflowRepository,
       generator,
       currentLessonService,
+      generationStateRepository,
     );
   const resolvedCreateJourneyService =
     createJourneyService ??
@@ -65,15 +74,36 @@ export function createApp({
       journeyGenerator,
       lessonGenerationService: generationService,
       currentLessonService,
+      generationStateRepository,
+    });
+  const resolvedJourneyService =
+    journeyService ??
+    new JourneyService({
+      journeyRepository: new JourneyRepository(database),
+      currentLessonService,
     });
 
   app.disable('x-powered-by');
-  app.use(express.json({ limit: '32kb' }));
+  app.use(express.json({ limit: '5mb' }));
 
   app.get('/api/health', async (_request, response, next) => {
     try {
       await database.query('SELECT 1');
       response.json({ status: 'ok' });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get('/api/status', async (_request, response, next) => {
+    try {
+      const state = await generationStateRepository.getForUser(config.demoUserId);
+      response.json({
+        data: {
+          busy: Boolean(state),
+          requestType: state?.request_type ?? null,
+        },
+      });
     } catch (error) {
       next(error);
     }
@@ -88,10 +118,11 @@ export function createApp({
     }
   });
 
-  app.get('/api/lessons/history', async (_request, response, next) => {
+  app.get('/api/lessons/history', async (request, response, next) => {
     try {
       const lessons = await currentLessonService.getHistoryForUser(
         config.demoUserId,
+        request.query.journeyId,
       );
       response.json({ data: lessons });
     } catch (error) {
@@ -163,6 +194,55 @@ export function createApp({
         level,
       });
       response.status(201).json({ data: lesson });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get('/api/journeys', async (_request, response, next) => {
+    try {
+      const journeys = await resolvedJourneyService.listForUser(
+        config.demoUserId,
+      );
+      response.json({ data: journeys });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get('/api/books', async (_request, response, next) => {
+    try {
+      response.json({ data: await bookRepository.list() });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/api/books', async (request, response, next) => {
+    try {
+      const { fileName, content } = request.body ?? {};
+      const book = await bookRepository.create({ fileName, content });
+      response.status(201).json({ data: book });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get('/api/books/:bookId', async (request, response, next) => {
+    try {
+      response.json({ data: await bookRepository.getById(request.params.bookId) });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/api/journeys/:journeyId/open', async (request, response, next) => {
+    try {
+      const result = await resolvedJourneyService.openForUser({
+        userId: config.demoUserId,
+        journeyId: request.params.journeyId,
+      });
+      response.json({ data: result });
     } catch (error) {
       next(error);
     }
