@@ -4424,7 +4424,7 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   /* A fixed zero-width track avoids Safari glitches when interpolating
      minmax()/fr grid tracks during the read-mode toggle. */
   grid-template-columns: 0px minmax(0, 1fr);
-  padding: 88px clamp(18px, 3.5vw, 64px) 44px;
+  padding: 88px clamp(12px, 2vw, 40px) 44px;
   align-items: start;
 }
 .book-stage-overlay.is-read-mode .intro-copy {
@@ -4437,8 +4437,8 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   width: 100%;
 }
 .book-stage-overlay.is-read-mode .book-stage {
-  height: min(82svh, 820px);
-  min-height: 600px;
+  height: min(98svh, 980px);
+  min-height: 700px;
   will-change: height;
 }
 .book-stage-overlay.is-read-mode .book-rig {
@@ -4456,6 +4456,13 @@ body[data-theme="dark"] .stage-theme-toggle .icon-sun {
   opacity: 0;
   transform: translateY(20px);
   transition: opacity 0.35s ease, transform 0.5s ease;
+}
+
+.book-stage-overlay.is-read-mode .state-label {
+  display: none;
+}
+.book-stage-overlay.is-read-mode .interaction-copy {
+  margin-top: 0;
 }
 
 @media (min-width: 701px) and (max-width: 1100px) {

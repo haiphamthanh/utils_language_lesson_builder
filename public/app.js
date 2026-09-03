@@ -2205,12 +2205,12 @@ function updateBookScale() {
   const bookStageContainer = elements.bookStage.querySelector(".book-stage");
   const isReadMode = elements.bookStage.classList.contains("is-read-mode");
   const readModeHeight = Math.max(
-    600,
-    Math.min(window.innerHeight * 0.82, 820),
+    700,
+    Math.min(window.innerHeight * 0.98, 960),
   );
   const readModeHorizontalPadding = Math.min(
-    64,
-    Math.max(18, window.innerWidth * 0.035),
+    40,
+    Math.max(12, window.innerWidth * 0.02),
   );
   // The stage's height/grid/padding animate when Read mode is toggled. The
   // live element reports a mid-flight size for the whole transition, which
@@ -2238,7 +2238,7 @@ function updateBookScale() {
     bookStageContainer.style.transition = containerSavedTransition;
   const scale = Math.max(
     0.6,
-    Math.min(1.4, availableHeight / 613, availableWidth / 968),
+    Math.min(1.9, availableHeight / 613, availableWidth / 968),
   );
   elements.bookStage.style.setProperty("--book-scale", scale.toFixed(3));
 }
@@ -3016,6 +3016,23 @@ window.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !elements.readerIndexPanel.hidden) {
     closeUploadedReaderIndex();
     elements.readerIndexButton.focus();
+    return;
+  }
+  if (event.target.closest?.("input, textarea, select, contenteditable")) return;
+  if (!elements.bookStage.classList.contains("state-open")) return;
+  if (event.key === "ArrowRight") {
+    if (!elements.readerNext.disabled) {
+      event.preventDefault();
+      flipTimelineLesson(1);
+    }
+    return;
+  }
+  if (event.key === "ArrowLeft") {
+    if (!elements.readerPrev.disabled) {
+      event.preventDefault();
+      flipTimelineLesson(-1);
+    }
+    return;
   }
 });
 
